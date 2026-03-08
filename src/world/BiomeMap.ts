@@ -1,5 +1,6 @@
 import { BiomeType } from '../biomes/types'
 import { SeededRandom } from '../utils/SeededRandom'
+import { BIOME_CONFIG } from '../config'
 
 interface VoronoiSeed {
   x: number
@@ -7,9 +8,12 @@ interface VoronoiSeed {
   biome: BiomeType
 }
 
-const BIOME_TYPES = [BiomeType.Forest, BiomeType.Desert, BiomeType.Volcanic, BiomeType.Snow]
-// Distance between Voronoi seed points
-const SEED_SPACING = 180
+const BIOME_TYPES = [
+  BiomeType.Forest, BiomeType.Desert, BiomeType.Volcanic, BiomeType.Snow,
+  BiomeType.Swamp, BiomeType.Tundra, BiomeType.Mushroom, BiomeType.AshWastes,
+  BiomeType.Crystal, BiomeType.Savanna,
+]
+const SEED_SPACING = BIOME_CONFIG.seedSpacing
 
 export class BiomeMap {
   private seeds: VoronoiSeed[] = []

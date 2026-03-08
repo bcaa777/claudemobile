@@ -5,6 +5,12 @@ export enum BiomeType {
   Desert = 1,
   Volcanic = 2,
   Snow = 3,
+  Swamp = 4,
+  Tundra = 5,
+  Mushroom = 6,
+  AshWastes = 7,
+  Crystal = 8,
+  Savanna = 9,
 }
 
 export type SpriteCategory = 'tree' | 'bush' | 'rock' | 'structure' | 'grass'
@@ -30,8 +36,12 @@ export interface BiomeConfig {
   palette: [number, number, number][]  // [[r,g,b] 0..1, ...]
   groundColors: [number, number, number][]  // vertex color palette for terrain
   spriteTypes: SpriteTypeConfig[]
-  heightScale: number           // terrain amplitude
+  heightScale: number           // terrain amplitude (hills / rolling terrain)
   heightFrequency: number       // noise frequency
+  mountainScale: number         // mountains = heightScale * mountainScale
+  terraceStrength: number       // 0 = smooth, 1 = fully stepped cliffs
+  terraceStep: number           // height of each terrace step (overrides global)
+  waterColor: THREE.Color       // water / river surface colour in this biome
   hasPointLights: boolean
   particleType: 'snow' | 'ash' | 'fireflies' | 'embers' | null
   particleColor: THREE.Color

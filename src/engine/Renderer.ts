@@ -4,6 +4,7 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
 import { PixelatePass } from '../postprocessing/PixelatePass'
 import { ColorGradePass } from '../postprocessing/ColorGradePass'
 import { CRTPass } from '../postprocessing/CRTPass'
+import { UnderwaterPass } from '../postprocessing/UnderwaterPass'
 import { RetroPass } from '../postprocessing/RetroPass'
 
 export const RENDER_WIDTH = 320
@@ -16,6 +17,7 @@ export class Renderer {
   public composer: EffectComposer
 
   public colorGradePass!: ColorGradePass
+  public underwaterPass!: UnderwaterPass
   public retroPass!: RetroPass
 
   private renderTarget: THREE.WebGLRenderTarget
@@ -62,6 +64,9 @@ export class Renderer {
 
     const crtPass = new CRTPass()
     this.composer.addPass(crtPass)
+
+    this.underwaterPass = new UnderwaterPass()
+    this.composer.addPass(this.underwaterPass)
 
     this.retroPass = new RetroPass()
     this.composer.addPass(this.retroPass)

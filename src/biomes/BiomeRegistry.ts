@@ -3,12 +3,24 @@ import { forestBiome } from './definitions/forest'
 import { desertBiome } from './definitions/desert'
 import { volcanicBiome } from './definitions/volcanic'
 import { snowBiome } from './definitions/snow'
+import { swampBiome } from './definitions/swamp'
+import { tundraBiome } from './definitions/tundra'
+import { mushroomBiome } from './definitions/mushroom'
+import { ashWastesBiome } from './definitions/ashwastes'
+import { crystalBiome } from './definitions/crystal'
+import { savannaBiome } from './definitions/savanna'
 
 const registry: Map<BiomeType, BiomeConfig> = new Map([
-  [BiomeType.Forest,   forestBiome],
-  [BiomeType.Desert,   desertBiome],
-  [BiomeType.Volcanic, volcanicBiome],
-  [BiomeType.Snow,     snowBiome],
+  [BiomeType.Forest,    forestBiome],
+  [BiomeType.Desert,    desertBiome],
+  [BiomeType.Volcanic,  volcanicBiome],
+  [BiomeType.Snow,      snowBiome],
+  [BiomeType.Swamp,     swampBiome],
+  [BiomeType.Tundra,    tundraBiome],
+  [BiomeType.Mushroom,  mushroomBiome],
+  [BiomeType.AshWastes, ashWastesBiome],
+  [BiomeType.Crystal,   crystalBiome],
+  [BiomeType.Savanna,   savannaBiome],
 ])
 
 export function getBiome(type: BiomeType): BiomeConfig {

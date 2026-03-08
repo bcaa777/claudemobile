@@ -1,8 +1,6 @@
 import * as THREE from 'three'
 import { InputManager } from '../engine/InputManager'
-
-const MOVE_SPEED = 8
-const MOUSE_SENSITIVITY = 0.002
+import { PLAYER_CONFIG } from '../config'
 
 export class FirstPersonController {
   private camera: THREE.Camera
@@ -10,6 +8,9 @@ export class FirstPersonController {
   private yaw = 0
   private pitch = 0
   private velocity = new THREE.Vector3()
+
+  public verticalVelocity = 0
+  public isGrounded = false
 
   constructor(camera: THREE.Camera, input: InputManager) {
     this.camera = camera
@@ -20,20 +21,16 @@ export class FirstPersonController {
     const { dx, dy } = this.input.consumeMouseDelta()
 
     if (this.input.isPointerLocked()) {
-      this.yaw   -= dx * MOUSE_SENSITIVITY
-      this.pitch -= dy * MOUSE_SENSITIVITY
+      this.yaw   -= dx * PLAYER_CONFIG.mouseSensitivity
+      this.pitch -= dy * PLAYER_CONFIG.mouseSensitivity
       this.pitch = Math.max(-Math.PI * 0.45, Math.min(Math.PI * 0.45, this.pitch))
     }
 
-    // Build euler from yaw + pitch
     const euler = new THREE.Euler(this.pitch, this.yaw, 0, 'YXZ')
     this.camera.quaternion.setFromEuler(euler)
 
-    // Movement in camera-local XZ plane
-    const forward = new THREE.Vector3(0, 0, -1)
-      .applyEuler(new THREE.Euler(0, this.yaw, 0))
-    const right = new THREE.Vector3(1, 0, 0)
-      .applyEuler(new THREE.Euler(0, this.yaw, 0))
+    const forward = new THREE.Vector3(0, 0, -1).applyEuler(new THREE.Euler(0, this.yaw, 0))
+    const right   = new THREE.Vector3(1, 0, 0).applyEuler(new THREE.Euler(0, this.yaw, 0))
 
     const move = new THREE.Vector3()
     if (this.input.isDown('KeyW') || this.input.isDown('ArrowUp'))    move.add(forward)
@@ -43,8 +40,23 @@ export class FirstPersonController {
 
     if (move.lengthSq() > 0) move.normalize()
 
-    // Apply velocity with friction
-    this.velocity.lerp(move.multiplyScalar(MOVE_SPEED), delta * 10)
+    const isSprinting = this.input.isDown('ShiftLeft') || this.input.isDown('ShiftRight')
+    const speed = isSprinting ? PLAYER_CONFIG.sprintSpeed : PLAYER_CONFIG.moveSpeed
+
+    this.velocity.lerp(move.multiplyScalar(speed), delta * 10)
     this.camera.position.addScaledVector(this.velocity, delta)
+
+    // Jump
+    if (this.input.consumeJump() && this.isGrounded) {
+      this.verticalVelocity = PLAYER_CONFIG.jumpSpeed
+      this.isGrounded = false
+    }
+
+    // Gravity
+    if (!this.isGrounded) {
+      this.verticalVelocity -= PLAYER_CONFIG.gravity * delta
+    }
+
+    this.camera.position.y += this.verticalVelocity * delta
   }
 }

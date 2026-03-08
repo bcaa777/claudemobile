@@ -7,7 +7,7 @@ const ColorGradeShader = {
     tDiffuse:   { value: null as THREE.Texture | null },
     biomeTint:  { value: new THREE.Color(0x0d1a0d) },
     tintStrength: { value: 0.12 },
-    contrast:   { value: 1.15 },
+    contrast:   { value: 1.0 },
     saturation: { value: 0.80 },
   },
   vertexShader: /* glsl */`

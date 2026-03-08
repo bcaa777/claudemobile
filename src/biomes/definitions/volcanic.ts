@@ -4,10 +4,10 @@ import { BiomeConfig, BiomeType } from '../types'
 export const volcanicBiome: BiomeConfig = {
   type: BiomeType.Volcanic,
   name: 'Ember Fields',
-  fogColor: new THREE.Color(0x1a0500),
-  fogNear: 6,
-  fogFar: 45,
-  skyColor: new THREE.Color(0x0d0200),
+  fogColor: new THREE.Color(0x4a1500),
+  fogNear: 20,
+  fogFar: 100,
+  skyColor: new THREE.Color(0x1a0800),
   ambientDayColor: new THREE.Color(0x3a1008),
   ambientNightColor: new THREE.Color(0x1a0500),
   sunColor: new THREE.Color(0xff4400),
@@ -21,10 +21,10 @@ export const volcanicBiome: BiomeConfig = {
     [0.15, 0.05, 0.02],
   ],
   groundColors: [
-    [0.10, 0.04, 0.02],
-    [0.14, 0.05, 0.02],
-    [0.08, 0.03, 0.02],
-    [0.18, 0.06, 0.02],
+    [0.30, 0.10, 0.05],
+    [0.38, 0.14, 0.05],
+    [0.22, 0.08, 0.05],
+    [0.45, 0.16, 0.05],
     [0.85, 0.30, 0.03],  // lava crack
   ],
   spriteTypes: [
@@ -33,8 +33,12 @@ export const volcanicBiome: BiomeConfig = {
     { category: 'tree',      weight: 1, minScale: 2,   maxScale: 4,  isBillboard: true },  // dead tree
     { category: 'bush',      weight: 1, minScale: 0.8, maxScale: 1.5, isBillboard: true }, // ash bush
   ],
-  heightScale: 18,
-  heightFrequency: 0.025,
+  heightScale: 24,
+  heightFrequency: 0.026,
+  mountainScale: 3.8,
+  terraceStrength: 0.18,
+  terraceStep: 6,
+  waterColor: new THREE.Color(0xcc2200),
   hasPointLights: true,
   particleType: 'embers',
   particleColor: new THREE.Color(0xff4400),

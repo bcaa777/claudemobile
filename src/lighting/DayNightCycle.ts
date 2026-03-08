@@ -1,6 +1,7 @@
 import * as THREE from 'three'
+import { TIME_CONFIG } from '../config'
 
-const DAY_DURATION = 600  // seconds for a full day
+const DAY_DURATION = TIME_CONFIG.dayDuration
 
 // Time-of-day color keyframes
 const AMBIENT_KEYS = [
@@ -46,22 +47,22 @@ export class DayNightCycle {
   private moon: THREE.DirectionalLight
   private ambient: THREE.AmbientLight
   private hemi: THREE.HemisphereLight
-  public timeOfDay = 0.4  // start at midday (0=midnight, 1=midnight)
-  private elapsed = 0
+  public timeOfDay = TIME_CONFIG.startTime
+  private elapsed = TIME_CONFIG.startTime * DAY_DURATION
 
   constructor(scene: THREE.Scene) {
-    this.sun = new THREE.DirectionalLight(0xffe8c0, 1.2)
+    this.sun = new THREE.DirectionalLight(0xffe8c0, 3.0)
     this.sun.position.set(100, 100, 0)
     scene.add(this.sun)
 
-    this.moon = new THREE.DirectionalLight(0x3050a0, 0.15)
+    this.moon = new THREE.DirectionalLight(0x3050a0, 0.3)
     this.moon.position.set(-100, 80, 0)
     scene.add(this.moon)
 
-    this.ambient = new THREE.AmbientLight(0x304050, 1.0)
+    this.ambient = new THREE.AmbientLight(0x304050, 6.0)
     scene.add(this.ambient)
 
-    this.hemi = new THREE.HemisphereLight(0x304050, 0x101010, 0.3)
+    this.hemi = new THREE.HemisphereLight(0x304050, 0x101010, 2.0)
     scene.add(this.hemi)
   }
 
@@ -86,12 +87,16 @@ export class DayNightCycle {
 
     // Night intensity for sun (below horizon)
     const sunY = Math.sin(sunAngle)
-    this.sun.intensity = Math.max(0, sunY) * 1.5
+    this.sun.intensity = Math.max(0, sunY) * 3.0
     this.moon.intensity = Math.max(0, -sunY) * 0.2
 
     this.ambient.color.copy(sampleColorKeys(AMBIENT_KEYS, t))
     this.sun.color.copy(sampleColorKeys(SUN_KEYS, t))
     this.hemi.color.copy(sampleColorKeys(SUN_KEYS, t)).multiplyScalar(0.5)
+  }
+
+  getTime(): number {
+    return this.timeOfDay
   }
 
   getTimeString(): string {
