@@ -16,16 +16,16 @@ const PLAYER_ID = '__player__'
 
 // Species that can spawn per biome
 const BIOME_SPAWN_TABLE: Partial<Record<BiomeType, SpeciesId[]>> = {
-  [BiomeType.Forest]:    ['rabbit', 'rabbit', 'deer', 'deer', 'bird', 'wolf', 'fish', 'croc'],
-  [BiomeType.Desert]:    ['rabbit', 'bird', 'bird'],
-  [BiomeType.Volcanic]:  ['dragon', 'bird', 'wolf'],
-  [BiomeType.Snow]:      ['rabbit', 'deer', 'bird', 'fish', 'wolf'],
-  [BiomeType.Swamp]:     ['rabbit', 'deer', 'bird', 'fish', 'fish', 'croc'],
-  [BiomeType.Tundra]:    ['rabbit', 'rabbit', 'deer', 'bird', 'wolf', 'fish'],
-  [BiomeType.Mushroom]:  ['rabbit', 'rabbit', 'deer', 'bird'],
-  [BiomeType.AshWastes]: ['dragon', 'bird', 'wolf'],
+  [BiomeType.Forest]:    ['rabbit', 'rabbit', 'deer', 'deer', 'bird', 'wolf', 'bear', 'fox', 'fish', 'croc', 'toad'],
+  [BiomeType.Desert]:    ['camel', 'camel', 'rabbit', 'bird', 'scorpion'],
+  [BiomeType.Volcanic]:  ['dragon', 'bat', 'wolf'],
+  [BiomeType.Snow]:      ['rabbit', 'deer', 'bird', 'fish', 'wolf', 'mammoth', 'bear'],
+  [BiomeType.Swamp]:     ['rabbit', 'deer', 'bird', 'fish', 'fish', 'croc', 'toad', 'toad'],
+  [BiomeType.Tundra]:    ['rabbit', 'rabbit', 'deer', 'bird', 'wolf', 'fox', 'mammoth'],
+  [BiomeType.Mushroom]:  ['rabbit', 'rabbit', 'deer', 'bird', 'toad', 'toad', 'bat'],
+  [BiomeType.AshWastes]: ['dragon', 'dragon', 'bat', 'wolf'],
   [BiomeType.Crystal]:   ['dragon', 'bird', 'deer'],
-  [BiomeType.Savanna]:   ['rabbit', 'rabbit', 'deer', 'deer', 'bird'],
+  [BiomeType.Savanna]:   ['rabbit', 'rabbit', 'deer', 'deer', 'bird', 'lion', 'camel', 'fox'],
 }
 
 export class CreatureManager {

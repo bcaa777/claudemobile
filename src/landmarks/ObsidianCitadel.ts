@@ -20,7 +20,7 @@ export class ObsidianCitadel {
     this.position = pos.clone()
     const group = new THREE.Group()
     group.position.copy(this.position)
-    group.scale.setScalar(0.5)
+    group.scale.setScalar(0.25)
     scene.add(group)
 
     const px = this.position.x

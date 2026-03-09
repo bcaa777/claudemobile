@@ -58,15 +58,15 @@ export class LandmarkManager {
       const pos = new THREE.Vector3(x, WATER_LEVEL + 15, z)
       const inst = new Cls(pos, scene, s)
 
-      // Rescale walkables from landmark-local space to world-space (0.5 group scale)
+      // Rescale walkables from landmark-local space to world-space (0.25 group scale)
       const cx = inst.position.x, cy = inst.position.y, cz = inst.position.z
       for (const w of inst.walkables as CastleWalkable[]) {
         this.allWalkables.push({
-          minX: cx + (w.minX - cx) * 0.5,
-          maxX: cx + (w.maxX - cx) * 0.5,
-          minZ: cz + (w.minZ - cz) * 0.5,
-          maxZ: cz + (w.maxZ - cz) * 0.5,
-          y:    cy + (w.y    - cy) * 0.5,
+          minX: cx + (w.minX - cx) * 0.25,
+          maxX: cx + (w.maxX - cx) * 0.25,
+          minZ: cz + (w.minZ - cz) * 0.25,
+          maxZ: cz + (w.maxZ - cz) * 0.25,
+          y:    cy + (w.y    - cy) * 0.25,
         })
       }
 

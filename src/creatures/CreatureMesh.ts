@@ -74,6 +74,36 @@ export class CreatureMesh {
         this.group.add(aL, aR)
       }
 
+      // Camel hump
+      if (creature.species === 'camel') {
+        const hump = this.box(bodyW * 0.5, bodyH * 0.6, bodyW * 0.4, bodyColor)
+        hump.position.set(0, bodyH * 0.9, -bodyD * 0.1)
+        this.group.add(hump)
+      }
+
+      // Fox bushy tail (white tip)
+      if (creature.species === 'fox') {
+        const tail = this.box(bodyW * 0.3, bodyW * 0.35, bodyD * 0.4, 0xffffff)
+        tail.position.set(0, bodyH * 0.35, -bodyD * 0.55)
+        this.group.add(tail)
+      }
+
+      // Lion mane (dark golden ring around head)
+      if (creature.species === 'lion') {
+        const mane = this.box(bodyW * 1.0, bodyH * 1.0, bodyD * 0.35, 0xb8780a)
+        mane.position.set(0, bodyH * 0.2, bodyD * 0.55)
+        this.group.add(mane)
+      }
+
+      // Mammoth tusks (two white boxes pointing forward)
+      if (creature.species === 'mammoth') {
+        const tuskL = this.box(bodyW * 0.12, bodyW * 0.12, bodyD * 0.35, 0xfffff0)
+        tuskL.position.set(-bodyW * 0.28, -bodyH * 0.15, bodyD * 0.55)
+        const tuskR = tuskL.clone()
+        tuskR.position.x = bodyW * 0.28
+        this.group.add(tuskL, tuskR)
+      }
+
     } else if (sp.mobility === 'air') {
       // Body
       this.group.add(this.box(bodyW, bodyH, bodyD, bodyColor))
