@@ -11,6 +11,8 @@ export class FirstPersonController {
 
   public verticalVelocity = 0
   public isGrounded = false
+  public prevPos = new THREE.Vector3()
+  public get heading(): number { return this.yaw }
 
   constructor(camera: THREE.Camera, input: InputManager) {
     this.camera = camera
@@ -18,6 +20,8 @@ export class FirstPersonController {
   }
 
   update(delta: number) {
+    this.prevPos.copy(this.camera.position)
+
     const { dx, dy } = this.input.consumeMouseDelta()
 
     if (this.input.isPointerLocked()) {

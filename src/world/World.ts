@@ -92,6 +92,10 @@ export class World {
     this.castleWalkables = surfaces
   }
 
+  addMonumentWalkables(surfaces: CastleWalkable[]) {
+    this.castleWalkables.push(...surfaces)
+  }
+
   private generateChunk(cx: number, cz: number, key: string) {
     if (!this.pendingGeneration.has(key)) return
     const chunk = new Chunk(cx, cz, this.scene, this.biomeMap, this.atlas, this.lightPool)

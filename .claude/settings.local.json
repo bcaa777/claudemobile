@@ -6,7 +6,8 @@
       "Bash(npx puppeteer:*)",
       "Bash(node:*)",
       "Bash(cp:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(python3:*)"
     ]
   }
 }

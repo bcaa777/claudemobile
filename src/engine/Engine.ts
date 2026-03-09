@@ -10,7 +10,9 @@ import { BiomeMap } from '../world/BiomeMap'
 import { CreatureManager } from '../creatures/CreatureManager'
 import { Castle } from '../castle/Castle'
 import { CastleBreeze } from '../castle/CastleBreeze'
+import { LandmarkManager } from '../landmarks/LandmarkManager'
 import { DebugMap } from '../debug/DebugMap'
+import { DebugPanel } from '../debug/DebugPanel'
 import { WORLD_CONFIG } from '../config'
 import { WATER_LEVEL } from '../world/TerrainGenerator'
 
@@ -26,7 +28,10 @@ export class Engine {
   private creatureManager: CreatureManager
   private castle: Castle
   private castleBreeze: CastleBreeze
+  private landmarkManager: LandmarkManager
   private debugMap: DebugMap
+  private debugPanel: DebugPanel
+  private flashlight: THREE.SpotLight
 
   private lastTime = 0
   private running = false
@@ -34,6 +39,8 @@ export class Engine {
 
   private biomeHud: HTMLElement | null
   private timeHud: HTMLElement | null
+  private crystalHud: HTMLElement | null
+  private crystalsCollected = 0
 
   constructor(container: HTMLElement) {
     this.renderer = new Renderer(container)
@@ -55,10 +62,28 @@ export class Engine {
     this.castle = new Castle(WORLD_CONFIG.seed, this.renderer.scene)
     this.world.setCastleWalkables(this.castle.walkables)
     this.castleBreeze = new CastleBreeze(this.castle.position, this.renderer.scene)
-    this.debugMap = new DebugMap(this.castle.position)
+
+    this.landmarkManager = new LandmarkManager(this.biomeMap, this.renderer.scene, WORLD_CONFIG.seed)
+    this.world.addMonumentWalkables(this.landmarkManager.allWalkables)
+
+    this.debugMap = new DebugMap(this.castle.position, this.landmarkManager.positions)
+
+    // Flashlight — SpotLight attached to camera, auto-enables at night
+    this.flashlight = new THREE.SpotLight(0xffe8cc, 0, 40, Math.PI / 5, 0.3, 1.5)
+    this.renderer.scene.add(this.flashlight)
+    this.renderer.scene.add(this.flashlight.target)
+
+    this.debugPanel = new DebugPanel(
+      this.dayNight,
+      this.flashlight,
+      this.renderer.colorGradePass,
+      this.renderer.crtPass,
+      this.renderer.retroPass,
+    )
 
     this.biomeHud = document.getElementById('biome-hud')
     this.timeHud = document.getElementById('time-hud')
+    this.crystalHud = document.getElementById('crystal-hud')
 
     this.setupStartScreen()
   }
@@ -74,9 +99,10 @@ export class Engine {
       if (!this.running) this.start()
     })
 
-    // Re-acquire pointer lock on click after losing focus
-    document.addEventListener('click', () => {
-      if (document.pointerLockElement === null && this.running) {
+    // Re-acquire pointer lock only when clicking the game canvas (not debug panel)
+    document.addEventListener('click', (e) => {
+      if (document.pointerLockElement === null && this.running &&
+          e.target === this.renderer.renderer.domElement) {
         this.renderer.renderer.domElement.requestPointerLock()
       }
     })
@@ -130,9 +156,33 @@ export class Engine {
       this.timeHud.textContent = this.dayNight.getTimeString()
     }
 
+    // Flashlight — auto-enables at night (18:00–07:00), points where camera looks
+    const t = this.dayNight.getTime()
+    const isNight = t > 18 / 24 || t < 7 / 24
+    const targetIntensity = isNight ? 4.0 : 0.0
+    this.flashlight.intensity += (targetIntensity - this.flashlight.intensity) * Math.min(1, delta * 2)
+    this.flashlight.position.copy(this.renderer.camera.position)
+    const lookDir = new THREE.Vector3(0, 0, -1).applyQuaternion(this.renderer.camera.quaternion)
+    this.flashlight.target.position.copy(this.renderer.camera.position).addScaledVector(lookDir, 20)
+    this.flashlight.target.updateMatrixWorld()
+
+    // Crystal pickup detection
+    const totalCrystals = this.landmarkManager.allCrystals.length
+    for (const crystal of this.landmarkManager.allCrystals) {
+      if (crystal.tryCollect(this.renderer.camera.position)) {
+        this.crystalsCollected++
+        if (this.crystalHud) {
+          this.crystalHud.textContent = `◆ ${this.crystalsCollected} / ${totalCrystals}`
+          this.crystalHud.classList.add('flash')
+          setTimeout(() => this.crystalHud?.classList.remove('flash'), 400)
+        }
+      }
+    }
+
     this.castle.update(delta, this.lastTime / 1000)
+    this.landmarkManager.update(delta, this.lastTime / 1000)
     this.castleBreeze.update(delta, this.renderer.camera.position)
-    this.debugMap.update(this.renderer.camera.position)
+    this.debugMap.update(this.renderer.camera.position, this.controller.heading)
 
     this.renderer.render(delta)
     requestAnimationFrame((t) => this.loop(t))

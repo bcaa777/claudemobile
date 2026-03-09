@@ -82,6 +82,21 @@
         letter-spacing: 0.15em;
         pointer-events: none;
       }
+      #crystal-hud {
+        position: absolute;
+        top: 36px;
+        right: 20px;
+        color: rgba(100,220,255,0.6);
+        font-size: 0.65rem;
+        letter-spacing: 0.15em;
+        pointer-events: none;
+        text-shadow: 0 0 8px rgba(80,200,255,0.5);
+        transition: color 0.1s, text-shadow 0.1s;
+      }
+      #crystal-hud.flash {
+        color: rgba(180,255,255,1);
+        text-shadow: 0 0 16px rgba(80,255,255,1);
+      }
     </style>
   </head>
   <body>
@@ -95,6 +110,7 @@
       </div>
       <div id="biome-hud"></div>
       <div id="time-hud"></div>
+      <div id="crystal-hud">◆ 0 / 30</div>
     </div>
     <script type="module" src="/src/main.ts"></script>
   </body>

@@ -47,5 +47,3 @@ export class SpriteAtlas {
     this.cache.clear()
   }
 }
-
-export { VARIANTS }

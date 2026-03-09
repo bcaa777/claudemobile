@@ -6,9 +6,7 @@ import { ColorGradePass } from '../postprocessing/ColorGradePass'
 import { CRTPass } from '../postprocessing/CRTPass'
 import { UnderwaterPass } from '../postprocessing/UnderwaterPass'
 import { RetroPass } from '../postprocessing/RetroPass'
-
-export const RENDER_WIDTH = 320
-export const RENDER_HEIGHT = 240
+import { POST_CONFIG } from '../config'
 
 export class Renderer {
   public renderer: THREE.WebGLRenderer
@@ -17,6 +15,7 @@ export class Renderer {
   public composer: EffectComposer
 
   public colorGradePass!: ColorGradePass
+  public crtPass!: CRTPass
   public underwaterPass!: UnderwaterPass
   public retroPass!: RetroPass
 
@@ -39,7 +38,9 @@ export class Renderer {
     this.renderer.outputColorSpace = THREE.LinearSRGBColorSpace
     container.appendChild(this.renderer.domElement)
 
-    this.renderTarget = new THREE.WebGLRenderTarget(RENDER_WIDTH, RENDER_HEIGHT, {
+    const rw = POST_CONFIG.pixelWidth
+    const rh = POST_CONFIG.pixelHeight
+    this.renderTarget = new THREE.WebGLRenderTarget(rw, rh, {
       minFilter: THREE.NearestFilter,
       magFilter: THREE.NearestFilter,
       format: THREE.RGBAFormat,
@@ -56,14 +57,14 @@ export class Renderer {
     const renderPass = new RenderPass(this.scene, this.camera)
     this.composer.addPass(renderPass)
 
-    const pixelatePass = new PixelatePass(RENDER_WIDTH, RENDER_HEIGHT)
+    const pixelatePass = new PixelatePass(POST_CONFIG.pixelWidth, POST_CONFIG.pixelHeight)
     this.composer.addPass(pixelatePass)
 
     this.colorGradePass = new ColorGradePass()
     this.composer.addPass(this.colorGradePass)
 
-    const crtPass = new CRTPass()
-    this.composer.addPass(crtPass)
+    this.crtPass = new CRTPass()
+    this.composer.addPass(this.crtPass)
 
     this.underwaterPass = new UnderwaterPass()
     this.composer.addPass(this.underwaterPass)

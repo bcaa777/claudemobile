@@ -1,8 +1,33 @@
+// ─── SAVED CONFIG ─────────────────────────────────────────────────────────────
+export const LS_CONFIG_KEY = 'engine_debug_cfg'
+
+export function loadSavedConfig(): void {
+  try {
+    const raw = localStorage.getItem(LS_CONFIG_KEY)
+    if (!raw) return
+    const saved = JSON.parse(raw) as Record<string, Record<string, unknown>>
+    function applyTo(cfg: Record<string, unknown>, src: Record<string, unknown>) {
+      for (const key of Object.keys(cfg)) {
+        if (key in src && (typeof src[key] === 'number' || typeof src[key] === 'boolean')) {
+          cfg[key] = src[key]
+        }
+      }
+    }
+    if (saved.player)   applyTo(PLAYER_CONFIG   as unknown as Record<string, unknown>, saved.player)
+    if (saved.post)     applyTo(POST_CONFIG     as unknown as Record<string, unknown>, saved.post)
+    if (saved.sprites)  applyTo(SPRITE_CONFIG   as unknown as Record<string, unknown>, saved.sprites)
+    if (saved.world)    applyTo(WORLD_CONFIG    as unknown as Record<string, unknown>, saved.world)
+    if (saved.time)     applyTo(TIME_CONFIG     as unknown as Record<string, unknown>, saved.time)
+    if (saved.biome)    applyTo(BIOME_CONFIG    as unknown as Record<string, unknown>, saved.biome)
+    if (saved.creature) applyTo(CREATURE_CONFIG as unknown as Record<string, unknown>, saved.creature)
+  } catch { /* ignore */ }
+}
+
 // ─── PLAYER ──────────────────────────────────────────────────────────────────
 export const PLAYER_CONFIG = {
   moveSpeed:        8,    // units/s walking
   sprintSpeed:      18,   // units/s sprinting (hold Shift)
-  jumpSpeed:        10,   // initial vertical velocity on jump (Space)
+  jumpSpeed:        32,   // initial vertical velocity on jump (Space) — ~18 unit jump height
   gravity:          28,   // downward acceleration (units/s²)
   mouseSensitivity: 0.002,
 }
@@ -62,6 +87,13 @@ export const TERRAIN_CONFIG = {
   enableSwampPiers:     true,
 }
 
+// ─── CREATURES ───────────────────────────────────────────────────────────────
+export const CREATURE_CONFIG = {
+  spawnMultiplier: 1.0,  // scale creature count per chunk (0 = no animals, 3 = very dense)
+  aggroRange:      1.0,  // multiplier on predator sight/attack range
+  speedMultiplier: 1.0,  // multiplier on all creature movement speeds
+}
+
 // ─── BIOME MAP ────────────────────────────────────────────────────────────────
 export const BIOME_CONFIG = {
   seedSpacing: 180,       // distance between biome centres (higher = larger biomes)
@@ -101,8 +133,8 @@ export const SPRITE_CONFIG = {
 
 // ─── POST-PROCESSING ─────────────────────────────────────────────────────────
 export const POST_CONFIG = {
-  pixelWidth:        320, // internal render resolution width  (lower = chunkier pixels)
-  pixelHeight:       240, // internal render resolution height
+  pixelWidth:        640, // internal render resolution width  (lower = chunkier pixels)
+  pixelHeight:       480, // internal render resolution height
   contrast:          1.0, // 1.0 = neutral, >1 crushes shadows, <1 lifts blacks
   saturation:        0.80,
   chromaStrength:    0.004, // chromatic aberration radius

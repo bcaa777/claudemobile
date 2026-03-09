@@ -41,6 +41,17 @@ export class BiomeMap {
     }
   }
 
+  getClosestSeedOf(biomeType: BiomeType): { x: number; z: number } {
+    let best = Infinity
+    let result = { x: 0, z: 0 }
+    for (const seed of this.seeds) {
+      if (seed.biome !== biomeType) continue
+      const d = seed.x * seed.x + seed.z * seed.z
+      if (d < best) { best = d; result = { x: seed.x, z: seed.z } }
+    }
+    return result
+  }
+
   getBiomeAt(wx: number, wz: number): BiomeType {
     let nearestDist = Infinity
     let nearest = BiomeType.Forest

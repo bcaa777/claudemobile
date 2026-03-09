@@ -6,7 +6,7 @@ import { SeededRandom, chunkSeed } from '../utils/SeededRandom'
 import { World } from '../world/World'
 import { CHUNK_SIZE, WATER_LEVEL } from '../world/TerrainGenerator'
 import { BiomeType } from '../biomes/types'
-import { WORLD_CONFIG } from '../config'
+import { WORLD_CONFIG, CREATURE_CONFIG } from '../config'
 
 const VIEW_RADIUS = WORLD_CONFIG.viewRadius
 const MAX_POPULATION = 2000
@@ -60,7 +60,7 @@ export class CreatureManager {
 
     for (const speciesId of candidates) {
       const sp = SPECIES[speciesId]
-      const count = rng.int(14, 28)
+      const count = Math.round(rng.int(14, 28) * CREATURE_CONFIG.spawnMultiplier)
       for (let i = 0; i < count; i++) {
         if (this.creatures.size >= MAX_POPULATION) return
 
@@ -430,15 +430,17 @@ export class CreatureManager {
     const dz = c.targetPos.z - c.position.z
     const len = Math.sqrt(dx * dx + dz * dz)
     if (len < 0.1) { c.velocity.set(0, 0, 0); return }
-    c.velocity.set((dx / len) * speed, 0, (dz / len) * speed)
+    const s = speed * CREATURE_CONFIG.speedMultiplier
+    c.velocity.set((dx / len) * s, 0, (dz / len) * s)
   }
 
   private steerAwayFrom(c: Creature, threat: THREE.Vector3, speed: number) {
     const dx = c.position.x - threat.x
     const dz = c.position.z - threat.z
     const len = Math.sqrt(dx * dx + dz * dz)
-    if (len < 0.1) { c.velocity.set(speed, 0, 0); return }
-    c.velocity.set((dx / len) * speed, 0, (dz / len) * speed)
+    const s = speed * CREATURE_CONFIG.speedMultiplier
+    if (len < 0.1) { c.velocity.set(s, 0, 0); return }
+    c.velocity.set((dx / len) * s, 0, (dz / len) * s)
   }
 
   private wanderTarget(c: Creature): THREE.Vector3 {
@@ -474,11 +476,12 @@ export class CreatureManager {
   private findThreat(c: Creature, playerPos: THREE.Vector3): THREE.Vector3 | null {
     const sp = SPECIES[c.species]
 
-    if (c.position.distanceTo(playerPos) < sp.sightRange) return playerPos.clone()
+    const sr = sp.sightRange * CREATURE_CONFIG.aggroRange
+    if (c.position.distanceTo(playerPos) < sr) return playerPos.clone()
 
     for (const other of this.creatures.values()) {
       if (SPECIES[other.species].role !== 'predator') continue
-      if (c.position.distanceTo(other.position) < sp.sightRange) return other.position.clone()
+      if (c.position.distanceTo(other.position) < sr) return other.position.clone()
     }
     return null
   }
@@ -540,8 +543,9 @@ export class CreatureManager {
   // Returns a creature id or PLAYER_ID or null
   private findPrey(c: Creature, playerPos: THREE.Vector3 | null): string | null {
     const sp = SPECIES[c.species]
+    const aggroSight = sp.sightRange * CREATURE_CONFIG.aggroRange
     let best: string | null = null
-    let bestDist = sp.sightRange * 2
+    let bestDist = aggroSight * 2
 
     for (const other of this.creatures.values()) {
       if (other === c || SPECIES[other.species].role !== 'herbivore' || other.state === 'dead') continue
@@ -552,7 +556,7 @@ export class CreatureManager {
     // Also consider the player as prey (secondary)
     if (playerPos) {
       const distToPlayer = c.position.distanceTo(playerPos)
-      if (distToPlayer < sp.sightRange && distToPlayer < bestDist) {
+      if (distToPlayer < aggroSight && distToPlayer < bestDist) {
         best = PLAYER_ID
       }
     }
