@@ -3,6 +3,7 @@ import { BiomeType } from '../biomes/types'
 import type { BiomeMap } from '../world/BiomeMap'
 import type { CastleWalkable } from '../castle/Castle'
 import { WATER_LEVEL } from '../world/TerrainGenerator'
+import { mergeStaticMeshes } from '../utils/mergeStaticMeshes'
 import { DruidRingTemple } from './DruidRingTemple'
 import { GreatPyramid } from './GreatPyramid'
 import { ObsidianCitadel } from './ObsidianCitadel'
@@ -56,7 +57,14 @@ export class LandmarkManager {
     ) => {
       const { x, z } = biomeMap.getClosestSeedOf(biomeType)
       const pos = new THREE.Vector3(x, WATER_LEVEL + 15, z)
+      const childCount = scene.children.length
       const inst = new Cls(pos, scene, s)
+
+      // Merge static meshes in any groups the landmark just added to the scene
+      for (let i = childCount; i < scene.children.length; i++) {
+        const child = scene.children[i]
+        if (child instanceof THREE.Group) mergeStaticMeshes(child)
+      }
 
       // Rescale walkables from landmark-local space to world-space (0.25 group scale)
       const cx = inst.position.x, cy = inst.position.y, cz = inst.position.z

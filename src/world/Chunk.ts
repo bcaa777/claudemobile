@@ -1,12 +1,14 @@
 import * as THREE from 'three'
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { generateHeightmap, sampleHeight, CHUNK_SIZE, CHUNK_SEGMENTS, WATER_LEVEL, riverMask } from './TerrainGenerator'
 import { BiomeMap } from './BiomeMap'
 import { getBiome } from '../biomes/BiomeRegistry'
 import { BiomeType, SpriteCategory } from '../biomes/types'
 import { SpriteAtlas, VARIANTS } from '../sprites/SpriteAtlas'
-import { createBillboard, createGroundDecal } from '../sprites/BillboardSprite'
+import { BillboardBatch } from '../sprites/BillboardBatch'
 import { ParticleSystem } from '../sprites/ParticleSystem'
 import { PointLightPool } from '../lighting/PointLightPool'
+import { MaterialCache } from '../utils/MaterialCache'
 import { SeededRandom, chunkSeed } from '../utils/SeededRandom'
 import { SPRITE_CONFIG, TERRAIN_CONFIG } from '../config'
 import { ExplodableStructure } from './ExplodableStructure'
@@ -30,11 +32,12 @@ const ROCK_COLORS: Record<number, number> = {
   [BiomeType.Snow]:     0x7080a0,
 }
 
-function buildRockFormation(rng: SeededRandom, pos: THREE.Vector3, biome: BiomeType): THREE.Group {
+function buildRockFormation(rng: SeededRandom, pos: THREE.Vector3, biome: BiomeType, matCache: MaterialCache): { group: THREE.Group, topY: number, topX: number, topZ: number, topHalfW: number } {
   const g   = new THREE.Group()
   g.position.copy(pos)
-  const mat = new THREE.MeshLambertMaterial({ color: ROCK_COLORS[biome] ?? 0x404040 })
+  const mat = matCache.getLambert(ROCK_COLORS[biome] ?? 0x404040)
 
+  let topY = 0, topX = 0, topZ = 0, topHalfW = 1
   const count = 1 + rng.int(0, 3)
   for (let i = 0; i < count; i++) {
     const w  = rng.range(1.2, 3.2)
@@ -46,15 +49,18 @@ function buildRockFormation(rng: SeededRandom, pos: THREE.Vector3, biome: BiomeT
     mesh.position.set(ox, h / 2, oz)
     mesh.rotation.set(rng.range(-0.12, 0.12), rng.range(0, Math.PI * 2), rng.range(-0.08, 0.08))
     g.add(mesh)
+    if (h > topY) { topY = h; topX = ox; topZ = oz; topHalfW = w * 0.5 }
     if (rng.next() > 0.55) {
       const cw = w * rng.range(1.2, 1.8)
       const ch = rng.range(0.6, 2.0)
       const cap = new THREE.Mesh(new THREE.BoxGeometry(cw, ch, cw), mat)
       cap.position.set(ox + rng.range(-0.5, 0.5), h + ch / 2, oz + rng.range(-0.5, 0.5))
       g.add(cap)
+      const capTop = h + ch
+      if (capTop > topY) { topY = capTop; topX = ox; topZ = oz; topHalfW = cw * 0.5 }
     }
   }
-  return g
+  return { group: g, topY, topX, topZ, topHalfW }
 }
 
 const ARCH_COLORS: Record<number, number> = {
@@ -64,10 +70,10 @@ const ARCH_COLORS: Record<number, number> = {
   [BiomeType.Snow]:     0x5a6878,
 }
 
-function buildCaveArch(rng: SeededRandom, pos: THREE.Vector3, biome: BiomeType, axis: 'x' | 'z'): THREE.Group {
+function buildCaveArch(rng: SeededRandom, pos: THREE.Vector3, biome: BiomeType, axis: 'x' | 'z', matCache: MaterialCache): { group: THREE.Group, span: number, pillarH: number, thick: number } {
   const g   = new THREE.Group()
   g.position.copy(pos)
-  const mat = new THREE.MeshLambertMaterial({ color: ARCH_COLORS[biome] ?? 0x303030 })
+  const mat = matCache.getLambert(ARCH_COLORS[biome] ?? 0x303030)
 
   const span  = rng.range(9, 18)
   const h     = rng.range(5, 10)
@@ -100,17 +106,17 @@ function buildCaveArch(rng: SeededRandom, pos: THREE.Vector3, biome: BiomeType, 
     block.rotation.x = axis === 'z' ?  Math.cos(angle) * 0.22 : 0
     g.add(block)
   }
-  return g
+  return { group: g, span, pillarH: h, thick }
 }
 
-function buildBridge(rng: SeededRandom, pos: THREE.Vector3, length: number, axis: 'x' | 'z'): THREE.Group {
+function buildBridge(rng: SeededRandom, pos: THREE.Vector3, length: number, axis: 'x' | 'z', matCache: MaterialCache): THREE.Group {
   const g       = new THREE.Group()
   g.position.copy(pos)
   const deckW   = 3.6
   const plankT  = 0.25
   const railH   = 1.1
-  const woodMat = new THREE.MeshLambertMaterial({ color: 0x5a3210 })
-  const stoneMat= new THREE.MeshLambertMaterial({ color: 0x504538 })
+  const woodMat = matCache.getLambert(0x5a3210)
+  const stoneMat= matCache.getLambert(0x504538)
 
   const pCount = Math.ceil(length / 0.85)
   for (let i = 0; i < pCount; i++) {
@@ -188,11 +194,14 @@ export class Chunk {
 
   private terrainMesh: THREE.Mesh | null = null
   private extras: THREE.Object3D[] = []
-  private sprites: THREE.Object3D[] = []
+  private mergedMeshes: THREE.Mesh[] = []
+  private billboardBatches: BillboardBatch[] = []
+  private decalBatches: BillboardBatch[] = []
   private particleSystems: ParticleSystem[] = []
   private pointLights: THREE.PointLight[] = []
   private time = 0
   private rngForExplode: SeededRandom
+  private matCache: MaterialCache
 
   constructor(
     cx: number, cz: number,
@@ -200,12 +209,14 @@ export class Chunk {
     biomeMap: BiomeMap,
     atlas: SpriteAtlas,
     lightPool: PointLightPool,
+    matCache: MaterialCache,
   ) {
     this.cx    = cx
     this.cz    = cz
     this.group = new THREE.Group()
     this.group.position.set(cx * CHUNK_SIZE, 0, cz * CHUNK_SIZE)
     this.rngForExplode = new SeededRandom(chunkSeed(cx, cz, 99))
+    this.matCache = matCache
     scene.add(this.group)
     this.build(biomeMap, atlas, lightPool)
   }
@@ -249,7 +260,28 @@ export class Chunk {
     if (TERRAIN_CONFIG.enableChapels)            this.buildChapels(rng, biomeMap)
     if (TERRAIN_CONFIG.enableCemeteries)         this.buildCemeteries(rng, biomeMap)
     if (TERRAIN_CONFIG.enableSwampPiers)         this.buildSwampPiers(rng, biomeMap)
+    if (TERRAIN_CONFIG.enableForestRuins)       this.buildForestRuins(rng, biomeMap)
+    if (TERRAIN_CONFIG.enableForestWells)        this.buildForestWells(rng, biomeMap)
+    if (TERRAIN_CONFIG.enableDesertRuinedWalls)  this.buildDesertRuinedWalls(rng, biomeMap)
+    if (TERRAIN_CONFIG.enableDesertTents)        this.buildDesertTents(rng, biomeMap)
+    if (TERRAIN_CONFIG.enableVolcanicVents)      this.buildVolcanicVents(rng, biomeMap)
+    if (TERRAIN_CONFIG.enableVolcanicForges)     this.buildVolcanicForges(rng, biomeMap)
+    if (TERRAIN_CONFIG.enableIgloos)             this.buildIgloos(rng, biomeMap)
+    if (TERRAIN_CONFIG.enableSnowFortWalls)      this.buildSnowFortWalls(rng, biomeMap)
+    if (TERRAIN_CONFIG.enableTundraStoneCircles) this.buildTundraStoneCircles(rng, biomeMap)
+    if (TERRAIN_CONFIG.enableTundraBoneRacks)    this.buildTundraBoneRacks(rng, biomeMap)
+    if (TERRAIN_CONFIG.enableSwampHuts)          this.buildSwampHuts(rng, biomeMap)
+    if (TERRAIN_CONFIG.enableSwampBoardwalks)    this.buildSwampBoardwalks(rng, biomeMap)
+    if (TERRAIN_CONFIG.enableSavannaHuts)        this.buildSavannaHuts(rng, biomeMap)
+    if (TERRAIN_CONFIG.enableSavannaFences)      this.buildSavannaFences(rng, biomeMap)
+    if (TERRAIN_CONFIG.enableCrystalArches)      this.buildCrystalArches(rng, biomeMap)
+    if (TERRAIN_CONFIG.enableCrystalPedestals)   this.buildCrystalPedestals(rng, biomeMap)
+    if (TERRAIN_CONFIG.enableAshCrypts)          this.buildAshCrypts(rng, biomeMap)
+    if (TERRAIN_CONFIG.enableAshPyres)           this.buildAshPyres(rng, biomeMap)
+    if (TERRAIN_CONFIG.enableMushroomAltars)     this.buildMushroomAltars(rng, biomeMap)
+    if (TERRAIN_CONFIG.enableMushroomHollowLogs) this.buildMushroomHollowLogs(rng, biomeMap)
 
+    this.mergeStructures()
     this.placeSprites(rng, biomeMap, atlas, lightPool)
     this.buildParticles(biomeMap)
   }
@@ -264,13 +296,8 @@ export class Chunk {
     const waterColor = getBiome(centerBiome).waterColor
 
     const geo = new THREE.PlaneGeometry(CHUNK_SIZE, CHUNK_SIZE)
-    const mat = new THREE.MeshLambertMaterial({
-      color: waterColor,
-      transparent: true,
-      opacity: 0.80,
-      fog: true,
-      depthWrite: false,
-    })
+    const waterHex = typeof waterColor === 'number' ? waterColor : new THREE.Color(waterColor).getHex()
+    const mat = this.matCache.getLambert(waterHex, { transparent: true, opacity: 0.80, depthWrite: false })
     const mesh = new THREE.Mesh(geo, mat)
     mesh.rotation.x = -Math.PI / 2
     mesh.position.set(CHUNK_SIZE / 2, WATER_LEVEL, CHUNK_SIZE / 2)
@@ -305,9 +332,10 @@ export class Chunk {
         if (grad < 0.5 && h < 8) continue
 
         const biome = biomeMap.getBiomeAt(this.cx * CHUNK_SIZE + lx, this.cz * CHUNK_SIZE + lz)
-        const formation = buildRockFormation(rng, new THREE.Vector3(lx, h, lz), biome)
+        const { group: formation, topY, topX, topZ, topHalfW } = buildRockFormation(rng, new THREE.Vector3(lx, h, lz), biome, this.matCache)
         this.group.add(formation)
         this.extras.push(formation)
+        this.addWalkable(lx + topX, lz + topZ, topHalfW, topHalfW, h + topY)
       }
     }
   }
@@ -340,9 +368,18 @@ export class Chunk {
 
         const axis  = gradX > gradZ ? 'z' : 'x'
         const biome = biomeMap.getBiomeAt(this.cx * CHUNK_SIZE + lx, this.cz * CHUNK_SIZE + lz)
-        const arch  = buildCaveArch(rng, new THREE.Vector3(lx, h, lz), biome, axis)
+        const { group: arch, span, pillarH, thick } = buildCaveArch(rng, new THREE.Vector3(lx, h, lz), biome, axis, this.matCache)
         this.group.add(arch)
         this.extras.push(arch)
+        // Walkable on top of each pillar
+        const halfT = thick * 0.5
+        for (const side of [-span / 2, span / 2]) {
+          if (axis === 'x') {
+            this.addWalkable(lx + side, lz, halfT, halfT, h + pillarH)
+          } else {
+            this.addWalkable(lx, lz + side, halfT, halfT, h + pillarH)
+          }
+        }
       }
     }
   }
@@ -385,7 +422,7 @@ export class Chunk {
                 ? new THREE.Vector3(midVtx, deckY, crossVtx)
                 : new THREE.Vector3(crossVtx, deckY, midVtx)
 
-              const bridge = buildBridge(rng, pos, bridgeLen, axis)
+              const bridge = buildBridge(rng, pos, bridgeLen, axis, this.matCache)
               this.group.add(bridge)
               this.extras.push(bridge)
 
@@ -450,7 +487,7 @@ export class Chunk {
 
       const deckY = peakAvg - 1
       const bridgeLen = CHUNK_SIZE - 4
-      const stoneMat = new THREE.MeshLambertMaterial({ color: 0x5a4838 })
+      const stoneMat = this.matCache.getLambert(0x5a4838)
 
       // Build elevated bridge with tall pillars
       const g = new THREE.Group()
@@ -467,7 +504,7 @@ export class Chunk {
           plankT,
           axis === 'z' ? bridgeLen / pCount - 0.1 : deckW,
         )
-        const plank = new THREE.Mesh(pGeo, new THREE.MeshLambertMaterial({ color: 0x6a4820 }))
+        const plank = new THREE.Mesh(pGeo, this.matCache.getLambert(0x6a4820))
         axis === 'x' ? plank.position.set(off, 0, 0) : plank.position.set(0, 0, off)
         g.add(plank)
       }
@@ -497,7 +534,7 @@ export class Chunk {
       }
 
       // Rope-style suspension cables
-      const cableMat = new THREE.MeshLambertMaterial({ color: 0x3a2810 })
+      const cableMat = this.matCache.getLambert(0x3a2810)
       for (const side of [-deckW / 2, deckW / 2]) {
         const cGeo = new THREE.BoxGeometry(
           axis === 'x' ? bridgeLen : 0.12,
@@ -513,7 +550,7 @@ export class Chunk {
 
       // Railings
       const postCount = Math.floor(bridgeLen / 4) + 1
-      const railMat = new THREE.MeshLambertMaterial({ color: 0x6a4820 })
+      const railMat = this.matCache.getLambert(0x6a4820)
       for (let i = 0; i <= postCount; i++) {
         const t = i / postCount
         const off = t * bridgeLen - bridgeLen / 2
@@ -548,7 +585,7 @@ export class Chunk {
   private buildRoads(rng: SeededRandom, _biomeMap: BiomeMap) {
     if (!this.heightGrid) return
 
-    const roadMat  = new THREE.MeshLambertMaterial({ color: 0x5a5040 })
+    const roadMat  = this.matCache.getLambert(0x5a5040)
     const slabSize = 4.0
     const slabT    = 0.3
     const stepLen  = 3.5
@@ -613,7 +650,7 @@ export class Chunk {
 
   private buildGiantTrees(rng: SeededRandom, biomeMap: BiomeMap) {
     if (!this.heightGrid) return
-    if (rng.next() > 0.22) return  // ~22% chance per chunk
+    if (rng.next() > 0.30) return  // ~30% chance per chunk
 
     const biome = biomeMap.getBiomeAt(
       this.cx * CHUNK_SIZE + CHUNK_SIZE / 2,
@@ -653,7 +690,7 @@ export class Chunk {
     g.position.set(bestX, bestH, bestZ)
 
     // Trunk
-    const trunkMat = new THREE.MeshLambertMaterial({ color: trunkColor })
+    const trunkMat = this.matCache.getLambert(trunkColor)
     const trunk = new THREE.Mesh(new THREE.CylinderGeometry(trunkR * 0.6, trunkR, treeH, 8), trunkMat)
     trunk.position.y = treeH / 2
     g.add(trunk)
@@ -677,7 +714,7 @@ export class Chunk {
     // Mid platform
     const midY = treeH * 0.5
     const midR = 5.5
-    const platMat = new THREE.MeshLambertMaterial({ color: trunkColor })
+    const platMat = this.matCache.getLambert(trunkColor)
     const midPlat = new THREE.Mesh(new THREE.CylinderGeometry(midR, midR * 1.1, 0.6, 8), platMat)
     midPlat.position.y = midY
     g.add(midPlat)
@@ -715,14 +752,14 @@ export class Chunk {
     this.addWalkable(bestX, bestZ, canopyR - 1, canopyR - 1, bestH + canopyY + 0.4)
 
     // Foliage dome above canopy
-    const foliageMat = new THREE.MeshLambertMaterial({ color: canopyColor, transparent: true, opacity: 0.9 })
+    const foliageMat = this.matCache.getLambert(canopyColor, { transparent: true, opacity: 0.9 })
     const foliage = new THREE.Mesh(new THREE.SphereGeometry(canopyR * 1.1, 7, 5), foliageMat)
     foliage.position.y = canopyY + canopyR * 0.6
     g.add(foliage)
 
     // For mushroom biome: glowing spots on canopy
     if (biome === BiomeType.Mushroom) {
-      const spotMat = new THREE.MeshLambertMaterial({ color: 0xff80ff, emissive: new THREE.Color(0x440044) })
+      const spotMat = this.matCache.getLambert(0xff80ff, { emissive: 0x440044 })
       for (let i = 0; i < 6; i++) {
         const angle = rng.range(0, Math.PI * 2)
         const r = rng.range(0, canopyR * 0.8)
@@ -744,7 +781,7 @@ export class Chunk {
 
   private buildMegaStructures(rng: SeededRandom, biomeMap: BiomeMap) {
     if (!this.heightGrid) return
-    if (rng.next() > 0.08) return  // 8% chance
+    if (rng.next() > 0.12) return  // 12% chance
 
     // Find flat terrain away from water
     let bestH = -Infinity, bestX = CHUNK_SIZE / 2, bestZ = CHUNK_SIZE / 2, bestGrad = Infinity
@@ -775,8 +812,8 @@ export class Chunk {
     const g = new THREE.Group()
     g.position.set(bestX, bestH, bestZ)
 
-    const stoneMat = new THREE.MeshLambertMaterial({ color: stoneColor })
-    const accentMat = new THREE.MeshLambertMaterial({ color: stoneColor + 0x101010 })
+    const stoneMat = this.matCache.getLambert(stoneColor)
+    const accentMat = this.matCache.getLambert(stoneColor + 0x101010)
 
     // 4 stacked platforms (ziggurat)
     const tiers = [
@@ -786,10 +823,16 @@ export class Chunk {
       { w:  6, d:  6, h: 3, y: 9 },
     ]
 
-    for (const tier of tiers) {
+    for (let ti = 0; ti < tiers.length; ti++) {
+      const tier = tiers[ti]
       const tierMesh = new THREE.Mesh(new THREE.BoxGeometry(tier.w, tier.h, tier.d), stoneMat)
       tierMesh.position.y = tier.y + tier.h / 2
       g.add(tierMesh)
+
+      // Walkable on top of each tier (tier 3 handled separately below with altar)
+      if (ti < 3) {
+        this.addWalkable(bestX, bestZ, tier.w / 2 - 0.3, tier.d / 2 - 0.3, bestH + tier.y + tier.h)
+      }
 
       // Carved block lines on faces
       for (let bx = -tier.w / 2 + 2; bx < tier.w / 2; bx += 3) {
@@ -805,7 +848,7 @@ export class Chunk {
     }
 
     // Steps on each face of bottom tier
-    const stepMat = new THREE.MeshLambertMaterial({ color: stoneColor })
+    const stepMat = this.matCache.getLambert(stoneColor)
     for (let i = 0; i < 3; i++) {
       const sw = 16 - i * 1.5
       const sh = 0.5
@@ -817,10 +860,8 @@ export class Chunk {
 
     // Top altar/flame effect (emissive column)
     const altarColor = biome === BiomeType.Volcanic ? 0xff4400 : 0xffa020
-    const altarMat = new THREE.MeshLambertMaterial({
-      color: altarColor,
-      emissive: new THREE.Color(altarColor).multiplyScalar(0.3),
-    })
+    const altarEmissive = new THREE.Color(altarColor).multiplyScalar(0.3).getHex()
+    const altarMat = this.matCache.getLambert(altarColor, { emissive: altarEmissive })
     const altar = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.8, 2, 6), altarMat)
     altar.position.y = tiers[3].y + tiers[3].h + 1
     g.add(altar)
@@ -846,7 +887,7 @@ export class Chunk {
 
   private buildChapels(rng: SeededRandom, biomeMap: BiomeMap) {
     if (!this.heightGrid) return
-    if (rng.next() > 0.05) return  // ~5% per chunk
+    if (rng.next() > 0.08) return  // ~8% per chunk
 
     const biome = biomeMap.getBiomeAt(
       this.cx * CHUNK_SIZE + CHUNK_SIZE / 2,
@@ -873,9 +914,9 @@ export class Chunk {
     const darkStone  = biome === BiomeType.Snow ? 0x505870 : biome === BiomeType.Tundra ? 0x484858 : 0x3a2e28
     const woodColor  = 0x5a3010
 
-    const stoneMat = new THREE.MeshLambertMaterial({ color: stoneColor })
-    const darkMat  = new THREE.MeshLambertMaterial({ color: darkStone })
-    const woodMat  = new THREE.MeshLambertMaterial({ color: woodColor })
+    const stoneMat = this.matCache.getLambert(stoneColor)
+    const darkMat  = this.matCache.getLambert(darkStone)
+    const woodMat  = this.matCache.getLambert(woodColor)
 
     const g = new THREE.Group()
     g.position.set(bestX, bestH, bestZ)
@@ -932,7 +973,7 @@ export class Chunk {
 
   private buildCemeteries(rng: SeededRandom, biomeMap: BiomeMap) {
     if (!this.heightGrid) return
-    if (rng.next() > 0.04) return  // ~4% per chunk
+    if (rng.next() > 0.06) return  // ~6% per chunk
 
     const biome = biomeMap.getBiomeAt(
       this.cx * CHUNK_SIZE + CHUNK_SIZE / 2,
@@ -958,8 +999,8 @@ export class Chunk {
     const stoneColor = biome === BiomeType.Swamp ? 0x2a3820 : 0x363228
     const fenceColor = biome === BiomeType.Swamp ? 0x1e2814 : 0x282420
 
-    const stoneMat = new THREE.MeshLambertMaterial({ color: stoneColor })
-    const fenceMat = new THREE.MeshLambertMaterial({ color: fenceColor })
+    const stoneMat = this.matCache.getLambert(stoneColor)
+    const fenceMat = this.matCache.getLambert(fenceColor)
 
     const g = new THREE.Group()
     g.position.set(bestX, bestH, bestZ)
@@ -972,7 +1013,7 @@ export class Chunk {
     }
 
     // Ground slab (barely raised)
-    box(14, 0.3, 12, new THREE.MeshLambertMaterial({ color: biome === BiomeType.Swamp ? 0x1e2814 : 0x252220 }), 0, 0.15, 0)
+    box(14, 0.3, 12, this.matCache.getLambert(biome === BiomeType.Swamp ? 0x1e2814 : 0x252220), 0, 0.15, 0)
 
     // Fence N/S
     box(14, 1, 0.25, fenceMat, 0, 0.8, -6)
@@ -1004,7 +1045,7 @@ export class Chunk {
 
     // 1–2 iron crosses
     const crossCount = 1 + rng.int(0, 1)
-    const crossMat = new THREE.MeshLambertMaterial({ color: 0x1a1a1a })
+    const crossMat = this.matCache.getLambert(0x1a1a1a)
     for (let i = 0; i < crossCount; i++) {
       const cx2 = rng.range(-5, 5)
       const cz2 = rng.range(-4, 4)
@@ -1020,6 +1061,8 @@ export class Chunk {
 
     this.group.add(g)
     this.extras.push(g)
+    // Cemetery ground slab walkable
+    this.addWalkable(bestX, bestZ, 7.0, 6.0, bestH + 0.3)
   }
 
   // ── Swamp Piers ───────────────────────────────────────────────────────────
@@ -1058,8 +1101,8 @@ export class Chunk {
 
     const worldH = sampleHeight(this.heightGrid!, edgeX, edgeZ)
     const deckY = WATER_LEVEL + 0.15
-    const woodMat  = new THREE.MeshLambertMaterial({ color: 0x5a3210 })
-    const darkWood = new THREE.MeshLambertMaterial({ color: 0x3a2010 })
+    const woodMat  = this.matCache.getLambert(0x5a3210)
+    const darkWood = this.matCache.getLambert(0x3a2010)
 
     const g = new THREE.Group()
     g.position.set(edgeX, 0, edgeZ)
@@ -1123,6 +1166,894 @@ export class Chunk {
     this.extras.push(g)
   }
 
+  // ── Forest Ruins ──────────────────────────────────────────────────────────
+
+  private buildForestRuins(rng: SeededRandom, biomeMap: BiomeMap) {
+    if (!this.heightGrid) return
+    const step = 24; const cols = Math.floor(CHUNK_SIZE / step); const rows = cols
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+      if (rng.next() > 0.08) continue
+      const lx = (c + 0.5) * step + rng.range(-4, 4)
+      const lz = (r + 0.5) * step + rng.range(-4, 4)
+      const h = sampleHeight(this.heightGrid!, lx, lz)
+      if (h < WATER_LEVEL + 1) continue
+      const biome = biomeMap.getBiomeAt(this.cx * CHUNK_SIZE + lx, this.cz * CHUNK_SIZE + lz)
+      if (biome !== BiomeType.Forest) continue
+
+      const g = new THREE.Group(); g.position.set(lx, h, lz)
+      const stone = this.matCache.getLambert(0x5a4838)
+      const dark = this.matCache.getLambert(0x3a2e28)
+      // Foundation
+      g.add(new THREE.Mesh(new THREE.BoxGeometry(12, 0.5, 10), stone))
+      // Partial walls
+      for (let i = 0; i < 2 + rng.int(0, 1); i++) {
+        const wh = rng.range(2, 5); const ww = rng.range(3, 6)
+        const m = new THREE.Mesh(new THREE.BoxGeometry(ww, wh, 0.8), i % 2 === 0 ? stone : dark)
+        m.position.set(rng.range(-4, 4), wh / 2 + 0.25, rng.range(-3, 3))
+        m.rotation.y = rng.range(-0.3, 0.3); g.add(m)
+      }
+      // Corner piece
+      const corner = new THREE.Mesh(new THREE.BoxGeometry(1.2, rng.range(3, 5), 1.2), dark)
+      corner.position.set(-5, corner.geometry.parameters.height / 2 + 0.25, -4); g.add(corner)
+      // Rubble
+      for (let i = 0; i < 3; i++) {
+        const rb = new THREE.Mesh(new THREE.BoxGeometry(rng.range(0.5, 1.5), rng.range(0.3, 0.8), rng.range(0.5, 1.5)), stone)
+        rb.position.set(rng.range(-5, 5), 0.5, rng.range(-4, 4))
+        rb.rotation.y = rng.range(0, Math.PI); g.add(rb)
+      }
+      this.group.add(g); this.extras.push(g)
+      this.addWalkable(lx, lz, 6, 5, h + 0.5)
+    }
+  }
+
+  // ── Forest Wells ──────────────────────────────────────────────────────────
+
+  private buildForestWells(rng: SeededRandom, biomeMap: BiomeMap) {
+    if (!this.heightGrid) return
+    const step = 28; const cols = Math.floor(CHUNK_SIZE / step); const rows = cols
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+      if (rng.next() > 0.06) continue
+      const lx = (c + 0.5) * step + rng.range(-4, 4)
+      const lz = (r + 0.5) * step + rng.range(-4, 4)
+      const h = sampleHeight(this.heightGrid!, lx, lz)
+      if (h < WATER_LEVEL + 1) continue
+      const biome = biomeMap.getBiomeAt(this.cx * CHUNK_SIZE + lx, this.cz * CHUNK_SIZE + lz)
+      if (biome !== BiomeType.Forest && biome !== BiomeType.Snow && biome !== BiomeType.Tundra) continue
+
+      const g = new THREE.Group(); g.position.set(lx, h, lz)
+      const stone = this.matCache.getLambert(0x5a4838)
+      const wood = this.matCache.getLambert(0x5a3010)
+      // Ring walls
+      for (const [ox, oz, w, d] of [[-1.5, 0, 0.5, 3.5], [1.5, 0, 0.5, 3.5], [0, -1.5, 3.5, 0.5], [0, 1.5, 3.5, 0.5]] as [number, number, number, number][]) {
+        const wall = new THREE.Mesh(new THREE.BoxGeometry(w, 1.2, d), stone)
+        wall.position.set(ox, 0.6, oz); g.add(wall)
+      }
+      // Uprights
+      for (const sx of [-1.2, 1.2]) {
+        const up = new THREE.Mesh(new THREE.BoxGeometry(0.3, 3, 0.3), wood)
+        up.position.set(sx, 1.5, 0); g.add(up)
+      }
+      // Crossbar
+      const bar = new THREE.Mesh(new THREE.BoxGeometry(3, 0.25, 0.25), wood)
+      bar.position.set(0, 3, 0); g.add(bar)
+      // Bucket
+      const bucket = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.6, 0.5), wood)
+      bucket.position.set(0.3, 2.2, 0); g.add(bucket)
+      // Cap stones
+      const cap = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.3, 3.8), stone)
+      cap.position.set(0, 1.35, 0); g.add(cap)
+      this.group.add(g); this.extras.push(g)
+      this.addWalkable(lx, lz, 1.75, 1.75, h + 1.5)
+    }
+  }
+
+  // ── Desert Ruined Walls ──────────────────────────────────────────────────
+
+  private buildDesertRuinedWalls(rng: SeededRandom, biomeMap: BiomeMap) {
+    if (!this.heightGrid) return
+    const step = 22; const cols = Math.floor(CHUNK_SIZE / step); const rows = cols
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+      if (rng.next() > 0.10) continue
+      const lx = (c + 0.5) * step + rng.range(-4, 4)
+      const lz = (r + 0.5) * step + rng.range(-4, 4)
+      const h = sampleHeight(this.heightGrid!, lx, lz)
+      if (h < WATER_LEVEL + 1) continue
+      const biome = biomeMap.getBiomeAt(this.cx * CHUNK_SIZE + lx, this.cz * CHUNK_SIZE + lz)
+      if (biome !== BiomeType.Desert) continue
+
+      const g = new THREE.Group(); g.position.set(lx, h, lz)
+      const sand = this.matCache.getLambert(0x8a6040)
+      const dark = this.matCache.getLambert(0x6a4820)
+      const ry = rng.range(0, Math.PI)
+      // Main wall
+      const wall = new THREE.Mesh(new THREE.BoxGeometry(14, 3, 1.5), sand)
+      wall.position.y = 1.5; wall.rotation.y = ry; g.add(wall)
+      // Pillars
+      for (const side of [-6, 6]) {
+        const pil = new THREE.Mesh(new THREE.BoxGeometry(1.8, 4, 1.8), dark)
+        pil.position.set(Math.cos(ry) * side, 2, Math.sin(ry) * side); g.add(pil)
+      }
+      // Decorative band
+      const band = new THREE.Mesh(new THREE.BoxGeometry(14, 0.4, 1.6), dark)
+      band.position.y = 2.8; band.rotation.y = ry; g.add(band)
+      // Rubble
+      for (let i = 0; i < 3; i++) {
+        const rb = new THREE.Mesh(new THREE.BoxGeometry(rng.range(0.5, 1.5), rng.range(0.3, 0.8), rng.range(0.5, 1.5)), sand)
+        rb.position.set(rng.range(-4, 4), 0.3, rng.range(-2, 2)); g.add(rb)
+      }
+      this.group.add(g); this.extras.push(g)
+      this.addWalkable(lx, lz, 7, 0.75, h + 3)
+    }
+  }
+
+  // ── Desert Tents ──────────────────────────────────────────────────────────
+
+  private buildDesertTents(rng: SeededRandom, biomeMap: BiomeMap) {
+    if (!this.heightGrid) return
+    const step = 26; const cols = Math.floor(CHUNK_SIZE / step); const rows = cols
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+      if (rng.next() > 0.08) continue
+      const lx = (c + 0.5) * step + rng.range(-4, 4)
+      const lz = (r + 0.5) * step + rng.range(-4, 4)
+      const h = sampleHeight(this.heightGrid!, lx, lz)
+      if (h < WATER_LEVEL + 1) continue
+      const biome = biomeMap.getBiomeAt(this.cx * CHUNK_SIZE + lx, this.cz * CHUNK_SIZE + lz)
+      if (biome !== BiomeType.Desert && biome !== BiomeType.Savanna) continue
+
+      const g = new THREE.Group(); g.position.set(lx, h, lz)
+      const poles = this.matCache.getLambert(0x5a3210)
+      const fabric = this.matCache.getLambert(0x8a6840)
+      const rug = this.matCache.getLambert(0x6a4020)
+      // Poles
+      for (const sx of [-1.5, 1.5]) {
+        const pole = new THREE.Mesh(new THREE.BoxGeometry(0.2, 3.5, 0.2), poles)
+        pole.position.set(sx, 1.75, 0); g.add(pole)
+      }
+      // Ridge pole
+      const ridge = new THREE.Mesh(new THREE.BoxGeometry(3.5, 0.15, 0.15), poles)
+      ridge.position.y = 3.5; g.add(ridge)
+      // Roof panels
+      const roofA = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.1, 2.5), fabric)
+      roofA.position.set(0, 3.0, 1.0); roofA.rotation.x = 0.4; g.add(roofA)
+      const roofB = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.1, 2.5), fabric)
+      roofB.position.set(0, 3.0, -1.0); roofB.rotation.x = -0.4; g.add(roofB)
+      // Ground rug
+      const rugMesh = new THREE.Mesh(new THREE.BoxGeometry(3.5, 0.1, 4.5), rug)
+      rugMesh.position.y = 0.05; g.add(rugMesh)
+      this.group.add(g); this.extras.push(g)
+      this.addWalkable(lx, lz, 1.75, 2.25, h + 0.1)
+    }
+  }
+
+  // ── Volcanic Vents ──────────────────────────────────────────────────────
+
+  private buildVolcanicVents(rng: SeededRandom, biomeMap: BiomeMap) {
+    if (!this.heightGrid) return
+    const step = 22; const cols = Math.floor(CHUNK_SIZE / step); const rows = cols
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+      if (rng.next() > 0.09) continue
+      const lx = (c + 0.5) * step + rng.range(-4, 4)
+      const lz = (r + 0.5) * step + rng.range(-4, 4)
+      const h = sampleHeight(this.heightGrid!, lx, lz)
+      if (h < WATER_LEVEL + 1) continue
+      const biome = biomeMap.getBiomeAt(this.cx * CHUNK_SIZE + lx, this.cz * CHUNK_SIZE + lz)
+      if (biome !== BiomeType.Volcanic) continue
+
+      const g = new THREE.Group(); g.position.set(lx, h, lz)
+      const obsidian = this.matCache.getLambert(0x2a1008)
+      const pit = this.matCache.getLambert(0x0a0404)
+      const lava = new THREE.MeshBasicMaterial({ color: 0xff4400 })
+      // Crater ring
+      for (const [ox, oz] of [[2.5, 0], [-2.5, 0], [0, 2.5], [0, -2.5]] as [number, number][]) {
+        const ring = new THREE.Mesh(new THREE.BoxGeometry(2, 1.5, 2), obsidian)
+        ring.position.set(ox, 0.75, oz); g.add(ring)
+      }
+      // Pit center
+      const pitMesh = new THREE.Mesh(new THREE.BoxGeometry(3, 0.5, 3), pit)
+      pitMesh.position.y = -0.25; g.add(pitMesh)
+      // Lava glow
+      const glow = new THREE.Mesh(new THREE.BoxGeometry(2, 0.15, 2), lava)
+      glow.position.y = 0.05; g.add(glow)
+      // Raised lip
+      const lip = new THREE.Mesh(new THREE.BoxGeometry(5.5, 0.5, 5.5), obsidian)
+      lip.position.y = 0.25; g.add(lip)
+      // Spikes
+      for (let i = 0; i < 2 + rng.int(0, 1); i++) {
+        const spike = new THREE.Mesh(new THREE.BoxGeometry(0.5, rng.range(2, 4), 0.5), obsidian)
+        spike.position.set(rng.range(-3, 3), spike.geometry.parameters.height / 2, rng.range(-3, 3))
+        spike.rotation.set(rng.range(-0.2, 0.2), 0, rng.range(-0.2, 0.2)); g.add(spike)
+      }
+      this.group.add(g); this.extras.push(g)
+      this.addWalkable(lx, lz, 2.25, 2.25, h + 1.5)
+    }
+  }
+
+  // ── Volcanic Forges ──────────────────────────────────────────────────────
+
+  private buildVolcanicForges(rng: SeededRandom, biomeMap: BiomeMap) {
+    if (!this.heightGrid) return
+    const step = 28; const cols = Math.floor(CHUNK_SIZE / step); const rows = cols
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+      if (rng.next() > 0.06) continue
+      const lx = (c + 0.5) * step + rng.range(-4, 4)
+      const lz = (r + 0.5) * step + rng.range(-4, 4)
+      const h = sampleHeight(this.heightGrid!, lx, lz)
+      if (h < WATER_LEVEL + 1) continue
+      const biome = biomeMap.getBiomeAt(this.cx * CHUNK_SIZE + lx, this.cz * CHUNK_SIZE + lz)
+      if (biome !== BiomeType.Volcanic) continue
+
+      const g = new THREE.Group(); g.position.set(lx, h, lz)
+      const stone = this.matCache.getLambert(0x3a1a08)
+      const darkStone = this.matCache.getLambert(0x1a0a04)
+      const ember = new THREE.MeshBasicMaterial({ color: 0xff4400 })
+      // Platform
+      const plat = new THREE.Mesh(new THREE.BoxGeometry(6, 1, 6), stone)
+      plat.position.y = 0.5; g.add(plat)
+      // Anvil
+      const anvil = new THREE.Mesh(new THREE.BoxGeometry(1.5, 1.2, 1), darkStone)
+      anvil.position.set(1, 1.6, 0); g.add(anvil)
+      // Partial walls
+      const wallA = new THREE.Mesh(new THREE.BoxGeometry(0.6, 3, 5), stone)
+      wallA.position.set(-2.7, 2.5, 0); g.add(wallA)
+      const wallB = new THREE.Mesh(new THREE.BoxGeometry(5, 3, 0.6), stone)
+      wallB.position.set(0, 2.5, -2.7); g.add(wallB)
+      // Chimney remnant
+      const chimney = new THREE.Mesh(new THREE.BoxGeometry(1.5, 4, 1.5), darkStone)
+      chimney.position.set(-2.2, 3, -2.2); g.add(chimney)
+      // Ember glow
+      const emberMesh = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.15, 1.5), ember)
+      emberMesh.position.set(-1, 1.1, 0.5); g.add(emberMesh)
+      this.group.add(g); this.extras.push(g)
+      this.addWalkable(lx, lz, 3, 3, h + 1)
+    }
+  }
+
+  // ── Igloos ──────────────────────────────────────────────────────────────
+
+  private buildIgloos(rng: SeededRandom, biomeMap: BiomeMap) {
+    if (!this.heightGrid) return
+    const step = 26; const cols = Math.floor(CHUNK_SIZE / step); const rows = cols
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+      if (rng.next() > 0.08) continue
+      const lx = (c + 0.5) * step + rng.range(-4, 4)
+      const lz = (r + 0.5) * step + rng.range(-4, 4)
+      const h = sampleHeight(this.heightGrid!, lx, lz)
+      if (h < WATER_LEVEL + 1) continue
+      const biome = biomeMap.getBiomeAt(this.cx * CHUNK_SIZE + lx, this.cz * CHUNK_SIZE + lz)
+      if (biome !== BiomeType.Snow) continue
+
+      const g = new THREE.Group(); g.position.set(lx, h, lz)
+      const ice = this.matCache.getLambert(0x9ca8c0)
+      const blueGray = this.matCache.getLambert(0x7888a0)
+      // Stacked shrinking rings to approximate dome
+      const rings = [
+        { w: 6, d: 6, h: 1.2, y: 0 },
+        { w: 5.5, d: 5.5, h: 1.0, y: 1.2 },
+        { w: 4.5, d: 4.5, h: 1.0, y: 2.2 },
+        { w: 3.5, d: 3.5, h: 0.8, y: 3.2 },
+        { w: 2.5, d: 2.5, h: 0.8, y: 4.0 },
+        { w: 1.5, d: 1.5, h: 0.6, y: 4.8 },
+      ]
+      for (let i = 0; i < rings.length; i++) {
+        const ring = rings[i]
+        const ringMesh = new THREE.Mesh(new THREE.BoxGeometry(ring.w, ring.h, ring.d), i % 2 === 0 ? ice : blueGray)
+        ringMesh.position.y = ring.y + ring.h / 2; g.add(ringMesh)
+      }
+      // Door gap (subtract by placing dark box)
+      const door = new THREE.Mesh(new THREE.BoxGeometry(1.5, 1.8, 1), this.matCache.getLambert(0x0a0a10))
+      door.position.set(0, 0.9, 3.2); g.add(door)
+      // Interior floor
+      const floor = new THREE.Mesh(new THREE.BoxGeometry(4, 0.15, 4), blueGray)
+      floor.position.y = 0.08; g.add(floor)
+      this.group.add(g); this.extras.push(g)
+      this.addWalkable(lx, lz, 2, 2, h + 0.15)
+      this.addWalkable(lx, lz, 0.75, 0.75, h + 5.4)
+    }
+  }
+
+  // ── Snow Fort Walls ──────────────────────────────────────────────────────
+
+  private buildSnowFortWalls(rng: SeededRandom, biomeMap: BiomeMap) {
+    if (!this.heightGrid) return
+    const step = 22; const cols = Math.floor(CHUNK_SIZE / step); const rows = cols
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+      if (rng.next() > 0.09) continue
+      const lx = (c + 0.5) * step + rng.range(-4, 4)
+      const lz = (r + 0.5) * step + rng.range(-4, 4)
+      const h = sampleHeight(this.heightGrid!, lx, lz)
+      if (h < WATER_LEVEL + 1) continue
+      const biome = biomeMap.getBiomeAt(this.cx * CHUNK_SIZE + lx, this.cz * CHUNK_SIZE + lz)
+      if (biome !== BiomeType.Snow) continue
+
+      const g = new THREE.Group(); g.position.set(lx, h, lz)
+      const stone = this.matCache.getLambert(0x7888a0)
+      const dark = this.matCache.getLambert(0x5a6878)
+      const ry = rng.range(0, Math.PI)
+      // Wall
+      const wall = new THREE.Mesh(new THREE.BoxGeometry(10, 2.5, 1.5), stone)
+      wall.position.y = 1.25; wall.rotation.y = ry; g.add(wall)
+      // Crenellations
+      for (let i = -1; i <= 1; i++) {
+        const cren = new THREE.Mesh(new THREE.BoxGeometry(1.5, 1, 1.6), dark)
+        cren.position.set(Math.cos(ry) * i * 3, 3, Math.sin(ry) * i * 3)
+        g.add(cren)
+      }
+      // Buttresses
+      for (const side of [-4, 4]) {
+        const but = new THREE.Mesh(new THREE.BoxGeometry(1.5, 2.8, 2), dark)
+        but.position.set(Math.cos(ry) * side, 1.4, Math.sin(ry) * side); g.add(but)
+      }
+      this.group.add(g); this.extras.push(g)
+      this.addWalkable(lx, lz, 5, 0.75, h + 2.5)
+    }
+  }
+
+  // ── Tundra Stone Circles ──────────────────────────────────────────────────
+
+  private buildTundraStoneCircles(rng: SeededRandom, biomeMap: BiomeMap) {
+    if (!this.heightGrid) return
+    const step = 24; const cols = Math.floor(CHUNK_SIZE / step); const rows = cols
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+      if (rng.next() > 0.09) continue
+      const lx = (c + 0.5) * step + rng.range(-4, 4)
+      const lz = (r + 0.5) * step + rng.range(-4, 4)
+      const h = sampleHeight(this.heightGrid!, lx, lz)
+      if (h < WATER_LEVEL + 1) continue
+      const biome = biomeMap.getBiomeAt(this.cx * CHUNK_SIZE + lx, this.cz * CHUNK_SIZE + lz)
+      if (biome !== BiomeType.Tundra) continue
+
+      const g = new THREE.Group(); g.position.set(lx, h, lz)
+      const gray = this.matCache.getLambert(0x606070)
+      const stoneCount = 5 + rng.int(0, 2)
+      const radius = 5
+      for (let i = 0; i < stoneCount; i++) {
+        const angle = (i / stoneCount) * Math.PI * 2
+        const sh = rng.range(2.5, 5)
+        const sw = rng.range(0.8, 1.5)
+        const stone = new THREE.Mesh(new THREE.BoxGeometry(sw, sh, sw * rng.range(0.6, 1)), gray)
+        stone.position.set(Math.cos(angle) * radius, sh / 2, Math.sin(angle) * radius)
+        stone.rotation.set(rng.range(-0.1, 0.1), rng.range(0, 0.5), rng.range(-0.1, 0.1))
+        g.add(stone)
+      }
+      // Center altar slab
+      const altar = new THREE.Mesh(new THREE.BoxGeometry(2, 0.5, 2), gray)
+      altar.position.y = 0.25; g.add(altar)
+      this.group.add(g); this.extras.push(g)
+      this.addWalkable(lx, lz, 1, 1, h + 0.5)
+    }
+  }
+
+  // ── Tundra Bone Racks ──────────────────────────────────────────────────
+
+  private buildTundraBoneRacks(rng: SeededRandom, biomeMap: BiomeMap) {
+    if (!this.heightGrid) return
+    const step = 26; const cols = Math.floor(CHUNK_SIZE / step); const rows = cols
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+      if (rng.next() > 0.08) continue
+      const lx = (c + 0.5) * step + rng.range(-4, 4)
+      const lz = (r + 0.5) * step + rng.range(-4, 4)
+      const h = sampleHeight(this.heightGrid!, lx, lz)
+      if (h < WATER_LEVEL + 1) continue
+      const biome = biomeMap.getBiomeAt(this.cx * CHUNK_SIZE + lx, this.cz * CHUNK_SIZE + lz)
+      if (biome !== BiomeType.Tundra) continue
+
+      const g = new THREE.Group(); g.position.set(lx, h, lz)
+      const wood = this.matCache.getLambert(0x4a3a28)
+      const dried = this.matCache.getLambert(0x6a4430)
+      // X-frames
+      for (const sx of [-1.5, 1.5]) {
+        const legA = new THREE.Mesh(new THREE.BoxGeometry(0.2, 3.5, 0.2), wood)
+        legA.position.set(sx, 1.75, 0); legA.rotation.z = 0.15; g.add(legA)
+        const legB = new THREE.Mesh(new THREE.BoxGeometry(0.2, 3.5, 0.2), wood)
+        legB.position.set(sx, 1.75, 0); legB.rotation.z = -0.15; g.add(legB)
+      }
+      // Drying bar
+      const bar = new THREE.Mesh(new THREE.BoxGeometry(3.5, 0.2, 0.2), wood)
+      bar.position.y = 3.2; g.add(bar)
+      // Hanging strips
+      for (let i = 0; i < 3 + rng.int(0, 1); i++) {
+        const strip = new THREE.Mesh(new THREE.BoxGeometry(0.3, rng.range(0.8, 1.5), 0.15), dried)
+        strip.position.set(rng.range(-1.2, 1.2), 2.5, 0); g.add(strip)
+      }
+      // Ground platform
+      const plat = new THREE.Mesh(new THREE.BoxGeometry(3.5, 0.2, 2), wood)
+      plat.position.y = 0.1; g.add(plat)
+      this.group.add(g); this.extras.push(g)
+      this.addWalkable(lx, lz, 1.75, 1, h + 0.2)
+    }
+  }
+
+  // ── Swamp Huts ──────────────────────────────────────────────────────────
+
+  private buildSwampHuts(rng: SeededRandom, biomeMap: BiomeMap) {
+    if (!this.heightGrid) return
+    const step = 26; const cols = Math.floor(CHUNK_SIZE / step); const rows = cols
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+      if (rng.next() > 0.08) continue
+      const lx = (c + 0.5) * step + rng.range(-4, 4)
+      const lz = (r + 0.5) * step + rng.range(-4, 4)
+      const h = sampleHeight(this.heightGrid!, lx, lz)
+      if (h < WATER_LEVEL - 1) continue
+      const biome = biomeMap.getBiomeAt(this.cx * CHUNK_SIZE + lx, this.cz * CHUNK_SIZE + lz)
+      if (biome !== BiomeType.Swamp) continue
+
+      const g = new THREE.Group(); g.position.set(lx, h, lz)
+      const darkWood = this.matCache.getLambert(0x3a2010)
+      const darker = this.matCache.getLambert(0x2a1a08)
+      const moss = this.matCache.getLambert(0x1a2a08)
+      const stiltH = 3
+      // Stilts
+      for (const [sx, sz] of [[-2, -1.5], [2, -1.5], [-2, 1.5], [2, 1.5]] as [number, number][]) {
+        const stilt = new THREE.Mesh(new THREE.BoxGeometry(0.4, stiltH, 0.4), darkWood)
+        stilt.position.set(sx, stiltH / 2, sz); g.add(stilt)
+      }
+      // Platform
+      const plat = new THREE.Mesh(new THREE.BoxGeometry(5, 0.3, 4), darkWood)
+      plat.position.y = stiltH; g.add(plat)
+      // Back wall
+      const backWall = new THREE.Mesh(new THREE.BoxGeometry(5, 2.5, 0.3), darker)
+      backWall.position.set(0, stiltH + 1.4, -1.85); g.add(backWall)
+      // Side wall
+      const sideWall = new THREE.Mesh(new THREE.BoxGeometry(0.3, 2.5, 4), darker)
+      sideWall.position.set(-2.35, stiltH + 1.4, 0); g.add(sideWall)
+      // Sloped roof
+      const roof = new THREE.Mesh(new THREE.BoxGeometry(5.5, 0.2, 4.5), moss)
+      roof.position.set(0, stiltH + 2.8, 0.2); roof.rotation.x = 0.15; g.add(roof)
+      this.group.add(g); this.extras.push(g)
+      this.addWalkable(lx, lz, 2.5, 2, h + stiltH + 0.15)
+    }
+  }
+
+  // ── Swamp Boardwalks ──────────────────────────────────────────────────
+
+  private buildSwampBoardwalks(rng: SeededRandom, biomeMap: BiomeMap) {
+    if (!this.heightGrid) return
+    const step = 20; const cols = Math.floor(CHUNK_SIZE / step); const rows = cols
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+      if (rng.next() > 0.10) continue
+      const lx = (c + 0.5) * step + rng.range(-4, 4)
+      const lz = (r + 0.5) * step + rng.range(-4, 4)
+      const h = sampleHeight(this.heightGrid!, lx, lz)
+      const biome = biomeMap.getBiomeAt(this.cx * CHUNK_SIZE + lx, this.cz * CHUNK_SIZE + lz)
+      if (biome !== BiomeType.Swamp) continue
+
+      const g = new THREE.Group(); g.position.set(lx, h, lz)
+      const planks = this.matCache.getLambert(0x5a3210)
+      const posts = this.matCache.getLambert(0x3a2010)
+      const axis = rng.next() > 0.5 ? 'x' : 'z'
+      const segCount = 6 + rng.int(0, 2)
+      const segSpacing = 1.8
+      const deckY = Math.max(h, WATER_LEVEL) + 0.3
+
+      for (let i = 0; i < segCount; i++) {
+        const off = (i - segCount / 2) * segSpacing
+        const yVar = rng.range(-0.1, 0.1)
+        const plank = new THREE.Mesh(new THREE.BoxGeometry(
+          axis === 'x' ? 1.6 : 2.5,
+          0.15,
+          axis === 'z' ? 1.6 : 2.5,
+        ), planks)
+        if (axis === 'x') plank.position.set(off, deckY - h + yVar, 0)
+        else plank.position.set(0, deckY - h + yVar, off)
+        g.add(plank)
+        // Walkable per plank
+        if (axis === 'x') this.addWalkable(lx + off, lz, 0.8, 1.25, deckY + 0.08 + yVar)
+        else this.addWalkable(lx, lz + off, 1.25, 0.8, deckY + 0.08 + yVar)
+        // Support posts (every other)
+        if (i % 2 === 0) {
+          for (const side of [-1, 1]) {
+            const post = new THREE.Mesh(new THREE.BoxGeometry(0.2, 2, 0.2), posts)
+            if (axis === 'x') post.position.set(off, deckY - h - 0.8, side * 1)
+            else post.position.set(side * 1, deckY - h - 0.8, off)
+            g.add(post)
+          }
+        }
+      }
+      this.group.add(g); this.extras.push(g)
+    }
+  }
+
+  // ── Savanna Huts ──────────────────────────────────────────────────────
+
+  private buildSavannaHuts(rng: SeededRandom, biomeMap: BiomeMap) {
+    if (!this.heightGrid) return
+    const step = 28; const cols = Math.floor(CHUNK_SIZE / step); const rows = cols
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+      if (rng.next() > 0.06) continue
+      const lx = (c + 0.5) * step + rng.range(-4, 4)
+      const lz = (r + 0.5) * step + rng.range(-4, 4)
+      const h = sampleHeight(this.heightGrid!, lx, lz)
+      if (h < WATER_LEVEL + 1) continue
+      const biome = biomeMap.getBiomeAt(this.cx * CHUNK_SIZE + lx, this.cz * CHUNK_SIZE + lz)
+      if (biome !== BiomeType.Savanna) continue
+
+      const g = new THREE.Group(); g.position.set(lx, h, lz)
+      const mud = this.matCache.getLambert(0x6a4820)
+      const thatch = this.matCache.getLambert(0x3a2808)
+      // 4 walls
+      for (const [ox, oz, w, d] of [[-2, 0, 0.5, 4.5], [2, 0, 0.5, 4.5], [0, -2, 4.5, 0.5], [0, 2, 4.5, 0.5]] as [number, number, number, number][]) {
+        const wall = new THREE.Mesh(new THREE.BoxGeometry(w, 2.5, d), mud)
+        wall.position.set(ox, 1.25, oz); g.add(wall)
+      }
+      // Floor
+      const floor = new THREE.Mesh(new THREE.BoxGeometry(4, 0.15, 4), mud)
+      floor.position.y = 0.08; g.add(floor)
+      // Pyramid roof (4 angled slabs)
+      for (let i = 0; i < 4; i++) {
+        const roofSlab = new THREE.Mesh(new THREE.BoxGeometry(4.5, 0.2, 2.5), thatch)
+        const angle = (i / 4) * Math.PI * 2
+        roofSlab.position.set(Math.sin(angle) * 0.8, 3.0, Math.cos(angle) * 0.8)
+        roofSlab.rotation.y = angle
+        roofSlab.rotation.x = 0.4
+        g.add(roofSlab)
+      }
+      // Door gap
+      const doorGap = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.8, 0.6), this.matCache.getLambert(0x0a0804))
+      doorGap.position.set(0, 0.9, 2.2); g.add(doorGap)
+      this.group.add(g); this.extras.push(g)
+      this.addWalkable(lx, lz, 2, 2, h + 0.15)
+    }
+  }
+
+  // ── Savanna Fences ──────────────────────────────────────────────────────
+
+  private buildSavannaFences(rng: SeededRandom, biomeMap: BiomeMap) {
+    if (!this.heightGrid) return
+    const step = 16; const cols = Math.floor(CHUNK_SIZE / step); const rows = cols
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+      if (rng.next() > 0.12) continue
+      const lx = (c + 0.5) * step + rng.range(-4, 4)
+      const lz = (r + 0.5) * step + rng.range(-4, 4)
+      const h = sampleHeight(this.heightGrid!, lx, lz)
+      if (h < WATER_LEVEL + 1) continue
+      const biome = biomeMap.getBiomeAt(this.cx * CHUNK_SIZE + lx, this.cz * CHUNK_SIZE + lz)
+      if (biome !== BiomeType.Savanna) continue
+
+      const g = new THREE.Group(); g.position.set(lx, h, lz)
+      const wood = this.matCache.getLambert(0x5a3210)
+      const axis = rng.next() > 0.5 ? 'x' : 'z'
+      const postCount = 4 + rng.int(0, 2)
+      const spacing = 2.5
+      const totalLen = (postCount - 1) * spacing
+
+      // Posts
+      for (let i = 0; i < postCount; i++) {
+        const off = i * spacing - totalLen / 2
+        const post = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1.8, 0.3), wood)
+        if (axis === 'x') post.position.set(off, 0.9, 0)
+        else post.position.set(0, 0.9, off)
+        g.add(post)
+      }
+      // Rails
+      for (const ry of [0.5, 1.3]) {
+        const rail = new THREE.Mesh(new THREE.BoxGeometry(
+          axis === 'x' ? totalLen + 0.5 : 0.15,
+          0.15,
+          axis === 'z' ? totalLen + 0.5 : 0.15,
+        ), wood)
+        if (axis === 'x') rail.position.set(0, ry, 0)
+        else rail.position.set(0, ry, 0)
+        g.add(rail)
+      }
+      this.group.add(g); this.extras.push(g)
+    }
+  }
+
+  // ── Crystal Arches ──────────────────────────────────────────────────────
+
+  private buildCrystalArches(rng: SeededRandom, biomeMap: BiomeMap) {
+    if (!this.heightGrid) return
+    const step = 24; const cols = Math.floor(CHUNK_SIZE / step); const rows = cols
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+      if (rng.next() > 0.08) continue
+      const lx = (c + 0.5) * step + rng.range(-4, 4)
+      const lz = (r + 0.5) * step + rng.range(-4, 4)
+      const h = sampleHeight(this.heightGrid!, lx, lz)
+      if (h < WATER_LEVEL + 1) continue
+      const biome = biomeMap.getBiomeAt(this.cx * CHUNK_SIZE + lx, this.cz * CHUNK_SIZE + lz)
+      if (biome !== BiomeType.Crystal) continue
+
+      const g = new THREE.Group(); g.position.set(lx, h, lz)
+      const base = this.matCache.getLambert(0x2860a0)
+      const light = this.matCache.getLambert(0x4080c0)
+      const dark = this.matCache.getLambert(0x104060)
+      // Pillars
+      for (const sx of [-4, 4]) {
+        const pillar = new THREE.Mesh(new THREE.BoxGeometry(1.5, 6, 1.5), base)
+        pillar.position.set(sx, 3, 0); g.add(pillar)
+        // Facet caps
+        const cap = new THREE.Mesh(new THREE.BoxGeometry(2, 1, 2), light)
+        cap.position.set(sx, 6.5, 0); cap.rotation.y = Math.PI / 4; g.add(cap)
+      }
+      // Bridge slab
+      const bridge = new THREE.Mesh(new THREE.BoxGeometry(9.5, 0.8, 1.5), base)
+      bridge.position.y = 6.4; g.add(bridge)
+      // Crystal growths at bases
+      for (const sx of [-4.5, 4.5]) {
+        const shard = new THREE.Mesh(new THREE.BoxGeometry(0.6, 1.5, 0.6), dark)
+        shard.position.set(sx, 0.75, 0.8); shard.rotation.z = rng.range(-0.3, 0.3)
+        g.add(shard)
+      }
+      this.group.add(g); this.extras.push(g)
+      this.addWalkable(lx, lz, 4, 0.75, h + 6.8)
+    }
+  }
+
+  // ── Crystal Pedestals ──────────────────────────────────────────────────
+
+  private buildCrystalPedestals(rng: SeededRandom, biomeMap: BiomeMap) {
+    if (!this.heightGrid) return
+    const step = 28; const cols = Math.floor(CHUNK_SIZE / step); const rows = cols
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+      if (rng.next() > 0.06) continue
+      const lx = (c + 0.5) * step + rng.range(-4, 4)
+      const lz = (r + 0.5) * step + rng.range(-4, 4)
+      const h = sampleHeight(this.heightGrid!, lx, lz)
+      if (h < WATER_LEVEL + 1) continue
+      const biome = biomeMap.getBiomeAt(this.cx * CHUNK_SIZE + lx, this.cz * CHUNK_SIZE + lz)
+      if (biome !== BiomeType.Crystal) continue
+
+      const g = new THREE.Group(); g.position.set(lx, h, lz)
+      const base = this.matCache.getLambert(0x2860a0)
+      const highlight = this.matCache.getLambert(0x60b0e0)
+      // 3 tiers
+      const tierData = [
+        { w: 4, h: 1.2, y: 0 },
+        { w: 3, h: 1.0, y: 1.2 },
+        { w: 2, h: 0.8, y: 2.2 },
+      ]
+      for (const t of tierData) {
+        const tier = new THREE.Mesh(new THREE.BoxGeometry(t.w, t.h, t.w), base)
+        tier.position.y = t.y + t.h / 2; g.add(tier)
+      }
+      // Floating crystal (rotated 45 degrees)
+      const crystal = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.8, 1.2), highlight)
+      crystal.position.y = 4; crystal.rotation.y = Math.PI / 4; crystal.rotation.x = 0.2
+      g.add(crystal)
+      // Small base shards
+      for (let i = 0; i < 4; i++) {
+        const angle = (i / 4) * Math.PI * 2
+        const shard = new THREE.Mesh(new THREE.BoxGeometry(0.4, rng.range(0.8, 1.5), 0.4), base)
+        shard.position.set(Math.cos(angle) * 2.5, shard.geometry.parameters.height / 2, Math.sin(angle) * 2.5)
+        shard.rotation.z = rng.range(-0.2, 0.2); g.add(shard)
+      }
+      this.group.add(g); this.extras.push(g)
+      this.addWalkable(lx, lz, 1, 1, h + 3)
+    }
+  }
+
+  // ── Ash Crypts ──────────────────────────────────────────────────────────
+
+  private buildAshCrypts(rng: SeededRandom, biomeMap: BiomeMap) {
+    if (!this.heightGrid) return
+    const step = 24; const cols = Math.floor(CHUNK_SIZE / step); const rows = cols
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+      if (rng.next() > 0.08) continue
+      const lx = (c + 0.5) * step + rng.range(-4, 4)
+      const lz = (r + 0.5) * step + rng.range(-4, 4)
+      const h = sampleHeight(this.heightGrid!, lx, lz)
+      if (h < WATER_LEVEL + 1) continue
+      const biome = biomeMap.getBiomeAt(this.cx * CHUNK_SIZE + lx, this.cz * CHUNK_SIZE + lz)
+      if (biome !== BiomeType.AshWastes) continue
+
+      const g = new THREE.Group(); g.position.set(lx, h, lz)
+      const gray = this.matCache.getLambert(0x303030)
+      const darkGray = this.matCache.getLambert(0x1a1a1a)
+      // Foundation
+      const found = new THREE.Mesh(new THREE.BoxGeometry(8, 0.5, 6), gray)
+      found.position.y = 0.25; g.add(found)
+      // Corner pillars
+      for (const [px, pz] of [[-3.5, -2.5], [3.5, -2.5], [-3.5, 2.5], [3.5, 2.5]] as [number, number][]) {
+        const pil = new THREE.Mesh(new THREE.BoxGeometry(0.8, 4, 0.8), darkGray)
+        pil.position.set(px, 2.5, pz); g.add(pil)
+      }
+      // Partial roof (half collapsed)
+      const roof = new THREE.Mesh(new THREE.BoxGeometry(4, 0.4, 6), gray)
+      roof.position.set(-2, 4.5, 0); g.add(roof)
+      // Rubble (collapsed side)
+      for (let i = 0; i < 3; i++) {
+        const rb = new THREE.Mesh(new THREE.BoxGeometry(rng.range(0.5, 1.5), rng.range(0.3, 0.8), rng.range(0.5, 1.5)), gray)
+        rb.position.set(rng.range(1, 3.5), 0.5 + rng.range(0, 0.5), rng.range(-2, 2))
+        rb.rotation.set(rng.range(-0.3, 0.3), rng.range(0, 1), rng.range(-0.3, 0.3)); g.add(rb)
+      }
+      // Entry gap
+      const entry = new THREE.Mesh(new THREE.BoxGeometry(2, 2.5, 0.6), darkGray)
+      entry.position.set(0, 1.75, 3); g.add(entry)
+      this.group.add(g); this.extras.push(g)
+      this.addWalkable(lx, lz, 4, 3, h + 0.5)
+      this.addWalkable(lx - 2, lz, 2, 3, h + 4.7)
+    }
+  }
+
+  // ── Ash Pyres ──────────────────────────────────────────────────────────
+
+  private buildAshPyres(rng: SeededRandom, biomeMap: BiomeMap) {
+    if (!this.heightGrid) return
+    const step = 22; const cols = Math.floor(CHUNK_SIZE / step); const rows = cols
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+      if (rng.next() > 0.09) continue
+      const lx = (c + 0.5) * step + rng.range(-4, 4)
+      const lz = (r + 0.5) * step + rng.range(-4, 4)
+      const h = sampleHeight(this.heightGrid!, lx, lz)
+      if (h < WATER_LEVEL + 1) continue
+      const biome = biomeMap.getBiomeAt(this.cx * CHUNK_SIZE + lx, this.cz * CHUNK_SIZE + lz)
+      if (biome !== BiomeType.AshWastes) continue
+
+      const g = new THREE.Group(); g.position.set(lx, h, lz)
+      const stone = this.matCache.getLambert(0x303030)
+      const charred = this.matCache.getLambert(0x1a1a1a)
+      const embers = new THREE.MeshBasicMaterial({ color: 0xff2200 })
+      // Platform
+      const plat = new THREE.Mesh(new THREE.BoxGeometry(4, 0.5, 4), stone)
+      plat.position.y = 0.25; g.add(plat)
+      // Crossed wood
+      for (let i = 0; i < 4 + rng.int(0, 1); i++) {
+        const log = new THREE.Mesh(new THREE.BoxGeometry(rng.range(2, 3.5), 0.3, 0.3), charred)
+        log.position.set(rng.range(-1, 1), 0.7 + i * 0.2, rng.range(-0.5, 0.5))
+        log.rotation.y = rng.range(-0.8, 0.8); g.add(log)
+      }
+      // Coal center
+      const coal = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.2, 1.5), embers)
+      coal.position.y = 0.6; g.add(coal)
+      // Torch posts
+      for (const sx of [-2.5, 2.5]) {
+        const torch = new THREE.Mesh(new THREE.BoxGeometry(0.2, 2.5, 0.2), charred)
+        torch.position.set(sx, 1.25, 0); g.add(torch)
+      }
+      this.group.add(g); this.extras.push(g)
+      this.addWalkable(lx, lz, 2, 2, h + 0.5)
+    }
+  }
+
+  // ── Mushroom Altars ──────────────────────────────────────────────────────
+
+  private buildMushroomAltars(rng: SeededRandom, biomeMap: BiomeMap) {
+    if (!this.heightGrid) return
+    const step = 24; const cols = Math.floor(CHUNK_SIZE / step); const rows = cols
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+      if (rng.next() > 0.08) continue
+      const lx = (c + 0.5) * step + rng.range(-4, 4)
+      const lz = (r + 0.5) * step + rng.range(-4, 4)
+      const h = sampleHeight(this.heightGrid!, lx, lz)
+      if (h < WATER_LEVEL + 1) continue
+      const biome = biomeMap.getBiomeAt(this.cx * CHUNK_SIZE + lx, this.cz * CHUNK_SIZE + lz)
+      if (biome !== BiomeType.Mushroom) continue
+
+      const g = new THREE.Group(); g.position.set(lx, h, lz)
+      const stem = this.matCache.getLambert(0x6090b0)
+      const cap = this.matCache.getLambert(0x7030a0)
+      const glow = new THREE.MeshBasicMaterial({ color: 0xff80ff })
+      // Central stump
+      const stump = new THREE.Mesh(new THREE.BoxGeometry(3, 2, 3), stem)
+      stump.position.y = 1; g.add(stump)
+      // Mushroom ring
+      const ringCount = 4 + rng.int(0, 2)
+      const ringR = 4
+      for (let i = 0; i < ringCount; i++) {
+        const angle = (i / ringCount) * Math.PI * 2
+        // Stem
+        const ms = new THREE.Mesh(new THREE.BoxGeometry(0.4, 1.5, 0.4), stem)
+        ms.position.set(Math.cos(angle) * ringR, 0.75, Math.sin(angle) * ringR); g.add(ms)
+        // Cap plate
+        const mc = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.3, 1.5), cap)
+        mc.position.set(Math.cos(angle) * ringR, 1.65, Math.sin(angle) * ringR); g.add(mc)
+      }
+      // Glowing center
+      const glowMesh = new THREE.Mesh(new THREE.BoxGeometry(1, 0.15, 1), glow)
+      glowMesh.position.y = 2.1; g.add(glowMesh)
+      this.group.add(g); this.extras.push(g)
+      this.addWalkable(lx, lz, 1.5, 1.5, h + 2)
+    }
+  }
+
+  // ── Mushroom Hollow Logs ──────────────────────────────────────────────
+
+  private buildMushroomHollowLogs(rng: SeededRandom, biomeMap: BiomeMap) {
+    if (!this.heightGrid) return
+    const step = 22; const cols = Math.floor(CHUNK_SIZE / step); const rows = cols
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+      if (rng.next() > 0.09) continue
+      const lx = (c + 0.5) * step + rng.range(-4, 4)
+      const lz = (r + 0.5) * step + rng.range(-4, 4)
+      const h = sampleHeight(this.heightGrid!, lx, lz)
+      if (h < WATER_LEVEL + 1) continue
+      const biome = biomeMap.getBiomeAt(this.cx * CHUNK_SIZE + lx, this.cz * CHUNK_SIZE + lz)
+      if (biome !== BiomeType.Mushroom) continue
+
+      const g = new THREE.Group(); g.position.set(lx, h, lz)
+      const logColor = this.matCache.getLambert(0x6090b0)
+      const interior = this.matCache.getLambert(0x405870)
+      const capColor = this.matCache.getLambert(0x7030a0)
+      const ry = rng.range(0, Math.PI)
+      // Outer log
+      const outer = new THREE.Mesh(new THREE.BoxGeometry(8, 3, 3), logColor)
+      outer.position.y = 1.5; outer.rotation.y = ry; g.add(outer)
+      // Interior hollow
+      const inner = new THREE.Mesh(new THREE.BoxGeometry(7, 2, 2), interior)
+      inner.position.y = 1.3; inner.rotation.y = ry; g.add(inner)
+      // Mushroom growths on top
+      for (let i = 0; i < 3 + rng.int(0, 1); i++) {
+        const mx = rng.range(-3, 3)
+        const ms = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.8, 0.4), logColor)
+        ms.position.set(Math.cos(ry) * mx, 3.2, Math.sin(ry) * mx); g.add(ms)
+        const mc = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.25, 1.2), capColor)
+        mc.position.set(Math.cos(ry) * mx, 3.7, Math.sin(ry) * mx); g.add(mc)
+      }
+      this.group.add(g); this.extras.push(g)
+      this.addWalkable(lx, lz, 4, 1.5, h + 3)
+    }
+  }
+
+  // ── Merge static structures into fewer draw calls ─────────────────────────
+
+  private mergeStructures() {
+    if (this.extras.length === 0) return
+
+    // Build set of explodable groups (these must stay separate for animation)
+    const explodableSet = new Set<THREE.Object3D>(this.explodables.map(e => e.group))
+
+    // Force matrix updates
+    this.group.updateMatrixWorld(true)
+    const chunkInverse = new THREE.Matrix4().copy(this.group.matrixWorld).invert()
+    const relMatrix = new THREE.Matrix4()
+
+    // Bucket geometries by material reference
+    const buckets = new Map<THREE.Material, THREE.BufferGeometry[]>()
+    const keptExtras: THREE.Object3D[] = []
+    const removedExtras: THREE.Object3D[] = []
+
+    for (const obj of this.extras) {
+      if (explodableSet.has(obj)) {
+        keptExtras.push(obj)
+        continue
+      }
+
+      let hasMeshes = false
+      obj.traverse(child => {
+        if (!(child instanceof THREE.Mesh)) return
+        hasMeshes = true
+        child.updateMatrixWorld(true)
+        relMatrix.multiplyMatrices(chunkInverse, child.matrixWorld)
+        const geoClone = child.geometry.clone()
+        geoClone.applyMatrix4(relMatrix)
+
+        const mat = child.material as THREE.Material
+        let bucket = buckets.get(mat)
+        if (!bucket) { bucket = []; buckets.set(mat, bucket) }
+        bucket.push(geoClone)
+      })
+
+      if (hasMeshes) {
+        removedExtras.push(obj)
+      } else {
+        keptExtras.push(obj)
+      }
+    }
+
+    // Merge each bucket and create a single mesh
+    for (const [mat, geos] of buckets) {
+      if (geos.length === 0) continue
+      const merged = mergeGeometries(geos, false)
+      if (merged) {
+        const mesh = new THREE.Mesh(merged, mat)
+        this.group.add(mesh)
+        this.mergedMeshes.push(mesh)
+      }
+      // Dispose temporary cloned geometries
+      for (const g of geos) g.dispose()
+    }
+
+    // Remove original structure groups from scene (geometries were cloned so dispose originals)
+    for (const obj of removedExtras) {
+      this.group.remove(obj)
+      obj.traverse(child => {
+        if (child instanceof THREE.Mesh) child.geometry.dispose()
+      })
+    }
+
+    this.extras = keptExtras
+  }
+
   // ── Sprites ───────────────────────────────────────────────────────────────
 
   private placeSprites(rng: SeededRandom, biomeMap: BiomeMap, atlas: SpriteAtlas, lightPool: PointLightPool) {
@@ -1131,6 +2062,10 @@ export class Chunk {
     const { gridStep, spawnDensity, positionJitter, globalScaleMultiplier, heightOffset } = SPRITE_CONFIG
     const cols = Math.floor(CHUNK_SIZE / gridStep)
     const rows = Math.floor(CHUNK_SIZE / gridStep)
+
+    // Collect sprites by texture key for batching (Phase 2)
+    const billboardGroups = new Map<THREE.CanvasTexture, { x: number; y: number; z: number; scale: number }[]>()
+    const decalGroups = new Map<THREE.CanvasTexture, { x: number; y: number; z: number; scale: number }[]>()
 
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
@@ -1156,11 +2091,17 @@ export class Chunk {
         const scale   = rng.range(chosen.minScale, chosen.maxScale) * globalScaleMultiplier
         const variant = rng.int(0, VARIANTS - 1)
         const tex     = atlas.getTexture(biome, chosen.category as SpriteCategory, variant)
-        const pos     = new THREE.Vector3(lx, height + heightOffset, lz)
+        const entry   = { x: lx, y: height + heightOffset, z: lz, scale }
 
-        const obj = chosen.isBillboard ? createBillboard(tex, scale, pos) : createGroundDecal(tex, scale, pos)
-        this.group.add(obj)
-        this.sprites.push(obj)
+        if (chosen.isBillboard) {
+          let arr = billboardGroups.get(tex)
+          if (!arr) { arr = []; billboardGroups.set(tex, arr) }
+          arr.push(entry)
+        } else {
+          let arr = decalGroups.get(tex)
+          if (!arr) { arr = []; decalGroups.set(tex, arr) }
+          arr.push(entry)
+        }
 
         if (config.hasPointLights && rng.next() < 0.08) {
           const light = lightPool.acquire()
@@ -1171,6 +2112,18 @@ export class Chunk {
           }
         }
       }
+    }
+
+    // Create instanced batches
+    for (const [tex, sprites] of billboardGroups) {
+      const batch = new BillboardBatch(tex, sprites, true)
+      this.group.add(batch.mesh)
+      this.billboardBatches.push(batch)
+    }
+    for (const [tex, sprites] of decalGroups) {
+      const batch = new BillboardBatch(tex, sprites, false)
+      this.group.add(batch.mesh)
+      this.decalBatches.push(batch)
     }
   }
 
@@ -1200,10 +2153,28 @@ export class Chunk {
     return this.heightGrid ? sampleHeight(this.heightGrid, lx, lz) : 0
   }
 
-  update(delta: number) {
+  update(delta: number, cameraX?: number, cameraZ?: number) {
     this.time += delta
     for (const ps of this.particleSystems) ps.update(delta, this.time)
     for (const ex of this.explodables) ex.update(delta, this.rngForExplode)
+
+    // Billboard batches face camera (Phase 2)
+    if (cameraX !== undefined && cameraZ !== undefined && this.billboardBatches.length > 0) {
+      // Convert camera world pos to chunk-local
+      const localCamX = cameraX - this.cx * CHUNK_SIZE
+      const localCamZ = cameraZ - this.cz * CHUNK_SIZE
+      const chunkCenterX = CHUNK_SIZE * 0.5
+      const chunkCenterZ = CHUNK_SIZE * 0.5
+
+      // Skip billboard updates for distant chunks (they barely rotate)
+      const dxC = localCamX - chunkCenterX
+      const dzC = localCamZ - chunkCenterZ
+      if (dxC * dxC + dzC * dzC < (CHUNK_SIZE * 3) * (CHUNK_SIZE * 3)) {
+        for (const batch of this.billboardBatches) {
+          batch.updateBillboard(localCamX, localCamZ, chunkCenterX, chunkCenterZ)
+        }
+      }
+    }
   }
 
   dispose(scene: THREE.Scene, lightPool: PointLightPool) {
@@ -1212,17 +2183,21 @@ export class Chunk {
       this.terrainMesh.geometry.dispose()
       ;(this.terrainMesh.material as THREE.Material).dispose()
     }
-    for (const obj of [...this.sprites, ...this.extras]) {
+    // Dispose remaining structure extras (geometry only — materials are cached)
+    for (const obj of this.extras) {
       obj.traverse(child => {
-        if (child instanceof THREE.Mesh) {
-          child.geometry.dispose()
-          ;(child.material as THREE.Material).dispose()
-        }
+        if (child instanceof THREE.Mesh) child.geometry.dispose()
       })
     }
+    // Dispose merged structure meshes (geometry only — materials are cached)
+    for (const mesh of this.mergedMeshes) mesh.geometry.dispose()
+    // Dispose billboard batches (Phase 2)
+    for (const batch of this.billboardBatches) batch.dispose()
+    for (const batch of this.decalBatches) batch.dispose()
     for (const ps of this.particleSystems) ps.dispose()
     for (const light of this.pointLights) lightPool.release(light)
-    this.sprites = []; this.extras = []
+    this.billboardBatches = []; this.decalBatches = []
+    this.extras = []; this.mergedMeshes = []
     this.particleSystems = []; this.pointLights = []
     this.walkableSurfaces = []; this.explodables = []
     this.heightGrid = null

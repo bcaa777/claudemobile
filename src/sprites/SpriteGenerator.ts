@@ -854,59 +854,934 @@ const drawGrass: DrawFn = (ctx, rng, pal) => {
   }
 }
 
+// ── Forest extras ─────────────────────────────────────────────────────────
+
+const drawForestFern: DrawFn = (ctx, rng, pal) => {
+  const cx = SPRITE_SIZE / 2
+  const baseY = SPRITE_SIZE - 4
+  const fronds = 3 + rng.int(0, 1)
+  for (let i = 0; i < fronds; i++) {
+    const angle = -Math.PI * 0.3 + (i / (fronds - 1)) * Math.PI * 0.6
+    const len = 20 + rng.range(0, 10)
+    ctx.fillStyle = pal[Math.floor(rng.range(0, 3))] || '#1a4010'
+    for (let t = 0; t < 1; t += 0.08) {
+      const x = cx + Math.sin(angle) * len * t
+      const y = baseY - Math.cos(angle) * len * t - t * t * 6
+      const w = 4 * (1 - t * 0.6)
+      ctx.fillRect(x - w / 2, y, w, 3)
+    }
+  }
+}
+
+const drawForestMushroom: DrawFn = (ctx, rng, _pal) => {
+  const cx = SPRITE_SIZE / 2
+  const baseY = SPRITE_SIZE - 4
+  const count = 2 + rng.int(0, 1)
+  for (let i = 0; i < count; i++) {
+    const mx = cx + rng.range(-14, 14)
+    const h = 8 + rng.range(0, 6)
+    // stem
+    ctx.fillStyle = '#5a3010'
+    ctx.fillRect(mx - 2, baseY - h, 4, h)
+    // cap
+    ctx.fillStyle = '#c03020'
+    ctx.beginPath()
+    ctx.ellipse(mx, baseY - h, 6 + rng.range(0, 3), 4, 0, Math.PI, 0)
+    ctx.fill()
+    // spots
+    ctx.fillStyle = '#f0e0c0'
+    ctx.fillRect(mx - 2, baseY - h - 2, 2, 2)
+    ctx.fillRect(mx + 2, baseY - h - 1, 2, 2)
+  }
+}
+
+const drawForestStump: DrawFn = (ctx, rng, _pal) => {
+  const cx = SPRITE_SIZE / 2
+  const baseY = SPRITE_SIZE - 4
+  const w = 18 + rng.range(0, 6)
+  const h = 14 + rng.range(0, 4)
+  // stump body
+  ctx.fillStyle = '#5a3010'
+  ctx.fillRect(cx - w / 2, baseY - h, w, h)
+  // bark dark edge
+  ctx.fillStyle = '#3a2008'
+  ctx.fillRect(cx - w / 2, baseY - h, 3, h)
+  ctx.fillRect(cx + w / 2 - 3, baseY - h, 3, h)
+  // top face
+  ctx.fillStyle = '#7a5030'
+  ctx.fillRect(cx - w / 2, baseY - h, w, 4)
+  // ring detail
+  ctx.fillStyle = '#4a2810'
+  ctx.beginPath()
+  ctx.ellipse(cx, baseY - h + 2, w * 0.3, 2, 0, 0, Math.PI * 2)
+  ctx.stroke()
+}
+
+const drawForestFallenLog: DrawFn = (ctx, rng, _pal) => {
+  const cx = SPRITE_SIZE / 2
+  const cy = SPRITE_SIZE * 0.6
+  const logW = 28 + rng.range(0, 8)
+  const logH = 8 + rng.range(0, 3)
+  // main log
+  ctx.fillStyle = '#5a3010'
+  ctx.fillRect(cx - logW / 2, cy - logH / 2, logW, logH)
+  // bark shadow
+  ctx.fillStyle = '#3a2008'
+  ctx.fillRect(cx - logW / 2, cy + logH / 2 - 2, logW, 2)
+  // moss patches
+  ctx.fillStyle = '#2a5a10'
+  for (let i = 0; i < 4; i++) {
+    const mx = cx + rng.range(-logW * 0.4, logW * 0.4)
+    const mw = 4 + rng.range(0, 4)
+    ctx.fillRect(mx - mw / 2, cy - logH / 2 - 1, mw, 3)
+  }
+}
+
+// ── Desert extras ─────────────────────────────────────────────────────────
+
+const drawDesertBarrelCactus: DrawFn = (ctx, rng, _pal) => {
+  const cx = SPRITE_SIZE / 2
+  const baseY = SPRITE_SIZE - 4
+  const w = 14 + rng.range(0, 4)
+  const h = 16 + rng.range(0, 4)
+  // round body
+  ctx.fillStyle = '#3a6020'
+  ctx.beginPath()
+  ctx.ellipse(cx, baseY - h / 2, w / 2, h / 2, 0, 0, Math.PI * 2)
+  ctx.fill()
+  // vertical ridges
+  ctx.fillStyle = '#2a4a14'
+  for (let i = -2; i <= 2; i++) {
+    const rx = cx + i * 3
+    ctx.fillRect(rx, baseY - h + 2, 1, h - 4)
+  }
+  // pink flower on top
+  ctx.fillStyle = '#e060a0'
+  ctx.beginPath()
+  ctx.arc(cx, baseY - h + 2, 4, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.fillStyle = '#f0a0c0'
+  ctx.fillRect(cx - 1, baseY - h, 2, 2)
+}
+
+const drawDesertSkull: DrawFn = (ctx, rng, _pal) => {
+  const cx = SPRITE_SIZE / 2
+  const cy = SPRITE_SIZE * 0.55
+  // skull shape
+  ctx.fillStyle = '#d8d0b0'
+  ctx.beginPath()
+  ctx.ellipse(cx, cy, 12, 10, 0, 0, Math.PI * 2)
+  ctx.fill()
+  // jaw
+  ctx.fillRect(cx - 6, cy + 6, 12, 5)
+  // eye sockets
+  ctx.fillStyle = '#1a1008'
+  ctx.beginPath()
+  ctx.ellipse(cx - 4, cy - 2, 3, 4, 0, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.beginPath()
+  ctx.ellipse(cx + 4, cy - 2, 3, 4, 0, 0, Math.PI * 2)
+  ctx.fill()
+  // nose hole
+  ctx.fillRect(cx - 1, cy + 3, 2, 2)
+  // horns
+  ctx.fillStyle = '#b0a890'
+  pixLine(ctx, cx - 10, cy - 6, cx - 20, cy - 16 + rng.range(0, 4), 2)
+  pixLine(ctx, cx + 10, cy - 6, cx + 20, cy - 16 + rng.range(0, 4), 2)
+}
+
+const drawDesertDryBush: DrawFn = (ctx, rng, _pal) => {
+  const cx = SPRITE_SIZE / 2
+  const cy = SPRITE_SIZE * 0.55
+  const r = 14 + rng.range(0, 4)
+  // circular tangle of dry brown lines
+  ctx.fillStyle = '#8a6a30'
+  for (let i = 0; i < 20; i++) {
+    const a1 = rng.range(0, Math.PI * 2)
+    const a2 = a1 + rng.range(0.5, 2)
+    const r1 = rng.range(2, r)
+    const r2 = rng.range(2, r)
+    pixLine(ctx,
+      cx + Math.cos(a1) * r1, cy + Math.sin(a1) * r1,
+      cx + Math.cos(a2) * r2, cy + Math.sin(a2) * r2, 1)
+  }
+}
+
+const drawDesertBones: DrawFn = (ctx, rng, _pal) => {
+  const cx = SPRITE_SIZE / 2
+  const cy = SPRITE_SIZE * 0.6
+  ctx.fillStyle = '#d8d0b0'
+  for (let i = 0; i < 6; i++) {
+    const bx = cx + rng.range(-16, 16)
+    const by = cy + rng.range(-8, 8)
+    const angle = rng.range(0, Math.PI)
+    const len = 6 + rng.range(0, 8)
+    pixLine(ctx,
+      bx - Math.cos(angle) * len / 2, by - Math.sin(angle) * len / 2,
+      bx + Math.cos(angle) * len / 2, by + Math.sin(angle) * len / 2, 2)
+    // knob ends
+    ctx.fillRect(bx - Math.cos(angle) * len / 2 - 1, by - Math.sin(angle) * len / 2 - 1, 3, 3)
+    ctx.fillRect(bx + Math.cos(angle) * len / 2 - 1, by + Math.sin(angle) * len / 2 - 1, 3, 3)
+  }
+}
+
+// ── Volcanic extras ───────────────────────────────────────────────────────
+
+const drawVolcanicBoneSpire: DrawFn = (ctx, rng, _pal) => {
+  const cx = SPRITE_SIZE / 2
+  const baseY = SPRITE_SIZE - 4
+  const h = 36 + rng.range(0, 10)
+  // twisted obsidian spire
+  ctx.fillStyle = '#1a0a04'
+  ctx.beginPath()
+  ctx.moveTo(cx - 6, baseY)
+  ctx.lineTo(cx + 6, baseY)
+  ctx.lineTo(cx + 2 + rng.range(-2, 2), baseY - h)
+  ctx.lineTo(cx - 2 + rng.range(-2, 2), baseY - h)
+  ctx.closePath()
+  ctx.fill()
+  // lava crack lines
+  ctx.fillStyle = '#ff4400'
+  pixLine(ctx, cx - 3, baseY - h * 0.2, cx + 2, baseY - h * 0.45, 1)
+  pixLine(ctx, cx + 1, baseY - h * 0.5, cx - 2, baseY - h * 0.7, 1)
+  pixLine(ctx, cx, baseY - h * 0.75, cx + 1, baseY - h * 0.9, 1)
+}
+
+const drawVolcanicEmberBush: DrawFn = (ctx, rng, _pal) => {
+  const cx = SPRITE_SIZE / 2
+  const cy = SPRITE_SIZE * 0.55
+  const r = 14 + rng.range(0, 4)
+  // dark bush shape
+  ctx.fillStyle = '#1a0808'
+  ctx.beginPath()
+  ctx.ellipse(cx, cy, r, r * 0.7, 0, 0, Math.PI * 2)
+  ctx.fill()
+  // glowing ember dots on edges
+  ctx.fillStyle = '#ff6600'
+  for (let i = 0; i < 10; i++) {
+    const a = rng.range(0, Math.PI * 2)
+    const d = r * rng.range(0.6, 1.0)
+    ctx.fillRect(cx + Math.cos(a) * d - 1, cy + Math.sin(a) * d * 0.7 - 1, 3, 3)
+  }
+}
+
+const drawVolcanicLavaRock: DrawFn = (ctx, rng, _pal) => {
+  const cx = SPRITE_SIZE / 2
+  const cy = SPRITE_SIZE * 0.58
+  const rx = 16 + rng.range(0, 6)
+  const ry = 10 + rng.range(0, 4)
+  // dark rock
+  ctx.fillStyle = '#2a1008'
+  ctx.beginPath()
+  const sides = 6 + rng.int(0, 2)
+  for (let i = 0; i < sides; i++) {
+    const angle = (i / sides) * Math.PI * 2
+    const x = cx + Math.cos(angle) * rx * (1 + rng.range(-0.15, 0.15))
+    const y = cy + Math.sin(angle) * ry * (1 + rng.range(-0.15, 0.15))
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y)
+  }
+  ctx.closePath()
+  ctx.fill()
+  // bright orange-red crack lines
+  ctx.fillStyle = '#ff4400'
+  for (let i = 0; i < 4; i++) {
+    const x1 = cx + rng.range(-rx * 0.7, rx * 0.7)
+    const y1 = cy + rng.range(-ry * 0.5, ry * 0.5)
+    const x2 = cx + rng.range(-rx * 0.7, rx * 0.7)
+    const y2 = cy + rng.range(-ry * 0.5, ry * 0.5)
+    pixLine(ctx, x1, y1, x2, y2, 1)
+  }
+}
+
+const drawVolcanicScorchMark: DrawFn = (ctx, _rng, _pal) => {
+  const cx = SPRITE_SIZE / 2
+  const cy = SPRITE_SIZE * 0.6
+  // outer edge
+  ctx.fillStyle = '#1a0808'
+  ctx.beginPath()
+  ctx.ellipse(cx, cy, 18, 10, 0, 0, Math.PI * 2)
+  ctx.fill()
+  // dark center
+  ctx.fillStyle = '#0a0404'
+  ctx.beginPath()
+  ctx.ellipse(cx, cy, 10, 6, 0, 0, Math.PI * 2)
+  ctx.fill()
+}
+
+// ── Snow extras ───────────────────────────────────────────────────────────
+
+const drawSnowBareTree: DrawFn = (ctx, rng, _pal) => {
+  const cx = SPRITE_SIZE / 2
+  const baseY = SPRITE_SIZE - 4
+  const trunkH = 34 + rng.range(0, 8)
+  // trunk
+  ctx.fillStyle = '#6a5a4a'
+  ctx.fillRect(cx - 3, baseY - trunkH, 6, trunkH)
+  // branches
+  const branches: [number, number, number, number][] = [
+    [cx, baseY - trunkH * 0.7, cx - 16, baseY - trunkH * 0.85],
+    [cx, baseY - trunkH * 0.7, cx + 14, baseY - trunkH * 0.9],
+    [cx, baseY - trunkH * 0.5, cx - 12, baseY - trunkH * 0.6],
+    [cx, baseY - trunkH * 0.5, cx + 10, baseY - trunkH * 0.55],
+  ]
+  ctx.fillStyle = '#6a5a4a'
+  for (const [x1, y1, x2, y2] of branches) {
+    pixLine(ctx, x1, y1, x2, y2, 2)
+  }
+  // snow blobs at branch intersections
+  ctx.fillStyle = '#e8eeff'
+  for (const [, , x2, y2] of branches) {
+    ctx.beginPath()
+    ctx.arc(x2, y2 - 2, 4 + rng.range(0, 2), 0, Math.PI * 2)
+    ctx.fill()
+  }
+}
+
+const drawSnowIceBush: DrawFn = (ctx, rng, _pal) => {
+  const cx = SPRITE_SIZE / 2
+  const cy = SPRITE_SIZE * 0.5
+  const r = 14 + rng.range(0, 4)
+  // frozen bush body
+  ctx.fillStyle = '#7888a0'
+  ctx.beginPath()
+  ctx.ellipse(cx, cy, r, r * 0.7, 0, 0, Math.PI * 2)
+  ctx.fill()
+  // icicle triangles hanging below
+  ctx.fillStyle = '#c0d8f0'
+  for (let i = 0; i < 5; i++) {
+    const ix = cx + rng.range(-r * 0.7, r * 0.7)
+    const iy = cy + r * 0.5
+    ctx.beginPath()
+    ctx.moveTo(ix - 2, iy)
+    ctx.lineTo(ix + 2, iy)
+    ctx.lineTo(ix, iy + 6 + rng.range(0, 4))
+    ctx.closePath()
+    ctx.fill()
+  }
+}
+
+const drawSnowDrift: DrawFn = (ctx, rng, _pal) => {
+  const cx = SPRITE_SIZE / 2
+  const baseY = SPRITE_SIZE * 0.7
+  const w = 24 + rng.range(0, 8)
+  // main mound
+  ctx.fillStyle = '#e0e8f8'
+  ctx.beginPath()
+  ctx.ellipse(cx, baseY, w, 8, 0, Math.PI, 0)
+  ctx.fill()
+  // subtle blue shadow
+  ctx.fillStyle = '#a0b0c8'
+  ctx.beginPath()
+  ctx.ellipse(cx + 4, baseY, w * 0.5, 4, 0, Math.PI, 0)
+  ctx.fill()
+}
+
+const drawSnowFrozenFlower: DrawFn = (ctx, rng, _pal) => {
+  const cx = SPRITE_SIZE / 2
+  const baseY = SPRITE_SIZE - 4
+  // short stem
+  ctx.fillStyle = '#7888a0'
+  ctx.fillRect(cx - 1, baseY - 14, 2, 14)
+  // 6-pointed ice crystal star
+  ctx.fillStyle = '#c0e0ff'
+  const starY = baseY - 16
+  const starR = 5 + rng.range(0, 2)
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2 - Math.PI / 2
+    const ex = cx + Math.cos(a) * starR
+    const ey = starY + Math.sin(a) * starR
+    pixLine(ctx, cx, starY, ex, ey, 2)
+  }
+  // center dot
+  ctx.fillRect(cx - 1, starY - 1, 3, 3)
+}
+
+// ── Tundra (arctic steppe) ────────────────────────────────────────────────
+
+const drawTundraShrub: DrawFn = (ctx, rng, _pal) => {
+  const cx = SPRITE_SIZE / 2
+  const baseY = SPRITE_SIZE - 4
+  // stunted wind-bent shrub, leaning right
+  ctx.fillStyle = '#5a6050'
+  const stemH = 20
+  pixLine(ctx, cx - 4, baseY, cx + 6, baseY - stemH, 2)
+  // small branches blown right
+  pixLine(ctx, cx + 2, baseY - stemH * 0.6, cx + 14, baseY - stemH * 0.7, 1)
+  pixLine(ctx, cx + 4, baseY - stemH * 0.8, cx + 12, baseY - stemH * 0.95, 1)
+  // sparse leaf blobs
+  ctx.fillStyle = '#4a5440'
+  for (let i = 0; i < 3; i++) {
+    const lx = cx + 6 + rng.range(0, 10)
+    const ly = baseY - stemH * 0.5 - rng.range(0, stemH * 0.4)
+    ctx.beginPath()
+    ctx.ellipse(lx, ly, 4, 3, 0, 0, Math.PI * 2)
+    ctx.fill()
+  }
+}
+
+const drawTundraLichen: DrawFn = (ctx, rng, _pal) => {
+  const cx = SPRITE_SIZE / 2
+  const cy = SPRITE_SIZE * 0.65
+  // flat circular lichen patches on ground
+  const patches = 3 + rng.int(0, 2)
+  for (let i = 0; i < patches; i++) {
+    const px = cx + rng.range(-12, 12)
+    const py = cy + rng.range(-4, 4)
+    const r = 4 + rng.range(0, 4)
+    ctx.fillStyle = rng.next() > 0.5 ? '#8a8040' : '#7a6a40'
+    ctx.beginPath()
+    ctx.ellipse(px, py, r, r * 0.5, 0, 0, Math.PI * 2)
+    ctx.fill()
+  }
+}
+
+const drawTundraDryGrass: DrawFn = (ctx, rng, _pal) => {
+  const cx = SPRITE_SIZE / 2
+  const baseY = SPRITE_SIZE - 4
+  const blades = 5 + rng.int(0, 2)
+  ctx.fillStyle = '#8a7a50'
+  for (let i = 0; i < blades; i++) {
+    const bx = cx + rng.range(-12, 12)
+    const h = 8 + rng.range(0, 8)
+    const lean = rng.range(-2, 2)
+    pixLine(ctx, bx, baseY, bx + lean, baseY - h, 2)
+  }
+}
+
+const drawTundraStandingStone: DrawFn = (ctx, rng, _pal) => {
+  const cx = SPRITE_SIZE / 2
+  const baseY = SPRITE_SIZE - 4
+  const h = 38 + rng.range(0, 8)
+  const w = 10 + rng.range(0, 4)
+  const tilt = rng.range(-3, 3)
+  // tall narrow gray monolith
+  ctx.fillStyle = '#606070'
+  ctx.beginPath()
+  ctx.moveTo(cx - w / 2, baseY)
+  ctx.lineTo(cx + w / 2, baseY)
+  ctx.lineTo(cx + w / 2 * 0.6 + tilt, baseY - h)
+  ctx.lineTo(cx - w / 2 * 0.6 + tilt, baseY - h)
+  ctx.closePath()
+  ctx.fill()
+  // rune scratch line
+  ctx.fillStyle = '#808890'
+  pixLine(ctx, cx + tilt * 0.5 - 2, baseY - h * 0.3, cx + tilt * 0.5 + 2, baseY - h * 0.6, 1)
+  pixLine(ctx, cx + tilt * 0.5, baseY - h * 0.4, cx + tilt * 0.5 + 3, baseY - h * 0.45, 1)
+}
+
+const drawTundraSkull: DrawFn = (ctx, rng, _pal) => {
+  const cx = SPRITE_SIZE / 2
+  const cy = SPRITE_SIZE * 0.55
+  // weathered gray skull
+  ctx.fillStyle = '#909090'
+  ctx.beginPath()
+  ctx.ellipse(cx, cy, 10, 8, 0, 0, Math.PI * 2)
+  ctx.fill()
+  // jaw
+  ctx.fillRect(cx - 5, cy + 5, 10, 4)
+  // dark eye sockets
+  ctx.fillStyle = '#303030'
+  ctx.fillRect(cx - 5, cy - 3, 4, 4)
+  ctx.fillRect(cx + 1, cy - 3, 4, 4)
+  // antler suggestions
+  ctx.fillStyle = '#787878'
+  pixLine(ctx, cx - 8, cy - 5, cx - 18, cy - 18, 2)
+  pixLine(ctx, cx - 18, cy - 18, cx - 22, cy - 14 + rng.range(0, 3), 1)
+  pixLine(ctx, cx + 8, cy - 5, cx + 18, cy - 18, 2)
+  pixLine(ctx, cx + 18, cy - 18, cx + 22, cy - 14 + rng.range(0, 3), 1)
+}
+
+// ── Swamp extras ──────────────────────────────────────────────────────────
+
+const drawSwampCattail: DrawFn = (ctx, rng, _pal) => {
+  const cx = SPRITE_SIZE / 2
+  const baseY = SPRITE_SIZE - 4
+  const count = 3 + rng.int(0, 1)
+  for (let i = 0; i < count; i++) {
+    const rx = cx + rng.range(-10, 10)
+    const h = 26 + rng.range(0, 10)
+    // thin green reed
+    ctx.fillStyle = '#2a4a10'
+    pixLine(ctx, rx, baseY, rx + rng.range(-2, 2), baseY - h, 2)
+    // brown oval seed head at top
+    ctx.fillStyle = '#5a3a10'
+    ctx.beginPath()
+    ctx.ellipse(rx, baseY - h - 3, 3, 5, 0, 0, Math.PI * 2)
+    ctx.fill()
+  }
+}
+
+const drawSwampMossyRock: DrawFn = (ctx, rng, _pal) => {
+  const cx = SPRITE_SIZE / 2
+  const cy = SPRITE_SIZE * 0.6
+  const rx = 16 + rng.range(0, 6)
+  const ry = 10 + rng.range(0, 4)
+  // dark rock
+  ctx.fillStyle = '#2a3020'
+  ctx.beginPath()
+  ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2)
+  ctx.fill()
+  // green moss patches
+  ctx.fillStyle = '#1a3a08'
+  for (let i = 0; i < 4; i++) {
+    const mx = cx + rng.range(-rx * 0.5, rx * 0.5)
+    const my = cy + rng.range(-ry * 0.4, ry * 0.4)
+    ctx.beginPath()
+    ctx.ellipse(mx, my, 5 + rng.range(0, 3), 3 + rng.range(0, 2), 0, 0, Math.PI * 2)
+    ctx.fill()
+  }
+  // dripping wisps
+  ctx.fillStyle = '#1a3a08'
+  for (let i = 0; i < 3; i++) {
+    const wx = cx + rng.range(-rx * 0.5, rx * 0.5)
+    const wy = cy + ry * 0.6
+    pixLine(ctx, wx, wy, wx + rng.range(-2, 2), wy + 4 + rng.range(0, 4), 1)
+  }
+}
+
+const drawSwampLantern: DrawFn = (ctx, rng, _pal) => {
+  const cx = SPRITE_SIZE / 2
+  const baseY = SPRITE_SIZE - 4
+  const postH = 30 + rng.range(0, 8)
+  // crooked brown post
+  ctx.fillStyle = '#3a2010'
+  pixLine(ctx, cx, baseY, cx + rng.range(-3, 3), baseY - postH, 3)
+  // curved tip
+  const tipX = cx + 8
+  const tipY = baseY - postH - 2
+  pixLine(ctx, cx, baseY - postH, tipX, tipY, 2)
+  // warm yellow lantern
+  ctx.fillStyle = '#ffcc44'
+  ctx.fillRect(tipX - 3, tipY, 6, 7)
+  // glow
+  ctx.fillStyle = 'rgba(255,204,68,0.2)'
+  ctx.beginPath()
+  ctx.arc(tipX, tipY + 3, 10, 0, Math.PI * 2)
+  ctx.fill()
+}
+
+// ── Savanna extras ────────────────────────────────────────────────────────
+
+const drawSavannaDeadTree: DrawFn = (ctx, rng, _pal) => {
+  const cx = SPRITE_SIZE / 2
+  const baseY = SPRITE_SIZE - 4
+  const trunkH = 36 + rng.range(0, 8)
+  // bleached trunk
+  ctx.fillStyle = '#c0b898'
+  ctx.fillRect(cx - 4, baseY - trunkH, 8, trunkH)
+  // bare twisted branches
+  const branches: [number, number, number, number][] = [
+    [cx, baseY - trunkH * 0.8, cx - 18, baseY - trunkH - 4],
+    [cx, baseY - trunkH * 0.8, cx + 16, baseY - trunkH - 2],
+    [cx, baseY - trunkH * 0.6, cx - 12, baseY - trunkH * 0.75],
+    [cx, baseY - trunkH * 0.6, cx + 14, baseY - trunkH * 0.7],
+  ]
+  ctx.fillStyle = '#b0a888'
+  for (const [x1, y1, x2, y2] of branches) {
+    pixLine(ctx, x1, y1, x2, y2, 2)
+  }
+}
+
+const drawSavannaTermiteMound: DrawFn = (ctx, rng, _pal) => {
+  const cx = SPRITE_SIZE / 2
+  const baseY = SPRITE_SIZE - 4
+  const h = 32 + rng.range(0, 10)
+  const baseW = 16 + rng.range(0, 4)
+  // tall tapering cone
+  ctx.fillStyle = '#8a6030'
+  ctx.beginPath()
+  ctx.moveTo(cx - baseW / 2, baseY)
+  ctx.lineTo(cx + baseW / 2, baseY)
+  ctx.lineTo(cx + 3, baseY - h)
+  ctx.lineTo(cx - 3, baseY - h)
+  ctx.closePath()
+  ctx.fill()
+  // small dark holes
+  ctx.fillStyle = '#3a2010'
+  for (let i = 0; i < 5; i++) {
+    const hx = cx + rng.range(-baseW * 0.3, baseW * 0.3)
+    const hy = baseY - rng.range(4, h - 4)
+    ctx.fillRect(hx - 1, hy - 1, 3, 2)
+  }
+}
+
+const drawSavannaDryBush: DrawFn = (ctx, rng, _pal) => {
+  const cx = SPRITE_SIZE / 2
+  const cy = SPRITE_SIZE * 0.55
+  const r = 12 + rng.range(0, 4)
+  // golden-brown scrubby bush
+  ctx.fillStyle = '#9a8040'
+  ctx.beginPath()
+  ctx.ellipse(cx, cy, r, r * 0.7, 0, 0, Math.PI * 2)
+  ctx.fill()
+  // darker patches
+  ctx.fillStyle = '#7a6030'
+  for (let i = 0; i < 3; i++) {
+    const px = cx + rng.range(-r * 0.4, r * 0.4)
+    const py = cy + rng.range(-r * 0.3, r * 0.3)
+    ctx.beginPath()
+    ctx.ellipse(px, py, 4, 3, 0, 0, Math.PI * 2)
+    ctx.fill()
+  }
+  // thorn spikes protruding
+  ctx.fillStyle = '#6a5020'
+  for (let i = 0; i < 6; i++) {
+    const a = rng.range(0, Math.PI * 2)
+    const sx = cx + Math.cos(a) * r
+    const sy = cy + Math.sin(a) * r * 0.7
+    pixLine(ctx, sx, sy, sx + Math.cos(a) * 5, sy + Math.sin(a) * 5 * 0.7, 1)
+  }
+}
+
+const drawSavannaWaypost: DrawFn = (ctx, rng, _pal) => {
+  const cx = SPRITE_SIZE / 2
+  const baseY = SPRITE_SIZE - 4
+  const postH = 34 + rng.range(0, 6)
+  // wooden post
+  ctx.fillStyle = '#5a3210'
+  ctx.fillRect(cx - 3, baseY - postH, 6, postH)
+  // horizontal plank sign near top
+  ctx.fillStyle = '#6a4220'
+  ctx.fillRect(cx - 12, baseY - postH + 4, 24, 8)
+  // dark line on sign
+  ctx.fillStyle = '#3a2008'
+  ctx.fillRect(cx - 10, baseY - postH + 7, 20, 1)
+}
+
+// ── Crystal extras ────────────────────────────────────────────────────────
+
+const drawCrystalCluster: DrawFn = (ctx, rng, _pal) => {
+  const cx = SPRITE_SIZE / 2
+  const baseY = SPRITE_SIZE - 4
+  const count = 4 + rng.int(0, 1)
+  for (let i = 0; i < count; i++) {
+    const sx = cx + rng.range(-12, 12)
+    const h = 12 + rng.range(0, 16)
+    const w = 4 + rng.range(0, 3)
+    // main facet
+    ctx.fillStyle = '#60b0e0'
+    ctx.beginPath()
+    ctx.moveTo(sx, baseY - h)
+    ctx.lineTo(sx + w / 2, baseY - h / 3)
+    ctx.lineTo(sx + w / 2 * 0.6, baseY)
+    ctx.lineTo(sx - w / 2 * 0.6, baseY)
+    ctx.lineTo(sx - w / 2, baseY - h / 3)
+    ctx.closePath()
+    ctx.fill()
+    // dark facet
+    ctx.fillStyle = '#104060'
+    ctx.beginPath()
+    ctx.moveTo(sx, baseY - h)
+    ctx.lineTo(sx - w / 2, baseY - h / 3)
+    ctx.lineTo(sx - w * 0.1, baseY - h * 0.6)
+    ctx.closePath()
+    ctx.fill()
+  }
+}
+
+const drawCrystalFlower: DrawFn = (ctx, rng, _pal) => {
+  const cx = SPRITE_SIZE / 2
+  const cy = SPRITE_SIZE * 0.45
+  // diamond-shaped crystal petals
+  ctx.fillStyle = '#4080c0'
+  const petalR = 8 + rng.range(0, 3)
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2
+    const px = cx + Math.cos(a) * petalR
+    const py = cy + Math.sin(a) * petalR
+    ctx.beginPath()
+    ctx.moveTo(px + Math.cos(a) * 4, py + Math.sin(a) * 4)
+    ctx.lineTo(px + Math.cos(a + Math.PI / 2) * 2, py + Math.sin(a + Math.PI / 2) * 2)
+    ctx.lineTo(px - Math.cos(a) * 4, py - Math.sin(a) * 4)
+    ctx.lineTo(px + Math.cos(a - Math.PI / 2) * 2, py + Math.sin(a - Math.PI / 2) * 2)
+    ctx.closePath()
+    ctx.fill()
+  }
+  // central dot
+  ctx.fillStyle = '#c0f0ff'
+  ctx.beginPath()
+  ctx.arc(cx, cy, 3, 0, Math.PI * 2)
+  ctx.fill()
+  // short stem
+  ctx.fillStyle = '#4080c0'
+  ctx.fillRect(cx - 1, cy + petalR + 4, 2, SPRITE_SIZE - cy - petalR - 8)
+}
+
+const drawCrystalShard: DrawFn = (ctx, rng, _pal) => {
+  const cx = SPRITE_SIZE / 2
+  const baseY = SPRITE_SIZE - 4
+  const h = 30 + rng.range(0, 10)
+  const w = 12 + rng.range(0, 4)
+  const tilt = rng.range(-4, 4)
+  // single large tilted crystal shard
+  // base facet
+  ctx.fillStyle = '#2860a0'
+  ctx.beginPath()
+  ctx.moveTo(cx + tilt, baseY - h)
+  ctx.lineTo(cx + w / 2, baseY - h / 3)
+  ctx.lineTo(cx + w / 2 * 0.6, baseY)
+  ctx.lineTo(cx - w / 2 * 0.6, baseY)
+  ctx.lineTo(cx - w / 2, baseY - h / 3)
+  ctx.closePath()
+  ctx.fill()
+  // bright highlight facet
+  ctx.fillStyle = '#c0f0ff'
+  ctx.beginPath()
+  ctx.moveTo(cx + tilt, baseY - h)
+  ctx.lineTo(cx + w / 2, baseY - h / 3)
+  ctx.lineTo(cx + w * 0.1, baseY - h * 0.6)
+  ctx.closePath()
+  ctx.fill()
+}
+
+const drawCrystalRuneStone: DrawFn = (ctx, rng, _pal) => {
+  const cx = SPRITE_SIZE / 2
+  const baseY = SPRITE_SIZE - 4
+  const h = 32 + rng.range(0, 8)
+  const w = 14 + rng.range(0, 4)
+  // standing crystal tablet
+  ctx.fillStyle = '#2860a0'
+  ctx.fillRect(cx - w / 2, baseY - h, w, h)
+  // bright cyan rune lines
+  ctx.fillStyle = '#60e0ff'
+  // vertical line
+  pixLine(ctx, cx, baseY - h + 6, cx, baseY - 6, 1)
+  // horizontal bars
+  pixLine(ctx, cx - w * 0.3, baseY - h * 0.7, cx + w * 0.3, baseY - h * 0.7, 1)
+  pixLine(ctx, cx - w * 0.25, baseY - h * 0.4, cx + w * 0.25, baseY - h * 0.4, 1)
+  // diagonal accents
+  pixLine(ctx, cx - w * 0.2, baseY - h * 0.55, cx + w * 0.2, baseY - h * 0.55, 1)
+}
+
+// ── AshWastes extras ──────────────────────────────────────────────────────
+
+const drawAshCharredTree: DrawFn = (ctx, rng, _pal) => {
+  const cx = SPRITE_SIZE / 2
+  const baseY = SPRITE_SIZE - 4
+  const trunkH = 34 + rng.range(0, 8)
+  // blackened splintered trunk
+  ctx.fillStyle = '#0a0a0a'
+  ctx.fillRect(cx - 4, baseY - trunkH, 8, trunkH)
+  // splinters at top
+  ctx.fillRect(cx - 5, baseY - trunkH - 3, 3, 6)
+  ctx.fillRect(cx + 2, baseY - trunkH - 5, 3, 8)
+  // no canopy
+  // ember glow dot at top
+  ctx.fillStyle = '#ff4400'
+  ctx.beginPath()
+  ctx.arc(cx, baseY - trunkH - 2, 3, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.fillStyle = 'rgba(255,68,0,0.2)'
+  ctx.beginPath()
+  ctx.arc(cx, baseY - trunkH - 2, 6, 0, Math.PI * 2)
+  ctx.fill()
+}
+
+const drawAshBonePile: DrawFn = (ctx, rng, _pal) => {
+  const cx = SPRITE_SIZE / 2
+  const cy = SPRITE_SIZE * 0.6
+  // ash pieces
+  ctx.fillStyle = '#404040'
+  for (let i = 0; i < 4; i++) {
+    const ax = cx + rng.range(-14, 14)
+    const ay = cy + rng.range(-4, 6)
+    ctx.fillRect(ax - 2, ay - 1, 4 + rng.range(0, 3), 3)
+  }
+  // bone shapes
+  ctx.fillStyle = '#c0c0b0'
+  for (let i = 0; i < 5; i++) {
+    const bx = cx + rng.range(-12, 12)
+    const by = cy + rng.range(-6, 4)
+    const angle = rng.range(0, Math.PI)
+    const len = 5 + rng.range(0, 6)
+    pixLine(ctx,
+      bx - Math.cos(angle) * len / 2, by - Math.sin(angle) * len / 2,
+      bx + Math.cos(angle) * len / 2, by + Math.sin(angle) * len / 2, 2)
+  }
+}
+
+const drawAshDeadBush: DrawFn = (ctx, rng, _pal) => {
+  const cx = SPRITE_SIZE / 2
+  const cy = SPRITE_SIZE * 0.5
+  // thin gray skeletal bush outline
+  ctx.fillStyle = '#606060'
+  for (let i = 0; i < 8; i++) {
+    const a = rng.range(0, Math.PI * 2)
+    const len = 8 + rng.range(0, 10)
+    pixLine(ctx, cx, cy,
+      cx + Math.cos(a) * len, cy + Math.sin(a) * len, 1)
+    // sub-branch
+    const mx = cx + Math.cos(a) * len * 0.6
+    const my = cy + Math.sin(a) * len * 0.6
+    const a2 = a + rng.range(-0.8, 0.8)
+    pixLine(ctx, mx, my,
+      mx + Math.cos(a2) * 5, my + Math.sin(a2) * 5, 1)
+  }
+}
+
+const drawAshGravestone: DrawFn = (ctx, rng, _pal) => {
+  const cx = SPRITE_SIZE / 2
+  const baseY = SPRITE_SIZE - 4
+  const h = 22 + rng.range(0, 6)
+  const w = 12 + rng.range(0, 4)
+  const tilt = rng.range(-4, 4)
+  // tilted cracked gray slab
+  ctx.fillStyle = '#505050'
+  ctx.beginPath()
+  ctx.moveTo(cx - w / 2, baseY)
+  ctx.lineTo(cx + w / 2, baseY)
+  ctx.lineTo(cx + w / 2 * 0.8 + tilt, baseY - h)
+  ctx.lineTo(cx - w / 2 * 0.8 + tilt, baseY - h)
+  ctx.closePath()
+  ctx.fill()
+  // rounded top
+  ctx.beginPath()
+  ctx.ellipse(cx + tilt, baseY - h, w * 0.4, 4, 0, Math.PI, 0)
+  ctx.fill()
+  // cross etching
+  ctx.fillStyle = '#404040'
+  pixLine(ctx, cx + tilt * 0.5, baseY - h * 0.7, cx + tilt * 0.5, baseY - h * 0.3, 1)
+  pixLine(ctx, cx + tilt * 0.5 - 3, baseY - h * 0.55, cx + tilt * 0.5 + 3, baseY - h * 0.55, 1)
+  // crack
+  pixLine(ctx, cx + tilt * 0.3 + 2, baseY - h * 0.8, cx + tilt * 0.3 - 1, baseY - h * 0.4, 1)
+}
+
+// ── Mushroom extras ───────────────────────────────────────────────────────
+
+const drawMushroomSporePuff: DrawFn = (ctx, rng, _pal) => {
+  const cx = SPRITE_SIZE / 2
+  const cy = SPRITE_SIZE * 0.45
+  // 3-4 soft translucent purple-pink circles
+  const count = 3 + rng.int(0, 1)
+  for (let i = 0; i < count; i++) {
+    const px = cx + rng.range(-10, 10)
+    const py = cy + rng.range(-8, 8)
+    const r = 6 + rng.range(0, 4)
+    ctx.fillStyle = 'rgba(192,96,224,0.35)'
+    ctx.beginPath()
+    ctx.arc(px, py, r, 0, Math.PI * 2)
+    ctx.fill()
+  }
+  // bright spore dots
+  ctx.fillStyle = '#e0a0ff'
+  for (let i = 0; i < 8; i++) {
+    ctx.fillRect(cx + rng.range(-16, 16), cy + rng.range(-12, 12), 2, 2)
+  }
+}
+
+const drawMushroomCoralRock: DrawFn = (ctx, rng, _pal) => {
+  const cx = SPRITE_SIZE / 2
+  const cy = SPRITE_SIZE * 0.6
+  // base rock
+  ctx.fillStyle = '#405870'
+  ctx.beginPath()
+  ctx.ellipse(cx, cy, 14, 9, 0, 0, Math.PI * 2)
+  ctx.fill()
+  // branching purple coral-fungus protrusions
+  ctx.fillStyle = '#7030a0'
+  for (let i = 0; i < 5; i++) {
+    const bx = cx + rng.range(-10, 10)
+    const by = cy - 4
+    const h = 8 + rng.range(0, 10)
+    pixLine(ctx, bx, by, bx + rng.range(-5, 5), by - h, 2)
+    // branch tip
+    ctx.fillRect(bx + rng.range(-5, 5) - 1, by - h - 1, 3, 3)
+  }
+}
+
+const drawMushroomWebbing: DrawFn = (ctx, rng, _pal) => {
+  const cx = SPRITE_SIZE / 2
+  const cy = SPRITE_SIZE * 0.6
+  // network of thin white-purple mycelium lines radiating outward
+  ctx.fillStyle = '#b080d0'
+  for (let i = 0; i < 10; i++) {
+    const a = rng.range(0, Math.PI * 2)
+    const len = 10 + rng.range(0, 14)
+    pixLine(ctx, cx, cy,
+      cx + Math.cos(a) * len, cy + Math.sin(a) * len * 0.5, 1)
+    // sub-branches
+    const mx = cx + Math.cos(a) * len * 0.5
+    const my = cy + Math.sin(a) * len * 0.5 * 0.5
+    const a2 = a + rng.range(-1, 1)
+    pixLine(ctx, mx, my,
+      mx + Math.cos(a2) * 6, my + Math.sin(a2) * 3, 1)
+  }
+}
+
+const drawMushroomRing: DrawFn = (ctx, rng, _pal) => {
+  const cx = SPRITE_SIZE / 2
+  const cy = SPRITE_SIZE * 0.55
+  const ringR = 14 + rng.range(0, 4)
+  const count = 6 + rng.int(0, 2)
+  for (let i = 0; i < count; i++) {
+    const a = (i / count) * Math.PI * 2
+    const mx = cx + Math.cos(a) * ringR
+    const my = cy + Math.sin(a) * ringR * 0.5
+    // tiny stem
+    ctx.fillStyle = '#6090b0'
+    ctx.fillRect(mx - 1, my - 4, 2, 6)
+    // tiny cap
+    ctx.fillStyle = '#7030a0'
+    ctx.beginPath()
+    ctx.ellipse(mx, my - 4, 3 + rng.range(0, 1), 2, 0, Math.PI, 0)
+    ctx.fill()
+  }
+}
+
 // ─── Sprite function tables (indexed by variant) ─────────────────────────────
 
 type BiomeCategoryKey = `${BiomeType}_${SpriteCategory}`
 
 const drawFunctions: Record<string, DrawFn[]> = {
   [`${BiomeType.Forest}_tree`]:      [drawForestTree, drawForestOak, drawForestBirch],
-  [`${BiomeType.Forest}_bush`]:      [drawGrass],
-  [`${BiomeType.Forest}_rock`]:      [drawRock],
-  [`${BiomeType.Forest}_structure`]: [drawStructure, drawForestShrine, drawForestWatchtower],
+  [`${BiomeType.Forest}_bush`]:      [drawGrass, drawForestFern, drawForestMushroom],
+  [`${BiomeType.Forest}_rock`]:      [drawRock, drawForestStump],
+  [`${BiomeType.Forest}_structure`]: [drawStructure, drawForestShrine, drawForestWatchtower, drawForestFallenLog],
   [`${BiomeType.Forest}_grass`]:     [drawGrass],
-  [`${BiomeType.Desert}_tree`]:      [drawDesertCactus],
-  [`${BiomeType.Desert}_bush`]:      [drawGrass],
-  [`${BiomeType.Desert}_rock`]:      [drawRock],
-  [`${BiomeType.Desert}_structure`]: [drawStructure, drawDesertObelisk, drawDesertArch],
+  [`${BiomeType.Desert}_tree`]:      [drawDesertCactus, drawDesertBarrelCactus],
+  [`${BiomeType.Desert}_bush`]:      [drawDesertDryBush],
+  [`${BiomeType.Desert}_rock`]:      [drawRock, drawDesertSkull],
+  [`${BiomeType.Desert}_structure`]: [drawStructure, drawDesertObelisk, drawDesertArch, drawDesertBones],
   [`${BiomeType.Desert}_grass`]:     [drawGrass],
-  [`${BiomeType.Volcanic}_tree`]:    [drawVolcanicDeadTree],
-  [`${BiomeType.Volcanic}_bush`]:    [drawGrass],
-  [`${BiomeType.Volcanic}_rock`]:    [drawRock],
+  [`${BiomeType.Volcanic}_tree`]:    [drawVolcanicDeadTree, drawVolcanicBoneSpire],
+  [`${BiomeType.Volcanic}_bush`]:    [drawVolcanicEmberBush],
+  [`${BiomeType.Volcanic}_rock`]:    [drawRock, drawVolcanicLavaRock],
+  [`${BiomeType.Volcanic}_grass`]:   [drawVolcanicScorchMark],
   [`${BiomeType.Volcanic}_structure`]: [drawStructure, drawVolcanicShrine],
-  [`${BiomeType.Snow}_tree`]:        [drawSnowPine],
-  [`${BiomeType.Snow}_bush`]:        [drawGrass],
-  [`${BiomeType.Snow}_rock`]:        [drawRock],
+  [`${BiomeType.Snow}_tree`]:        [drawSnowPine, drawSnowBareTree],
+  [`${BiomeType.Snow}_bush`]:        [drawSnowIceBush],
+  [`${BiomeType.Snow}_rock`]:        [drawRock, drawSnowDrift],
   [`${BiomeType.Snow}_structure`]:   [drawStructure, drawSnowCairn, drawSnowShrine],
-  [`${BiomeType.Snow}_grass`]:       [drawGrass],
+  [`${BiomeType.Snow}_grass`]:       [drawGrass, drawSnowFrozenFlower],
   [`${BiomeType.Swamp}_tree`]:       [drawSwampTree, drawSwampMangrove, drawSwampHollow],
-  [`${BiomeType.Swamp}_bush`]:       [drawGrass],
-  [`${BiomeType.Swamp}_rock`]:       [drawRock],
-  [`${BiomeType.Swamp}_structure`]:  [drawStructure, drawSwampTotem],
+  [`${BiomeType.Swamp}_bush`]:       [drawGrass, drawSwampCattail],
+  [`${BiomeType.Swamp}_rock`]:       [drawRock, drawSwampMossyRock],
+  [`${BiomeType.Swamp}_structure`]:  [drawStructure, drawSwampTotem, drawSwampLantern],
   [`${BiomeType.Swamp}_grass`]:      [drawGrass],
-  [`${BiomeType.Tundra}_tree`]:      [drawSnowPine],
-  [`${BiomeType.Tundra}_bush`]:      [drawGrass],
-  [`${BiomeType.Tundra}_rock`]:      [drawRock],
-  [`${BiomeType.Tundra}_structure`]: [drawStructure, drawSnowCairn, drawSnowShrine],
-  [`${BiomeType.Tundra}_grass`]:     [drawGrass],
+  [`${BiomeType.Tundra}_tree`]:      [drawTundraShrub],
+  [`${BiomeType.Tundra}_bush`]:      [drawTundraLichen],
+  [`${BiomeType.Tundra}_rock`]:      [drawRock, drawTundraSkull],
+  [`${BiomeType.Tundra}_structure`]: [drawTundraStandingStone],
+  [`${BiomeType.Tundra}_grass`]:     [drawTundraDryGrass],
   [`${BiomeType.Mushroom}_tree`]:       [drawMushroomCap, drawMushroomCluster, drawMushroomGlowing, drawMushroomThin],
-  [`${BiomeType.Mushroom}_bush`]:       [drawGrass],
-  [`${BiomeType.Mushroom}_rock`]:       [drawRock],
-  [`${BiomeType.Mushroom}_structure`]:  [drawStructure],
-  [`${BiomeType.Mushroom}_grass`]:      [drawGrass],
-  [`${BiomeType.AshWastes}_tree`]:       [drawAshSpire],
-  [`${BiomeType.AshWastes}_bush`]:       [drawGrass],
-  [`${BiomeType.AshWastes}_rock`]:       [drawRock],
-  [`${BiomeType.AshWastes}_structure`]:  [drawStructure],
+  [`${BiomeType.Mushroom}_bush`]:       [drawGrass, drawMushroomSporePuff],
+  [`${BiomeType.Mushroom}_rock`]:       [drawRock, drawMushroomCoralRock],
+  [`${BiomeType.Mushroom}_structure`]:  [drawStructure, drawMushroomRing],
+  [`${BiomeType.Mushroom}_grass`]:      [drawGrass, drawMushroomWebbing],
+  [`${BiomeType.AshWastes}_tree`]:       [drawAshSpire, drawAshCharredTree],
+  [`${BiomeType.AshWastes}_bush`]:       [drawAshDeadBush],
+  [`${BiomeType.AshWastes}_rock`]:       [drawRock, drawAshBonePile],
+  [`${BiomeType.AshWastes}_structure`]:  [drawStructure, drawAshGravestone],
   [`${BiomeType.AshWastes}_grass`]:      [drawGrass],
-  [`${BiomeType.Crystal}_tree`]:       [drawCrystalSpire],
-  [`${BiomeType.Crystal}_bush`]:       [drawGrass],
-  [`${BiomeType.Crystal}_rock`]:       [drawRock],
-  [`${BiomeType.Crystal}_structure`]:  [drawStructure, drawCrystalAltar],
+  [`${BiomeType.Crystal}_tree`]:       [drawCrystalSpire, drawCrystalCluster],
+  [`${BiomeType.Crystal}_bush`]:       [drawCrystalFlower],
+  [`${BiomeType.Crystal}_rock`]:       [drawRock, drawCrystalShard],
+  [`${BiomeType.Crystal}_structure`]:  [drawStructure, drawCrystalAltar, drawCrystalRuneStone],
   [`${BiomeType.Crystal}_grass`]:      [drawGrass],
-  [`${BiomeType.Savanna}_tree`]:       [drawAcacia, drawBaobab],
-  [`${BiomeType.Savanna}_bush`]:       [drawGrass],
-  [`${BiomeType.Savanna}_rock`]:       [drawRock],
-  [`${BiomeType.Savanna}_structure`]:  [drawStructure],
+  [`${BiomeType.Savanna}_tree`]:       [drawAcacia, drawBaobab, drawSavannaDeadTree],
+  [`${BiomeType.Savanna}_bush`]:       [drawSavannaDryBush],
+  [`${BiomeType.Savanna}_rock`]:       [drawRock, drawSavannaTermiteMound],
+  [`${BiomeType.Savanna}_structure`]:  [drawStructure, drawSavannaWaypost],
   [`${BiomeType.Savanna}_grass`]:      [drawGrass],
 }
 

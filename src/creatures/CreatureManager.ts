@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { Creature } from './Creature'
 import { CreatureMesh } from './CreatureMesh'
+import { SpatialGrid } from './SpatialGrid'
 import { SPECIES, SpeciesId } from './Species'
 import { SeededRandom, chunkSeed } from '../utils/SeededRandom'
 import { World } from '../world/World'
@@ -9,10 +10,14 @@ import { BiomeType } from '../biomes/types'
 import { WORLD_CONFIG, CREATURE_CONFIG } from '../config'
 
 const VIEW_RADIUS = WORLD_CONFIG.viewRadius
-const MAX_POPULATION = 2000
-const MESH_VIEW_DIST = (VIEW_RADIUS + 1) * CHUNK_SIZE
-const BATCH_SIZE = 50     // max state-machine ticks per frame
+const MAX_POPULATION = 500
+const MESH_VIEW_DIST = 60  // only create meshes for nearby creatures
+const MAX_VISIBLE_MESHES = 150  // hard cap on total creature meshes
+const BATCH_SIZE = 30     // max state-machine ticks per frame
 const PLAYER_ID = '__player__'
+
+// Hoisted constant set to avoid per-frame allocation (Phase 5b)
+const ACTIVE_STATES = new Set(['flee', 'chase', 'hunt', 'wander', 'seek_food', 'seek_water', 'seek_mate', 'courtship', 'attack'])
 
 // Species that can spawn per biome
 const BIOME_SPAWN_TABLE: Partial<Record<BiomeType, SpeciesId[]>> = {
@@ -32,6 +37,7 @@ export class CreatureManager {
   private creatures: Map<string, Creature> = new Map()
   private meshes: Map<string, CreatureMesh> = new Map()
   private initializedChunks: Set<string> = new Set()
+  private grid: SpatialGrid<Creature> = new SpatialGrid(32)
   private rng: SeededRandom
   private scene: THREE.Scene
   private batchOffset = 0
@@ -91,17 +97,27 @@ export class CreatureManager {
   }
 
   update(delta: number, playerPos: THREE.Vector3, world: World, dayTime: number): void {
-    const all = Array.from(this.creatures.values())
+    // Rebuild spatial grid (Phase 4)
+    this.grid.clear()
+    this.grid.insertAll(this.creatures.values())
+    const all = this.grid.flat
     const total = all.length
 
     // Determine batch window
     const start = this.batchOffset % Math.max(1, total)
     const end = Math.min(start + BATCH_SIZE, total)
 
+    // Pre-compute squared distance threshold (Phase 5c)
+    const farThreshSq = ((VIEW_RADIUS + 3) * CHUNK_SIZE) ** 2
+    const meshViewDistSq = MESH_VIEW_DIST * MESH_VIEW_DIST
+    let meshesCreated = 0
+
     for (let i = 0; i < total; i++) {
       const c = all[i]
-      const distToPlayer = c.position.distanceTo(playerPos)
-      const farAway = distToPlayer > (VIEW_RADIUS + 3) * CHUNK_SIZE
+      const dx = c.position.x - playerPos.x
+      const dz = c.position.z - playerPos.z
+      const distSq = dx * dx + dz * dz
+      const farAway = distSq > farThreshSq
 
       // Stats tick always (far = quarter rate)
       if (!farAway || i % 4 === 0) {
@@ -118,14 +134,21 @@ export class CreatureManager {
         this.applyMovement(c, delta, world)
       }
 
-      // Mesh lifecycle
-      if (distToPlayer <= MESH_VIEW_DIST) {
-        if (!c.hasMesh) {
-          const mesh = new CreatureMesh(c, this.scene)
+      // Mesh lifecycle (limit mesh creation to 4 per frame, cap total visible)
+      if (distSq <= meshViewDistSq) {
+        if (!c.hasMesh && meshesCreated < 4 && this.meshes.size < MAX_VISIBLE_MESHES) {
+          const mesh = new CreatureMesh(c, this.scene, distSq)
           this.meshes.set(c.id, mesh)
           c.hasMesh = true
+          meshesCreated++
         }
-        this.meshes.get(c.id)?.update(c, delta)
+        if (c.hasMesh) {
+          const mesh = this.meshes.get(c.id)
+          if (mesh) {
+            mesh.updateLOD(c, distSq, this.scene)
+            mesh.update(c, delta)
+          }
+        }
       } else if (c.hasMesh) {
         this.disposeMesh(c)
       }
@@ -145,12 +168,14 @@ export class CreatureManager {
       }
     }
 
-    // Cull excess population (remove oldest first)
+    // Cull excess population (remove oldest first) - only when significantly over limit
     if (this.creatures.size > MAX_POPULATION) {
-      const byAge = Array.from(this.creatures.values()).sort((a, b) => b.age - a.age)
+      // Sort the flat array by age descending (reuse grid.flat to avoid new allocation)
+      all.sort((a, b) => b.age - a.age)
       const target = Math.floor(MAX_POPULATION * 0.9)
-      while (this.creatures.size > target && byAge.length > 0) {
-        const victim = byAge.pop()!
+      let idx = all.length - 1
+      while (this.creatures.size > target && idx >= 0) {
+        const victim = all[idx--]
         this.disposeMesh(victim)
         this.creatures.delete(victim.id)
       }
@@ -196,8 +221,7 @@ export class CreatureManager {
     }
 
     // Energy
-    const activeStates = new Set(['flee', 'chase', 'hunt', 'wander', 'seek_food', 'seek_water', 'seek_mate', 'courtship', 'attack'])
-    const energyRate = c.state === 'sleep' ? 15 : activeStates.has(c.state) ? -3 : 5
+    const energyRate = c.state === 'sleep' ? 15 : ACTIVE_STATES.has(c.state) ? -3 : 5
     c.energy = Math.max(0, Math.min(sp.maxEnergy, c.energy + delta * energyRate))
 
     if (c.reproductionCooldown > 0) c.reproductionCooldown -= delta
@@ -305,9 +329,10 @@ export class CreatureManager {
         if (threat) { this.startFlee(c, threat); break }
         const mate = c.targetId ? this.creatures.get(c.targetId) : null
         if (!mate || mate.state === 'dead') { c.state = 'idle'; c.targetId = null; break }
-        // Orbit mate
+        // Orbit mate (Phase 5b: reuse targetPos)
         const angle = c.stateTimer * 1.5
-        c.targetPos = new THREE.Vector3(
+        if (!c.targetPos) c.targetPos = new THREE.Vector3()
+        c.targetPos.set(
           mate.position.x + Math.cos(angle) * 3,
           mate.position.y,
           mate.position.z + Math.sin(angle) * 3
@@ -327,7 +352,7 @@ export class CreatureManager {
           // Only the creature with numerically lower id spawns the baby
           const myNum  = parseInt(c.id.slice(1))
           const mateNum = c.targetId ? parseInt(c.targetId.slice(1)) : Infinity
-          if (mate && myNum < mateNum) this.spawnBaby(c, mate)
+          if (mate && myNum < mateNum && this.creatures.size < MAX_POPULATION * 0.95) this.spawnBaby(c, mate)
           c.reproductionCooldown = 120
           c.state = 'idle'; c.stateTimer = 0; c.targetId = null
         }
@@ -343,7 +368,7 @@ export class CreatureManager {
         const dist = c.position.distanceTo(target)
         if (dist <= sp.attackRange) { c.state = 'attack'; c.stateTimer = 0 }
         else if (dist <= sp.sightRange * 2) { c.state = 'chase'; c.stateTimer = 0 }
-        else { c.targetPos = target.clone(); this.steerToTarget(c, sp.maxSpeed * 0.5) }
+        else { if (!c.targetPos) c.targetPos = new THREE.Vector3(); c.targetPos.copy(target); this.steerToTarget(c, sp.maxSpeed * 0.5) }
         break
       }
 
@@ -354,7 +379,8 @@ export class CreatureManager {
         if (!chaseTarget || (c.targetId !== PLAYER_ID && this.creatures.get(c.targetId!)?.state === 'dead')) {
           c.state = 'idle'; c.targetId = null; break
         }
-        c.targetPos = chaseTarget.clone()
+        if (!c.targetPos) c.targetPos = new THREE.Vector3()
+        c.targetPos.copy(chaseTarget)
         const dist = c.position.distanceTo(chaseTarget)
         if (dist <= sp.attackRange) { c.state = 'attack'; c.stateTimer = 0 }
         else if (dist > sp.sightRange * 3) { c.state = 'hunt'; c.stateTimer = 0 }
@@ -375,7 +401,8 @@ export class CreatureManager {
           c.state = 'idle'; c.targetId = null; break
         }
 
-        c.targetPos = attackTarget.clone()
+        if (!c.targetPos) c.targetPos = new THREE.Vector3()
+        c.targetPos.copy(attackTarget)
         this.steerToTarget(c, sp.maxSpeed)
 
         if (c.stateTimer > 0.5) {
@@ -475,15 +502,18 @@ export class CreatureManager {
 
   private findThreat(c: Creature, playerPos: THREE.Vector3): THREE.Vector3 | null {
     const sp = SPECIES[c.species]
-
     const sr = sp.sightRange * CREATURE_CONFIG.aggroRange
-    if (c.position.distanceTo(playerPos) < sr) return playerPos.clone()
 
-    for (const other of this.creatures.values()) {
-      if (SPECIES[other.species].role !== 'predator') continue
-      if (c.position.distanceTo(other.position) < sr) return other.position.clone()
-    }
-    return null
+    // Check player distance with squared comparison (Phase 5c)
+    const pdx = c.position.x - playerPos.x
+    const pdz = c.position.z - playerPos.z
+    if (pdx * pdx + pdz * pdz < sr * sr) return playerPos
+
+    // Use spatial grid instead of iterating all creatures (Phase 4)
+    const threat = this.grid.queryNearest(c.position, sr, (other) =>
+      other !== c && SPECIES[other.species].role === 'predator'
+    )
+    return threat ? threat.position : null
   }
 
   private findFood(c: Creature, world: World): THREE.Vector3 | null {
@@ -528,34 +558,36 @@ export class CreatureManager {
   }
 
   private findMate(c: Creature): Creature | null {
-    let best: Creature | null = null
-    let bestDist = 30
-    for (const other of this.creatures.values()) {
-      if (other === c || other.species !== c.species) continue
-      if (!['seek_mate', 'idle', 'wander'].includes(other.state)) continue
-      if (other.reproductionCooldown > 0) continue
-      const dist = c.position.distanceTo(other.position)
-      if (dist < bestDist) { bestDist = dist; best = other }
-    }
-    return best
+    // Use spatial grid (Phase 4) with filter
+    return this.grid.queryNearest(c.position, 30, (other) =>
+      other !== c &&
+      other.species === c.species &&
+      (other.state === 'seek_mate' || other.state === 'idle' || other.state === 'wander') &&
+      other.reproductionCooldown <= 0
+    )
   }
 
   // Returns a creature id or PLAYER_ID or null
   private findPrey(c: Creature, playerPos: THREE.Vector3 | null): string | null {
     const sp = SPECIES[c.species]
     const aggroSight = sp.sightRange * CREATURE_CONFIG.aggroRange
-    let best: string | null = null
-    let bestDist = aggroSight * 2
+    const range = aggroSight * 2
 
-    for (const other of this.creatures.values()) {
-      if (other === c || SPECIES[other.species].role !== 'herbivore' || other.state === 'dead') continue
-      const dist = c.position.distanceTo(other.position)
-      if (dist < bestDist) { bestDist = dist; best = other.id }
-    }
+    // Use spatial grid (Phase 4)
+    const prey = this.grid.queryNearest(c.position, range, (other) =>
+      other !== c && SPECIES[other.species].role === 'herbivore' && other.state !== 'dead'
+    )
+
+    let best: string | null = prey ? prey.id : null
+    let bestDist = prey
+      ? Math.sqrt((prey.position.x - c.position.x) ** 2 + (prey.position.z - c.position.z) ** 2)
+      : range
 
     // Also consider the player as prey (secondary)
     if (playerPos) {
-      const distToPlayer = c.position.distanceTo(playerPos)
+      const pdx = c.position.x - playerPos.x
+      const pdz = c.position.z - playerPos.z
+      const distToPlayer = Math.sqrt(pdx * pdx + pdz * pdz)
       if (distToPlayer < aggroSight && distToPlayer < bestDist) {
         best = PLAYER_ID
       }

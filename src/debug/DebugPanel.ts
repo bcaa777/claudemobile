@@ -3,6 +3,7 @@ import { DayNightCycle } from '../lighting/DayNightCycle'
 import { ColorGradePass } from '../postprocessing/ColorGradePass'
 import { CRTPass } from '../postprocessing/CRTPass'
 import { RetroPass } from '../postprocessing/RetroPass'
+import { PerfOverlay } from './PerfOverlay'
 import {
   PLAYER_CONFIG, POST_CONFIG, SPRITE_CONFIG,
   WORLD_CONFIG, TIME_CONFIG, BIOME_CONFIG, CREATURE_CONFIG,
@@ -31,6 +32,7 @@ export class DebugPanel {
   private colorGrade: ColorGradePass
   private crt: CRTPass
   private retro: RetroPass
+  private perfOverlay: PerfOverlay
   public isOpen = false
 
   constructor(
@@ -39,12 +41,14 @@ export class DebugPanel {
     colorGrade: ColorGradePass,
     crt: CRTPass,
     retro: RetroPass,
+    perfOverlay: PerfOverlay,
   ) {
     this.dayNight = dayNight
     this.flashlight = flashlight
     this.colorGrade = colorGrade
     this.crt = crt
     this.retro = retro
+    this.perfOverlay = perfOverlay
 
     // Restore saved debug state (lighting mults, playerLight)
     const saved = readLS()
@@ -193,6 +197,10 @@ export class DebugPanel {
     panel.appendChild(el('div', { color: '#555', textAlign: 'center', marginBottom: '2px', letterSpacing: '1px' }, '[ F3 ] DEBUG PANEL'))
     panel.appendChild(el('div', { color: '#383838', fontSize: '9px', textAlign: 'center', marginBottom: '2px' }, 'Esc = release cursor   M = map'))
     panel.appendChild(el('div', { color: '#665533', fontSize: '9px', textAlign: 'center', marginBottom: '4px' }, '↺ = requires Save & Reload'))
+
+    // ── PERFORMANCE ──────────────────────────────────────────────────────────
+    panel.appendChild(section('PERFORMANCE'))
+    panel.appendChild(toggle('Perf Overlay', this.perfOverlay.getVisible(), v => { this.perfOverlay.setVisible(v) }))
 
     // ── LIGHTING ─────────────────────────────────────────────────────────────
     panel.appendChild(section('LIGHTING'))

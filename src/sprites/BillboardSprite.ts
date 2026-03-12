@@ -10,10 +10,10 @@ export function createBillboard(
   const geo = new THREE.PlaneGeometry(scale, scale)
   const mat = new THREE.MeshLambertMaterial({
     map: texture,
-    transparent: true,
-    alphaTest: 0.1,
+    transparent: false,
+    alphaTest: 0.5,
     side: THREE.DoubleSide,
-    depthWrite: false,
+    depthWrite: true,
   })
   const mesh = new THREE.Mesh(geo, mat)
   mesh.position.copy(position)
@@ -39,9 +39,9 @@ export function createGroundDecal(
   const geo = new THREE.PlaneGeometry(scale, scale)
   const mat = new THREE.MeshLambertMaterial({
     map: texture,
-    transparent: true,
-    alphaTest: 0.1,
-    depthWrite: false,
+    transparent: false,
+    alphaTest: 0.5,
+    depthWrite: true,
   })
   const mesh = new THREE.Mesh(geo, mat)
   mesh.rotation.x = -Math.PI / 2

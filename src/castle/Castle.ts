@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { SeededRandom } from '../utils/SeededRandom'
+import { mergeStaticMeshes } from '../utils/mergeStaticMeshes'
 import { WATER_LEVEL } from '../world/TerrainGenerator'
 
 export interface CastleWalkable {
@@ -62,6 +63,9 @@ export class Castle {
     this.buildFloor2(group, stoneMat, floorMat, woodMat, ironMat, scene, px, py, pz)
     this.buildFloor3(group, stoneMat, floorMat, px, py, pz)
     this.buildStairs(group, stoneMat, px, py, pz)
+
+    // Merge all static meshes by material to reduce draw calls (~168 → ~5)
+    mergeStaticMeshes(group)
   }
 
   private addWalkable(px: number, py: number, pz: number,
@@ -205,6 +209,7 @@ export class Castle {
 
   private addPointLight(group: THREE.Group, lx: number, ly: number, lz: number,
     color: number, intensity: number, distance: number): THREE.PointLight {
+    if (this.torchLights.length >= 3) return null!
     const light = new THREE.PointLight(color, intensity, distance)
     light.position.set(lx, ly, lz)
     group.add(light)

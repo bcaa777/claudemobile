@@ -27,7 +27,10 @@ const SUN_KEYS = [
   { t: 1.00, color: new THREE.Color(0x304060) },
 ]
 
-function sampleColorKeys(keys: { t: number; color: THREE.Color }[], t: number): THREE.Color {
+// Reusable Color to avoid per-frame allocations (Phase 5e)
+const _tmpColor = new THREE.Color()
+
+function sampleColorKeys(keys: { t: number; color: THREE.Color }[], t: number, out: THREE.Color): THREE.Color {
   t = ((t % 1) + 1) % 1
   let a = keys[keys.length - 1]
   let b = keys[0]
@@ -37,7 +40,7 @@ function sampleColorKeys(keys: { t: number; color: THREE.Color }[], t: number): 
     }
   }
   const local = a.t === b.t ? 0 : (t - a.t) / (b.t - a.t)
-  return new THREE.Color().lerpColors(a.color, b.color, local)
+  return out.lerpColors(a.color, b.color, local)
 }
 
 export class DayNightCycle {
@@ -95,9 +98,10 @@ export class DayNightCycle {
     this.ambient.intensity = 6.0 * this.ambientMult
     this.hemi.intensity    = 2.0 * this.hemiMult
 
-    this.ambient.color.copy(sampleColorKeys(AMBIENT_KEYS, t))
-    this.sun.color.copy(sampleColorKeys(SUN_KEYS, t))
-    this.hemi.color.copy(sampleColorKeys(SUN_KEYS, t)).multiplyScalar(0.5)
+    sampleColorKeys(AMBIENT_KEYS, t, this.ambient.color)
+    sampleColorKeys(SUN_KEYS, t, this.sun.color)
+    sampleColorKeys(SUN_KEYS, t, _tmpColor)
+    this.hemi.color.copy(_tmpColor).multiplyScalar(0.5)
   }
 
   getTime(): number {
@@ -112,5 +116,13 @@ export class DayNightCycle {
 
   getSunIntensity(): number {
     return this.sun.intensity
+  }
+
+  getSunDirection(out: THREE.Vector3): THREE.Vector3 {
+    return out.copy(this.sun.position).normalize()
+  }
+
+  getSunColor(out: THREE.Color): THREE.Color {
+    return out.copy(this.sun.color)
   }
 }

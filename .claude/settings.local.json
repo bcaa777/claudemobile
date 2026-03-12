@@ -7,7 +7,17 @@
       "Bash(node:*)",
       "Bash(cp:*)",
       "Bash(npx tsc:*)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "WebFetch(domain:localhost)",
+      "Bash(lsof:*)",
+      "Bash(curl:*)",
+      "Bash(for f in src/landmarks/DruidRingTemple.ts src/landmarks/GreatPyramid.ts src/landmarks/ObsidianCitadel.ts src/landmarks/IcePalace.ts src/landmarks/SwampZiggurat.ts src/landmarks/AncestorField.ts src/landmarks/MyceliumCathedral.ts src/landmarks/AshColosseum.ts src/landmarks/CrystalCathedral.ts src/landmarks/SavannaObelisk.ts)",
+      "Bash(do echo \"=== $f ===\")",
+      "Read(//Users/michalplodek/Documents/Code/claudemobile/**)",
+      "Bash(done)",
+      "Bash(wc:*)",
+      "Bash(npx vite:*)",
+      "Bash(grep:*)"
     ]
   }
 }

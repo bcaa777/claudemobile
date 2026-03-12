@@ -188,6 +188,7 @@ export class CrystalCathedral {
 
   private addPointLight(group: THREE.Group, lx: number, ly: number, lz: number,
     color: number, intensity: number, distance: number): THREE.PointLight {
+    if (this.torchLights.length >= 2) return null!
     const light = new THREE.PointLight(color, intensity, distance)
     light.position.set(lx, ly, lz)
     group.add(light)

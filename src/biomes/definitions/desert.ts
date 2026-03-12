@@ -8,6 +8,15 @@ export const desertBiome: BiomeConfig = {
   fogNear: 15,
   fogFar: 90,
   skyColor: new THREE.Color(0x1a0e05),
+  skyConfig: {
+    zenithDay: new THREE.Color(0x6a5020),
+    zenithNight: new THREE.Color(0x0a0808),
+    horizonDay: new THREE.Color(0xc09050),
+    horizonNight: new THREE.Color(0x1a0a04),
+    cloudColor: new THREE.Color(0xb08040),
+    cloudDensity: 0.05,
+    hazeStrength: 0.6,
+  },
   ambientDayColor: new THREE.Color(0x4a3010),
   ambientNightColor: new THREE.Color(0x100a02),
   sunColor: new THREE.Color(0xffbb44),
@@ -27,11 +36,11 @@ export const desertBiome: BiomeConfig = {
     [0.72, 0.55, 0.25],
   ],
   spriteTypes: [
-    { category: 'tree',      weight: 1, minScale: 2, maxScale: 4,  isBillboard: true },  // cactus
-    { category: 'rock',      weight: 5, minScale: 1, maxScale: 3.5, isBillboard: false },
-    { category: 'structure', weight: 1, minScale: 3, maxScale: 6,  isBillboard: true },
-    { category: 'grass',     weight: 2, minScale: 0.5, maxScale: 1, isBillboard: true },
-    { category: 'bush',      weight: 1, minScale: 0.8, maxScale: 1.5, isBillboard: true },
+    { category: 'tree',      weight: 2, minScale: 2, maxScale: 4,  isBillboard: true },  // cactus
+    { category: 'rock',      weight: 6, minScale: 1, maxScale: 3.5, isBillboard: false },
+    { category: 'structure', weight: 1.5, minScale: 3, maxScale: 6,  isBillboard: true },
+    { category: 'grass',     weight: 3, minScale: 0.5, maxScale: 1, isBillboard: true },
+    { category: 'bush',      weight: 3, minScale: 0.8, maxScale: 1.5, isBillboard: true },
   ],
   heightScale: 10,
   heightFrequency: 0.016,

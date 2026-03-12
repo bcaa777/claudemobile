@@ -6,6 +6,7 @@ import { FirstPersonController } from '../player/FirstPersonController'
 import { CollisionSystem } from '../player/CollisionSystem'
 import { DayNightCycle } from '../lighting/DayNightCycle'
 import { BiomeTransition } from '../systems/BiomeTransition'
+import { SkyDome } from '../sky/SkyDome'
 import { BiomeMap } from '../world/BiomeMap'
 import { CreatureManager } from '../creatures/CreatureManager'
 import { Castle } from '../castle/Castle'
@@ -13,6 +14,7 @@ import { CastleBreeze } from '../castle/CastleBreeze'
 import { LandmarkManager } from '../landmarks/LandmarkManager'
 import { DebugMap } from '../debug/DebugMap'
 import { DebugPanel } from '../debug/DebugPanel'
+import { PerfOverlay } from '../debug/PerfOverlay'
 import { WORLD_CONFIG } from '../config'
 import { WATER_LEVEL } from '../world/TerrainGenerator'
 
@@ -24,6 +26,7 @@ export class Engine {
   private collision: CollisionSystem
   private dayNight: DayNightCycle
   private biomeTransition: BiomeTransition
+  private skyDome: SkyDome
   private biomeMap: BiomeMap
   private creatureManager: CreatureManager
   private castle: Castle
@@ -31,15 +34,23 @@ export class Engine {
   private landmarkManager: LandmarkManager
   private debugMap: DebugMap
   private debugPanel: DebugPanel
+  private perfOverlay: PerfOverlay
   private flashlight: THREE.SpotLight
 
   private lastTime = 0
   private running = false
   private underwaterStrength = 0
 
+  // Reusable Vector3s to avoid per-frame allocations (Phase 5a)
+  private _fwd = new THREE.Vector3()
+  private _lookDir = new THREE.Vector3()
+  private _sunDir = new THREE.Vector3()
+  private _sunCol = new THREE.Color()
+
   private biomeHud: HTMLElement | null
   private timeHud: HTMLElement | null
   private crystalHud: HTMLElement | null
+  private modeHud: HTMLElement | null
   private crystalsCollected = 0
 
   constructor(container: HTMLElement) {
@@ -53,10 +64,12 @@ export class Engine {
     this.controller = new FirstPersonController(this.renderer.camera, this.input)
     this.collision = new CollisionSystem(this.world)
     this.dayNight = new DayNightCycle(this.renderer.scene)
+    this.skyDome = new SkyDome(this.renderer.scene)
     this.biomeTransition = new BiomeTransition(
       this.biomeMap,
       this.renderer.scene,
-      this.renderer.colorGradePass
+      this.renderer.colorGradePass,
+      this.skyDome
     )
 
     this.castle = new Castle(WORLD_CONFIG.seed, this.renderer.scene)
@@ -73,17 +86,21 @@ export class Engine {
     this.renderer.scene.add(this.flashlight)
     this.renderer.scene.add(this.flashlight.target)
 
+    this.perfOverlay = new PerfOverlay(this.renderer.renderer)
+
     this.debugPanel = new DebugPanel(
       this.dayNight,
       this.flashlight,
       this.renderer.colorGradePass,
       this.renderer.crtPass,
       this.renderer.retroPass,
+      this.perfOverlay,
     )
 
     this.biomeHud = document.getElementById('biome-hud')
     this.timeHud = document.getElementById('time-hud')
     this.crystalHud = document.getElementById('crystal-hud')
+    this.modeHud = document.getElementById('mode-hud')
 
     this.setupStartScreen()
   }
@@ -122,6 +139,15 @@ export class Engine {
     this.collision.update(this.renderer.camera, this.controller)
     this.world.update(this.renderer.camera.position)
     this.dayNight.update(delta)
+
+    // Update sky dome with sun position and day/night factor
+    const t = this.dayNight.getTime()
+    const sunAngle = t * Math.PI * 2
+    const dayFactor = Math.max(0, Math.min(1, Math.sin(sunAngle) * 2.0 + 0.5))
+    this.dayNight.getSunDirection(this._sunDir)
+    this.dayNight.getSunColor(this._sunCol)
+    this.skyDome.update(this.renderer.camera, t, this._sunDir, this._sunCol, delta)
+    this.biomeTransition.setDayFactor(dayFactor)
     this.biomeTransition.update(this.renderer.camera.position, delta)
     this.creatureManager.update(delta, this.renderer.camera.position, this.world, this.dayNight.getTime())
 
@@ -129,10 +155,9 @@ export class Engine {
     const knockback = this.creatureManager.pendingKnockback
     if (knockback > 0) {
       this.creatureManager.pendingKnockback = 0
-      const fwd = new THREE.Vector3()
-      this.renderer.camera.getWorldDirection(fwd)
-      this.renderer.camera.position.x -= fwd.x * 2 * knockback
-      this.renderer.camera.position.z -= fwd.z * 2 * knockback
+      this.renderer.camera.getWorldDirection(this._fwd)
+      this.renderer.camera.position.x -= this._fwd.x * 2 * knockback
+      this.renderer.camera.position.z -= this._fwd.z * 2 * knockback
     }
 
     // Explodable structures + camera shake
@@ -155,15 +180,17 @@ export class Engine {
     if (this.timeHud) {
       this.timeHud.textContent = this.dayNight.getTimeString()
     }
+    if (this.modeHud) {
+      this.modeHud.textContent = this.controller.isFlying ? '~ FLYING ~' : ''
+    }
 
     // Flashlight — auto-enables at night (18:00–07:00), points where camera looks
-    const t = this.dayNight.getTime()
     const isNight = t > 18 / 24 || t < 7 / 24
     const targetIntensity = isNight ? 4.0 : 0.0
     this.flashlight.intensity += (targetIntensity - this.flashlight.intensity) * Math.min(1, delta * 2)
     this.flashlight.position.copy(this.renderer.camera.position)
-    const lookDir = new THREE.Vector3(0, 0, -1).applyQuaternion(this.renderer.camera.quaternion)
-    this.flashlight.target.position.copy(this.renderer.camera.position).addScaledVector(lookDir, 20)
+    this._lookDir.set(0, 0, -1).applyQuaternion(this.renderer.camera.quaternion)
+    this.flashlight.target.position.copy(this.renderer.camera.position).addScaledVector(this._lookDir, 20)
     this.flashlight.target.updateMatrixWorld()
 
     // Crystal pickup detection
@@ -185,6 +212,7 @@ export class Engine {
     this.debugMap.update(this.renderer.camera.position, this.controller.heading)
 
     this.renderer.render(delta)
+    this.perfOverlay.update(this.renderer.renderer)
     requestAnimationFrame((t) => this.loop(t))
   }
 }

@@ -27,6 +27,8 @@ export class CollisionSystem {
   }
 
   update(camera: THREE.Camera, controller: FirstPersonController) {
+    if (controller.isFlying) return
+
     const pos     = camera.position
     const prevPos = controller.prevPos
 

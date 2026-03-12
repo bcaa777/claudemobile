@@ -74,9 +74,9 @@ export const TERRAIN_CONFIG = {
 
   // Procedural structures spawned in Chunk
   enableRockFormations: true,
-  rockDensity:          0.30, // 0–1 chance per candidate spot
+  rockDensity:          0.45, // 0–1 chance per candidate spot
   enableCaveArches:     true,
-  archDensity:          0.12, // 0–1 chance when a steep cliff is nearby
+  archDensity:          0.18, // 0–1 chance when a steep cliff is nearby
   enableBridges:        true,
   enableMountainBridges: true,
   enableRoads:          true,
@@ -85,11 +85,31 @@ export const TERRAIN_CONFIG = {
   enableChapels:        true,
   enableCemeteries:     true,
   enableSwampPiers:     true,
+  enableForestRuins:    true,
+  enableForestWells:    true,
+  enableDesertRuinedWalls: true,
+  enableDesertTents:    true,
+  enableVolcanicVents:  true,
+  enableVolcanicForges: true,
+  enableIgloos:         true,
+  enableSnowFortWalls:  true,
+  enableTundraStoneCircles: true,
+  enableTundraBoneRacks: true,
+  enableSwampHuts:      true,
+  enableSwampBoardwalks: true,
+  enableSavannaHuts:    true,
+  enableSavannaFences:  true,
+  enableCrystalArches:  true,
+  enableCrystalPedestals: true,
+  enableAshCrypts:      true,
+  enableAshPyres:       true,
+  enableMushroomAltars: true,
+  enableMushroomHollowLogs: true,
 }
 
 // ─── CREATURES ───────────────────────────────────────────────────────────────
 export const CREATURE_CONFIG = {
-  spawnMultiplier: 1.0,  // scale creature count per chunk (0 = no animals, 3 = very dense)
+  spawnMultiplier: 0.8,  // scale creature count per chunk (0 = no animals, 3 = very dense)
   aggroRange:      1.0,  // multiplier on predator sight/attack range
   speedMultiplier: 1.0,  // multiplier on all creature movement speeds
 }
@@ -102,10 +122,10 @@ export const BIOME_CONFIG = {
 // ─── SPRITE SPAWNING ─────────────────────────────────────────────────────────
 export const SPRITE_CONFIG = {
   // Placement grid
-  gridStep:          2.5,  // world units between candidate spawn points
+  gridStep:          2.0,  // world units between candidate spawn points
                            //   lower = denser grid (more sprites possible)
                            //   higher = sparser grid (fewer, more spread out)
-  spawnDensity:      0.45, // 0.0–1.0 — fraction of grid cells that actually spawn
+  spawnDensity:      0.60, // 0.0–1.0 — fraction of grid cells that actually spawn
                            //   0.0 = nothing, 1.0 = every cell fills
   positionJitter:    0.9,  // 0.0–1.0 — how randomly a sprite is offset within its cell
                            //   0.0 = perfectly grid-aligned, 1.0 = fully random within cell

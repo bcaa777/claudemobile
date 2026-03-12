@@ -5,9 +5,7 @@ const SHRINK_SPEED = 4.0           // scale units/second after collection
 
 export class LandmarkCrystal {
   private group: THREE.Group
-  private light: THREE.PointLight
   private halo: THREE.Points
-  private baseIntensity: number
   private floatPhase: number
   collected = false
   private shrink = 1.0
@@ -16,13 +14,12 @@ export class LandmarkCrystal {
   constructor(pos: THREE.Vector3, scene: THREE.Scene, color: number) {
     this.worldPos = pos.clone()
     this.floatPhase = Math.random() * Math.PI * 2
-    this.baseIntensity = 1.6
 
     this.group = new THREE.Group()
     this.group.position.copy(pos)
     scene.add(this.group)
 
-    // Glowing core
+    // Glowing core (MeshBasicMaterial = self-lit, no PointLight needed)
     const core = new THREE.Mesh(
       new THREE.OctahedronGeometry(1.2),
       new THREE.MeshBasicMaterial({ color })
@@ -35,10 +32,6 @@ export class LandmarkCrystal {
       new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.18 })
     )
     this.group.add(shell)
-
-    // Point light glow
-    this.light = new THREE.PointLight(color, this.baseIntensity, 14)
-    this.group.add(this.light)
 
     // 8 orbiting halo particles
     const count = 8
@@ -70,8 +63,6 @@ export class LandmarkCrystal {
     const dz = playerPos.z - this.worldPos.z
     if (dx * dx + dy * dy + dz * dz < COLLECT_RADIUS_SQ) {
       this.collected = true
-      // Flash the light briefly
-      this.light.intensity = this.baseIntensity * 4
       return true
     }
     return false
@@ -81,7 +72,6 @@ export class LandmarkCrystal {
     if (this.collected) {
       this.shrink = Math.max(0, this.shrink - delta * SHRINK_SPEED)
       this.group.scale.setScalar(this.shrink)
-      this.light.intensity = this.shrink * this.baseIntensity
       return
     }
 
@@ -89,8 +79,6 @@ export class LandmarkCrystal {
     this.group.position.y = this.worldPos.y + Math.sin(time * 1.5 + this.floatPhase) * 0.5
     // Slow spin
     this.group.rotation.y = time * 1.2
-    // Gentle light pulse
-    this.light.intensity = this.baseIntensity * (0.8 + 0.3 * Math.sin(time * 4 + this.floatPhase))
 
     // Orbit halo particles
     const attr = this.halo.geometry.attributes.position as THREE.BufferAttribute

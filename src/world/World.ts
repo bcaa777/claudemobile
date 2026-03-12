@@ -4,6 +4,7 @@ import { BiomeMap } from './BiomeMap'
 import { CHUNK_SIZE, WATER_LEVEL } from './TerrainGenerator'
 import { SpriteAtlas } from '../sprites/SpriteAtlas'
 import { PointLightPool } from '../lighting/PointLightPool'
+import { MaterialCache } from '../utils/MaterialCache'
 import { ExplodableStructure } from './ExplodableStructure'
 import { SeededRandom } from '../utils/SeededRandom'
 import { WORLD_CONFIG } from '../config'
@@ -18,8 +19,11 @@ export class World {
   private biomeMap: BiomeMap
   private atlas: SpriteAtlas
   private lightPool: PointLightPool
+  private matCache: MaterialCache
   private chunks: Map<string, Chunk> = new Map()
   private pendingGeneration: Set<string> = new Set()
+  private generationQueue: { cx: number; cz: number; key: string }[] = []
+  private static readonly MAX_CHUNKS_PER_FRAME = 2
   private explodables: ExplodableStructure[] = []
   private explodeRng = new SeededRandom(9999)
   private creatureManager: CreatureManager | null = null
@@ -33,7 +37,8 @@ export class World {
     this.scene = scene
     this.biomeMap = biomeMap
     this.atlas = new SpriteAtlas()
-    this.lightPool = new PointLightPool(scene, 24)
+    this.lightPool = new PointLightPool(scene, 4)
+    this.matCache = new MaterialCache()
   }
 
   private chunkKey(cx: number, cz: number): string {
@@ -44,9 +49,19 @@ export class World {
     const cx = Math.floor(playerPos.x / CHUNK_SIZE)
     const cz = Math.floor(playerPos.z / CHUNK_SIZE)
 
+    // Process pending chunk generation queue (staggered: max N per frame)
+    let built = 0
+    while (this.generationQueue.length > 0 && built < World.MAX_CHUNKS_PER_FRAME) {
+      const item = this.generationQueue.shift()!
+      if (this.pendingGeneration.has(item.key)) {
+        this.generateChunk(item.cx, item.cz, item.key)
+        built++
+      }
+    }
+
     if (cx === this.lastPlayerCX && cz === this.lastPlayerCZ) {
       for (const chunk of this.chunks.values()) {
-        chunk.update(1/60)
+        chunk.update(1/60, playerPos.x, playerPos.z)
       }
       return
     }
@@ -63,24 +78,31 @@ export class World {
 
     for (const [key, chunk] of this.chunks) {
       if (!needed.has(key)) {
-        // Remove this chunk's explodables from world list
-        this.explodables = this.explodables.filter(e => !chunk.explodables.includes(e))
+        // Remove this chunk's explodables from world list (Phase 5d: Set lookup)
+        const chunkExplodables = new Set(chunk.explodables)
+        this.explodables = this.explodables.filter(e => !chunkExplodables.has(e))
         chunk.dispose(this.scene, this.lightPool)
         this.chunks.delete(key)
         this.pendingGeneration.delete(key)
       }
     }
 
+    // Queue new chunks for staggered generation (sorted by distance to player)
+    const newChunks: { cx: number; cz: number; key: string; dist: number }[] = []
     for (const key of needed) {
       if (!this.chunks.has(key) && !this.pendingGeneration.has(key)) {
         this.pendingGeneration.add(key)
         const [kcx, kcz] = key.split(',').map(Number)
-        setTimeout(() => this.generateChunk(kcx, kcz, key), 0)
+        const dist = Math.abs(kcx - cx) + Math.abs(kcz - cz)
+        newChunks.push({ cx: kcx, cz: kcz, key, dist })
       }
     }
+    // Generate closest chunks first
+    newChunks.sort((a, b) => a.dist - b.dist)
+    this.generationQueue.push(...newChunks)
 
     for (const chunk of this.chunks.values()) {
-      chunk.update(1/60)
+      chunk.update(1/60, playerPos.x, playerPos.z)
     }
   }
 
@@ -98,7 +120,7 @@ export class World {
 
   private generateChunk(cx: number, cz: number, key: string) {
     if (!this.pendingGeneration.has(key)) return
-    const chunk = new Chunk(cx, cz, this.scene, this.biomeMap, this.atlas, this.lightPool)
+    const chunk = new Chunk(cx, cz, this.scene, this.biomeMap, this.atlas, this.lightPool, this.matCache)
     this.chunks.set(key, chunk)
     this.pendingGeneration.delete(key)
     for (const ex of chunk.explodables) {

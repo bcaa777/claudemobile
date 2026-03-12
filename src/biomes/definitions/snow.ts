@@ -8,6 +8,15 @@ export const snowBiome: BiomeConfig = {
   fogNear: 10,
   fogFar: 70,
   skyColor: new THREE.Color(0x1a2030),
+  skyConfig: {
+    zenithDay: new THREE.Color(0x4a5a70),
+    zenithNight: new THREE.Color(0x080a14),
+    horizonDay: new THREE.Color(0x8a98b0),
+    horizonNight: new THREE.Color(0x101828),
+    cloudColor: new THREE.Color(0xa0a8b8),
+    cloudDensity: 0.7,
+    hazeStrength: 0.3,
+  },
   ambientDayColor: new THREE.Color(0x304055),
   ambientNightColor: new THREE.Color(0x0a0d15),
   sunColor: new THREE.Color(0xaabbcc),
@@ -27,10 +36,11 @@ export const snowBiome: BiomeConfig = {
     [0.50, 0.60, 0.72],
   ],
   spriteTypes: [
-    { category: 'tree',      weight: 4, minScale: 3, maxScale: 6,   isBillboard: true },  // snow pine
-    { category: 'rock',      weight: 3, minScale: 1, maxScale: 3,   isBillboard: false },
-    { category: 'structure', weight: 0.5, minScale: 2, maxScale: 4, isBillboard: true },
-    { category: 'grass',     weight: 2, minScale: 0.6, maxScale: 1.2, isBillboard: true },
+    { category: 'tree',      weight: 5, minScale: 3, maxScale: 6,   isBillboard: true },  // snow pine
+    { category: 'rock',      weight: 4, minScale: 1, maxScale: 3,   isBillboard: false },
+    { category: 'structure', weight: 0.8, minScale: 2, maxScale: 4, isBillboard: true },
+    { category: 'bush',      weight: 3, minScale: 0.8, maxScale: 1.5, isBillboard: true },
+    { category: 'grass',     weight: 4, minScale: 0.6, maxScale: 1.2, isBillboard: true },
   ],
   heightScale: 22,
   heightFrequency: 0.019,

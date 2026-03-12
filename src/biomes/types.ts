@@ -23,6 +23,16 @@ export interface SpriteTypeConfig {
   isBillboard: boolean  // true = Y-axis billboard, false = ground decal
 }
 
+export interface SkyConfig {
+  zenithDay: THREE.Color
+  zenithNight: THREE.Color
+  horizonDay: THREE.Color
+  horizonNight: THREE.Color
+  cloudColor: THREE.Color
+  cloudDensity: number       // 0 = clear, 1 = overcast
+  hazeStrength: number       // 0 = sharp horizon, 1 = thick haze
+}
+
 export interface BiomeConfig {
   type: BiomeType
   name: string
@@ -30,6 +40,7 @@ export interface BiomeConfig {
   fogNear: number
   fogFar: number
   skyColor: THREE.Color       // background/clear color
+  skyConfig: SkyConfig
   ambientDayColor: THREE.Color
   ambientNightColor: THREE.Color
   sunColor: THREE.Color
