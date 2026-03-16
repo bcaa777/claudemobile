@@ -254,7 +254,7 @@ export class CreatureMesh {
   update(creature: Creature, delta: number) {
     this.group.position.copy(creature.position)
     this.group.scale.setScalar(creature.scale)
-    this.group.rotation.y = creature.heading + Math.PI
+    this.group.rotation.y = creature.heading
 
     // Simple LOD — no animation needed
     if (this.lod === 'simple') {

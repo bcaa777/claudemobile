@@ -168,6 +168,30 @@ export class CreatureManager {
       }
     }
 
+    // Clear initializedChunks for far-away chunks so they can respawn when revisited
+    const playerCX = Math.floor(playerPos.x / CHUNK_SIZE)
+    const playerCZ = Math.floor(playerPos.z / CHUNK_SIZE)
+    const cullChunkRadius = VIEW_RADIUS + 4
+    for (const key of this.initializedChunks) {
+      const [kcx, kcz] = key.split(',').map(Number)
+      if (Math.abs(kcx - playerCX) > cullChunkRadius || Math.abs(kcz - playerCZ) > cullChunkRadius) {
+        this.initializedChunks.delete(key)
+      }
+    }
+
+    // Cull creatures far from the player to free population slots for nearby chunks
+    const cullDistSq = ((VIEW_RADIUS + 4) * CHUNK_SIZE) ** 2
+    for (let i = all.length - 1; i >= 0; i--) {
+      const c2 = all[i]
+      if (c2.state === 'dead') continue
+      const cdx = c2.position.x - playerPos.x
+      const cdz = c2.position.z - playerPos.z
+      if (cdx * cdx + cdz * cdz > cullDistSq) {
+        this.disposeMesh(c2)
+        this.creatures.delete(c2.id)
+      }
+    }
+
     // Cull excess population (remove oldest first) - only when significantly over limit
     if (this.creatures.size > MAX_POPULATION) {
       // Sort the flat array by age descending (reuse grid.flat to avoid new allocation)
