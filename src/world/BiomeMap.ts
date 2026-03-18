@@ -96,12 +96,14 @@ export class BiomeMap {
     }
   }
 
-  getClosestSeedOf(biomeType: BiomeType): { x: number; z: number } {
+  getClosestSeedOf(biomeType: BiomeType, minDist = 0): { x: number; z: number } {
     let best = Infinity
     let result = { x: 0, z: 0 }
+    const minDistSq = minDist * minDist
     for (const seed of this.seeds) {
       if (seed.biome !== biomeType) continue
       const d = seed.x * seed.x + seed.z * seed.z
+      if (d < minDistSq) continue
       if (d < best) { best = d; result = { x: seed.x, z: seed.z } }
     }
     return result

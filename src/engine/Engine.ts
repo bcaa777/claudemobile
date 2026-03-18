@@ -89,7 +89,7 @@ export class Engine {
     }
 
     // Grand Staircase — base at closest Forest seed
-    const stairSeed = this.biomeMap.getClosestSeedOf(BiomeType.Forest)
+    const stairSeed = this.biomeMap.getClosestSeedOf(BiomeType.Forest, 700)
     const stairTerrainY = sampleWorldHeight(stairSeed.x, stairSeed.z, this.biomeMap)
     const stairPos = new THREE.Vector3(stairSeed.x, stairTerrainY, stairSeed.z)
     cc0 = this.renderer.scene.children.length
@@ -105,7 +105,7 @@ export class Engine {
     this.biomeMap.setHeavenCenter(stairSeed.x + 150, stairSeed.z)
 
     // Infernal Staircase — at closest Volcanic seed
-    const hellSeed = this.biomeMap.getClosestSeedOf(BiomeType.Volcanic)
+    const hellSeed = this.biomeMap.getClosestSeedOf(BiomeType.Volcanic, 700)
     const hellTerrainY = sampleWorldHeight(hellSeed.x, hellSeed.z, this.biomeMap)
     const hellStairPos = new THREE.Vector3(hellSeed.x, hellTerrainY, hellSeed.z)
     cc0 = this.renderer.scene.children.length
