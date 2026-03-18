@@ -289,6 +289,26 @@ export class Chunk {
     if (TERRAIN_CONFIG.enableHellLavaPools)      this.buildHellLavaPools(rng, biomeMap)
     if (TERRAIN_CONFIG.enableHellSpires)         this.buildHellSpires(rng, biomeMap)
     if (TERRAIN_CONFIG.enableHellLavaFalls)      this.buildHellLavaFalls(rng, biomeMap)
+    if (TERRAIN_CONFIG.enableAlpineRocks)        this.buildAlpineRocks(rng, biomeMap)
+    if (TERRAIN_CONFIG.enableAlpineCabins)       this.buildAlpineCabins(rng, biomeMap)
+    if (TERRAIN_CONFIG.enableCliffLedges)        this.buildCliffLedges(rng, biomeMap)
+    if (TERRAIN_CONFIG.enableCliffNests)         this.buildCliffNests(rng, biomeMap)
+    if (TERRAIN_CONFIG.enableFloatingRocks)      this.buildFloatingRocks(rng, biomeMap)
+    if (TERRAIN_CONFIG.enableSkyBridges)         this.buildSkyBridges(rng, biomeMap)
+    if (TERRAIN_CONFIG.enableJungleCanopy)       this.buildJungleCanopy(rng, biomeMap)
+    if (TERRAIN_CONFIG.enableJungleRuins)        this.buildJungleRuins(rng, biomeMap)
+    if (TERRAIN_CONFIG.enableMesaPillars)        this.buildMesaPillars(rng, biomeMap)
+    if (TERRAIN_CONFIG.enableMesaDwellings)      this.buildMesaDwellings(rng, biomeMap)
+    if (TERRAIN_CONFIG.enableCoralFormations)    this.buildCoralFormations(rng, biomeMap)
+    if (TERRAIN_CONFIG.enableReefCaves)          this.buildReefCaves(rng, biomeMap)
+    if (TERRAIN_CONFIG.enableBogMounds)          this.buildBogMounds(rng, biomeMap)
+    if (TERRAIN_CONFIG.enableBogBridges)         this.buildBogBridges(rng, biomeMap)
+    if (TERRAIN_CONFIG.enableBadlandsHoodoos)    this.buildBadlandsHoodoos(rng, biomeMap)
+    if (TERRAIN_CONFIG.enableBadlandsArches)     this.buildBadlandsArches(rng, biomeMap)
+    if (TERRAIN_CONFIG.enableTaigaLogs)          this.buildTaigaLogs(rng, biomeMap)
+    if (TERRAIN_CONFIG.enableTaigaCamps)         this.buildTaigaCamps(rng, biomeMap)
+    if (TERRAIN_CONFIG.enableOasisPalms)         this.buildOasisPalms(rng, biomeMap)
+    if (TERRAIN_CONFIG.enableOasisWells)         this.buildOasisWells(rng, biomeMap)
 
     this.mergeStructures()
     this.placeSprites(rng, biomeMap, atlas, lightPool)
@@ -2590,6 +2610,489 @@ export class Chunk {
         for (const batch of this.billboardBatches) {
           batch.updateBillboard(localCamX, localCamZ, chunkCenterX, chunkCenterZ)
         }
+      }
+    }
+  }
+
+  // ── Alpine: Snow-capped boulder clusters ─────────────────────────────────
+  private buildAlpineRocks(rng: SeededRandom, biomeMap: BiomeMap) {
+    if (!this.heightGrid) return
+    const spacing = 18
+    const rockMat = this.matCache.getLambert(0x778899, { map: texGen.getTexture('slate', 0x778899).map })
+    const snowMat = this.matCache.getLambert(0xe8e8f0, { map: texGen.getTexture('ice', 0xe8e8f0).map })
+    for (let lz = spacing / 2; lz < CHUNK_SIZE; lz += spacing) {
+      for (let lx = spacing / 2; lx < CHUNK_SIZE; lx += spacing) {
+        if (rng.next() > 0.35) continue
+        const wx = this.cx * CHUNK_SIZE + lx, wz = this.cz * CHUNK_SIZE + lz
+        if (biomeMap.getBiomeAt(wx, wz) !== BiomeType.Alpine) continue
+        const h = sampleHeight(this.heightGrid, lx, lz)
+        if (h < WATER_LEVEL + 1) continue
+        const g = new THREE.Group(); g.position.set(lx, h, lz)
+        const bw = rng.range(2, 5), bh = rng.range(4, 14)
+        const rock = new THREE.Mesh(new THREE.BoxGeometry(bw, bh, bw * rng.range(0.7, 1.3)), rockMat)
+        rock.position.set(0, bh / 2, 0); rock.rotation.y = rng.range(0, Math.PI * 2); g.add(rock)
+        const snow = new THREE.Mesh(new THREE.BoxGeometry(bw * 1.1, 1, bw * 1.1), snowMat)
+        snow.position.set(0, bh + 0.5, 0); g.add(snow)
+        this.group.add(g); this.extras.push(g)
+        this.addWalkable(lx, lz, bw * 0.5, bw * 0.5, h + bh + 1)
+      }
+    }
+  }
+
+  private buildAlpineCabins(rng: SeededRandom, biomeMap: BiomeMap) {
+    if (!this.heightGrid) return
+    const woodMat = this.matCache.getLambert(0x5a3a18, { map: texGen.getTexture('wood', 0x5a3a18).map })
+    const roofMat = this.matCache.getLambert(0x444444, { map: texGen.getTexture('slate', 0x444444).map })
+    for (let lz = 16; lz < CHUNK_SIZE - 16; lz += 32) {
+      for (let lx = 16; lx < CHUNK_SIZE - 16; lx += 32) {
+        if (rng.next() > 0.08) continue
+        const wx = this.cx * CHUNK_SIZE + lx, wz = this.cz * CHUNK_SIZE + lz
+        if (biomeMap.getBiomeAt(wx, wz) !== BiomeType.Alpine) continue
+        const h = sampleHeight(this.heightGrid, lx, lz)
+        if (h < WATER_LEVEL + 1) continue
+        const g = new THREE.Group(); g.position.set(lx, h, lz)
+        const cabin = new THREE.Mesh(new THREE.BoxGeometry(8, 5, 6), woodMat)
+        cabin.position.set(0, 2.5, 0); g.add(cabin)
+        const roof = new THREE.Mesh(new THREE.BoxGeometry(9, 2, 7), roofMat)
+        roof.position.set(0, 6, 0); g.add(roof)
+        this.group.add(g); this.extras.push(g)
+        this.addWalkable(lx, lz, 4, 3, h + 5)
+      }
+    }
+  }
+
+  private buildCliffLedges(rng: SeededRandom, biomeMap: BiomeMap) {
+    if (!this.heightGrid) return
+    const slateMat = this.matCache.getLambert(0x667788, { map: texGen.getTexture('slate', 0x667788).map })
+    for (let lz = 10; lz < CHUNK_SIZE - 10; lz += 16) {
+      for (let lx = 10; lx < CHUNK_SIZE - 10; lx += 16) {
+        if (rng.next() > 0.30) continue
+        const wx = this.cx * CHUNK_SIZE + lx, wz = this.cz * CHUNK_SIZE + lz
+        if (biomeMap.getBiomeAt(wx, wz) !== BiomeType.Cliffs) continue
+        const h = sampleHeight(this.heightGrid, lx, lz)
+        if (h < WATER_LEVEL + 1) continue
+        const g = new THREE.Group(); g.position.set(lx, h, lz)
+        const ledgeW = rng.range(5, 12), ledgeD = rng.range(3, 7)
+        const ledge = new THREE.Mesh(new THREE.BoxGeometry(ledgeW, 1.5, ledgeD), slateMat)
+        const offsetY = rng.range(2, 8)
+        ledge.position.set(0, offsetY, 0); g.add(ledge)
+        const support = new THREE.Mesh(new THREE.BoxGeometry(2, offsetY, 2), slateMat)
+        support.position.set(0, offsetY / 2, -ledgeD / 2 + 1); g.add(support)
+        this.group.add(g); this.extras.push(g)
+        this.addWalkable(lx, lz, ledgeW / 2, ledgeD / 2, h + offsetY + 0.75)
+      }
+    }
+  }
+
+  private buildCliffNests(rng: SeededRandom, biomeMap: BiomeMap) {
+    if (!this.heightGrid) return
+    const woodMat = this.matCache.getLambert(0x5a4020, { map: texGen.getTexture('wood', 0x5a4020).map })
+    for (let lz = 16; lz < CHUNK_SIZE - 16; lz += 30) {
+      for (let lx = 16; lx < CHUNK_SIZE - 16; lx += 30) {
+        if (rng.next() > 0.06) continue
+        const wx = this.cx * CHUNK_SIZE + lx, wz = this.cz * CHUNK_SIZE + lz
+        if (biomeMap.getBiomeAt(wx, wz) !== BiomeType.Cliffs) continue
+        const h = sampleHeight(this.heightGrid, lx, lz)
+        if (h < WATER_LEVEL + 2) continue
+        const g = new THREE.Group(); g.position.set(lx, h, lz)
+        const nestR = rng.range(3, 6)
+        const nest = new THREE.Mesh(new THREE.BoxGeometry(nestR * 2, 1.5, nestR * 2), woodMat)
+        nest.position.set(0, 0.75, 0); g.add(nest)
+        for (let a = 0; a < 8; a++) {
+          const angle = a * Math.PI / 4
+          const stick = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1.5, 0.3), woodMat)
+          stick.position.set(Math.cos(angle) * nestR, 2.25, Math.sin(angle) * nestR); g.add(stick)
+        }
+        this.group.add(g); this.extras.push(g)
+        this.addWalkable(lx, lz, nestR, nestR, h + 1.5)
+      }
+    }
+  }
+
+  private buildFloatingRocks(rng: SeededRandom, biomeMap: BiomeMap) {
+    if (!this.heightGrid) return
+    const rockMat = this.matCache.getLambert(0x889988, { map: texGen.getTexture('stone', 0x889988).map })
+    const mossMat = this.matCache.getLambert(0x446644, { map: texGen.getTexture('moss', 0x446644).map })
+    for (let lz = 10; lz < CHUNK_SIZE - 10; lz += 18) {
+      for (let lx = 10; lx < CHUNK_SIZE - 10; lx += 18) {
+        if (rng.next() > 0.25) continue
+        const wx = this.cx * CHUNK_SIZE + lx, wz = this.cz * CHUNK_SIZE + lz
+        if (biomeMap.getBiomeAt(wx, wz) !== BiomeType.FloatingIslands) continue
+        const h = sampleHeight(this.heightGrid, lx, lz)
+        const floatY = h + rng.range(10, 35)
+        const g = new THREE.Group(); g.position.set(lx, floatY, lz)
+        const rw = rng.range(4, 10), rh = rng.range(3, 8), rd = rng.range(4, 10)
+        const rock = new THREE.Mesh(new THREE.BoxGeometry(rw, rh, rd), rockMat)
+        rock.position.set(0, 0, 0); g.add(rock)
+        const top = new THREE.Mesh(new THREE.BoxGeometry(rw * 0.9, 0.5, rd * 0.9), mossMat)
+        top.position.set(0, rh / 2 + 0.25, 0); g.add(top)
+        this.group.add(g); this.extras.push(g)
+        this.addWalkable(lx, lz, rw / 2, rd / 2, floatY + rh / 2 + 0.5)
+      }
+    }
+  }
+
+  private buildSkyBridges(rng: SeededRandom, biomeMap: BiomeMap) {
+    if (!this.heightGrid) return
+    const stoneMat = this.matCache.getLambert(0x778877, { map: texGen.getTexture('stone', 0x778877).map })
+    for (let lz = 16; lz < CHUNK_SIZE - 16; lz += 28) {
+      for (let lx = 16; lx < CHUNK_SIZE - 16; lx += 28) {
+        if (rng.next() > 0.06) continue
+        const wx = this.cx * CHUNK_SIZE + lx, wz = this.cz * CHUNK_SIZE + lz
+        if (biomeMap.getBiomeAt(wx, wz) !== BiomeType.FloatingIslands) continue
+        const h = sampleHeight(this.heightGrid, lx, lz)
+        const bridgeY = h + rng.range(12, 25)
+        const g = new THREE.Group(); g.position.set(lx, bridgeY, lz)
+        const span = rng.range(12, 22)
+        const bridge = new THREE.Mesh(new THREE.BoxGeometry(span, 1, 3), stoneMat)
+        bridge.position.set(0, 0, 0); g.add(bridge)
+        for (const side of [-span / 2, span / 2]) {
+          const pillar = new THREE.Mesh(new THREE.BoxGeometry(2, 6, 2), stoneMat)
+          pillar.position.set(side, -3, 0); g.add(pillar)
+        }
+        this.group.add(g); this.extras.push(g)
+        this.addWalkable(lx, lz, span / 2, 1.5, bridgeY + 0.5)
+      }
+    }
+  }
+
+  private buildJungleCanopy(rng: SeededRandom, biomeMap: BiomeMap) {
+    if (!this.heightGrid) return
+    const woodMat = this.matCache.getLambert(0x3a2810, { map: texGen.getTexture('wood', 0x3a2810).map })
+    const leafMat = this.matCache.getLambert(0x226622, { map: texGen.getTexture('vine', 0x226622).map })
+    for (let lz = 10; lz < CHUNK_SIZE - 10; lz += 16) {
+      for (let lx = 10; lx < CHUNK_SIZE - 10; lx += 16) {
+        if (rng.next() > 0.20) continue
+        const wx = this.cx * CHUNK_SIZE + lx, wz = this.cz * CHUNK_SIZE + lz
+        if (biomeMap.getBiomeAt(wx, wz) !== BiomeType.Jungle) continue
+        const h = sampleHeight(this.heightGrid, lx, lz)
+        if (h < WATER_LEVEL + 1) continue
+        const g = new THREE.Group(); g.position.set(lx, h, lz)
+        const trunkH = rng.range(8, 18)
+        const trunk = new THREE.Mesh(new THREE.BoxGeometry(1.5, trunkH, 1.5), woodMat)
+        trunk.position.set(0, trunkH / 2, 0); g.add(trunk)
+        const platW = rng.range(5, 10)
+        const plat = new THREE.Mesh(new THREE.BoxGeometry(platW, 0.8, platW), woodMat)
+        plat.position.set(0, trunkH, 0); g.add(plat)
+        const canopy = new THREE.Mesh(new THREE.BoxGeometry(platW * 1.5, 3, platW * 1.5), leafMat)
+        canopy.position.set(0, trunkH + 2.5, 0); g.add(canopy)
+        this.group.add(g); this.extras.push(g)
+        this.addWalkable(lx, lz, platW / 2, platW / 2, h + trunkH + 0.4)
+      }
+    }
+  }
+
+  private buildJungleRuins(rng: SeededRandom, biomeMap: BiomeMap) {
+    if (!this.heightGrid) return
+    const stoneMat = this.matCache.getLambert(0x3a3a2a, { map: texGen.getTexture('moss', 0x3a3a2a).map })
+    for (let lz = 16; lz < CHUNK_SIZE - 16; lz += 30) {
+      for (let lx = 16; lx < CHUNK_SIZE - 16; lx += 30) {
+        if (rng.next() > 0.08) continue
+        const wx = this.cx * CHUNK_SIZE + lx, wz = this.cz * CHUNK_SIZE + lz
+        if (biomeMap.getBiomeAt(wx, wz) !== BiomeType.Jungle) continue
+        const h = sampleHeight(this.heightGrid, lx, lz)
+        if (h < WATER_LEVEL + 1) continue
+        const g = new THREE.Group(); g.position.set(lx, h, lz)
+        for (let i = 0; i < 3; i++) {
+          const wh = rng.range(3, 8), ww = rng.range(4, 10)
+          const wall = new THREE.Mesh(new THREE.BoxGeometry(ww, wh, 1.5), stoneMat)
+          wall.position.set(rng.range(-5, 5), wh / 2, rng.range(-5, 5))
+          wall.rotation.y = rng.range(0, Math.PI * 2); g.add(wall)
+        }
+        const slab = new THREE.Mesh(new THREE.BoxGeometry(10, 1, 10), stoneMat)
+        slab.position.set(0, 0.5, 0); g.add(slab)
+        this.group.add(g); this.extras.push(g)
+        this.addWalkable(lx, lz, 5, 5, h + 1)
+      }
+    }
+  }
+
+  private buildMesaPillars(rng: SeededRandom, biomeMap: BiomeMap) {
+    if (!this.heightGrid) return
+    const sandMat = this.matCache.getLambert(0xb86840, { map: texGen.getTexture('sandstone', 0xb86840).map })
+    for (let lz = 10; lz < CHUNK_SIZE - 10; lz += 16) {
+      for (let lx = 10; lx < CHUNK_SIZE - 10; lx += 16) {
+        if (rng.next() > 0.28) continue
+        const wx = this.cx * CHUNK_SIZE + lx, wz = this.cz * CHUNK_SIZE + lz
+        if (biomeMap.getBiomeAt(wx, wz) !== BiomeType.Mesa) continue
+        const h = sampleHeight(this.heightGrid, lx, lz)
+        if (h < WATER_LEVEL + 1) continue
+        const g = new THREE.Group(); g.position.set(lx, h, lz)
+        const pw = rng.range(2, 5), ph = rng.range(8, 25)
+        const pillar = new THREE.Mesh(new THREE.BoxGeometry(pw, ph, pw * rng.range(0.8, 1.2)), sandMat)
+        pillar.position.set(0, ph / 2, 0); g.add(pillar)
+        const cap = new THREE.Mesh(new THREE.BoxGeometry(pw * 1.5, 1.5, pw * 1.5), sandMat)
+        cap.position.set(0, ph + 0.75, 0); g.add(cap)
+        this.group.add(g); this.extras.push(g)
+        this.addWalkable(lx, lz, pw * 0.75, pw * 0.75, h + ph + 1.5)
+      }
+    }
+  }
+
+  private buildMesaDwellings(rng: SeededRandom, biomeMap: BiomeMap) {
+    if (!this.heightGrid) return
+    const adobeMat = this.matCache.getLambert(0xb86840, { map: texGen.getTexture('adobe', 0xb86840).map })
+    for (let lz = 16; lz < CHUNK_SIZE - 16; lz += 30) {
+      for (let lx = 16; lx < CHUNK_SIZE - 16; lx += 30) {
+        if (rng.next() > 0.07) continue
+        const wx = this.cx * CHUNK_SIZE + lx, wz = this.cz * CHUNK_SIZE + lz
+        if (biomeMap.getBiomeAt(wx, wz) !== BiomeType.Mesa) continue
+        const h = sampleHeight(this.heightGrid, lx, lz)
+        if (h < WATER_LEVEL + 1) continue
+        const g = new THREE.Group(); g.position.set(lx, h, lz)
+        const bw = rng.range(6, 10), bh = rng.range(4, 7), bd = rng.range(5, 8)
+        const dwelling = new THREE.Mesh(new THREE.BoxGeometry(bw, bh, bd), adobeMat)
+        dwelling.position.set(0, bh / 2, 0); g.add(dwelling)
+        const roof = new THREE.Mesh(new THREE.BoxGeometry(bw + 1, 0.8, bd + 1), adobeMat)
+        roof.position.set(0, bh + 0.4, 0); g.add(roof)
+        this.group.add(g); this.extras.push(g)
+        this.addWalkable(lx, lz, bw / 2, bd / 2, h + bh + 0.8)
+      }
+    }
+  }
+
+  private buildCoralFormations(rng: SeededRandom, biomeMap: BiomeMap) {
+    if (!this.heightGrid) return
+    const colors = [0xff6688, 0xff9944, 0xaa44cc, 0x44ccaa, 0xff88bb]
+    for (let lz = 8; lz < CHUNK_SIZE - 8; lz += 14) {
+      for (let lx = 8; lx < CHUNK_SIZE - 8; lx += 14) {
+        if (rng.next() > 0.40) continue
+        const wx = this.cx * CHUNK_SIZE + lx, wz = this.cz * CHUNK_SIZE + lz
+        if (biomeMap.getBiomeAt(wx, wz) !== BiomeType.CoralReef) continue
+        const h = sampleHeight(this.heightGrid, lx, lz)
+        const g = new THREE.Group(); g.position.set(lx, h, lz)
+        const count = rng.int(2, 5)
+        for (let i = 0; i < count; i++) {
+          const col = colors[rng.int(0, colors.length - 1)]
+          const mat = this.matCache.getLambert(col, { map: texGen.getTexture('coral', col).map })
+          const cw = rng.range(1, 3), ch = rng.range(2, 6)
+          const coral = new THREE.Mesh(new THREE.BoxGeometry(cw, ch, cw), mat)
+          coral.position.set(rng.range(-3, 3), ch / 2, rng.range(-3, 3)); g.add(coral)
+        }
+        this.group.add(g); this.extras.push(g)
+      }
+    }
+  }
+
+  private buildReefCaves(rng: SeededRandom, biomeMap: BiomeMap) {
+    if (!this.heightGrid) return
+    const coralMat = this.matCache.getLambert(0xff6688, { map: texGen.getTexture('coral', 0xff6688).map })
+    for (let lz = 16; lz < CHUNK_SIZE - 16; lz += 28) {
+      for (let lx = 16; lx < CHUNK_SIZE - 16; lx += 28) {
+        if (rng.next() > 0.06) continue
+        const wx = this.cx * CHUNK_SIZE + lx, wz = this.cz * CHUNK_SIZE + lz
+        if (biomeMap.getBiomeAt(wx, wz) !== BiomeType.CoralReef) continue
+        const h = sampleHeight(this.heightGrid, lx, lz)
+        const g = new THREE.Group(); g.position.set(lx, h, lz)
+        const span = rng.range(8, 14), archH = rng.range(4, 8)
+        for (const side of [-span / 2, span / 2]) {
+          const p = new THREE.Mesh(new THREE.BoxGeometry(2, archH, 2), coralMat)
+          p.position.set(side, archH / 2, 0); g.add(p)
+        }
+        const archTop = new THREE.Mesh(new THREE.BoxGeometry(span + 2, 2, 3), coralMat)
+        archTop.position.set(0, archH + 1, 0); g.add(archTop)
+        this.group.add(g); this.extras.push(g)
+        this.addWalkable(lx, lz, span / 2, 1.5, h + archH + 2)
+      }
+    }
+  }
+
+  private buildBogMounds(rng: SeededRandom, biomeMap: BiomeMap) {
+    if (!this.heightGrid) return
+    const mossMat = this.matCache.getLambert(0x334422, { map: texGen.getTexture('moss', 0x334422).map })
+    for (let lz = 10; lz < CHUNK_SIZE - 10; lz += 16) {
+      for (let lx = 10; lx < CHUNK_SIZE - 10; lx += 16) {
+        if (rng.next() > 0.30) continue
+        const wx = this.cx * CHUNK_SIZE + lx, wz = this.cz * CHUNK_SIZE + lz
+        if (biomeMap.getBiomeAt(wx, wz) !== BiomeType.Bog) continue
+        const h = sampleHeight(this.heightGrid, lx, lz)
+        const g = new THREE.Group(); g.position.set(lx, h, lz)
+        const mw = rng.range(4, 8), mh = rng.range(2, 5)
+        const mound = new THREE.Mesh(new THREE.BoxGeometry(mw, mh, mw * rng.range(0.8, 1.2)), mossMat)
+        mound.position.set(0, mh / 2, 0); g.add(mound)
+        this.group.add(g); this.extras.push(g)
+        this.addWalkable(lx, lz, mw / 2, mw / 2, h + mh)
+      }
+    }
+  }
+
+  private buildBogBridges(rng: SeededRandom, biomeMap: BiomeMap) {
+    if (!this.heightGrid) return
+    const woodMat = this.matCache.getLambert(0x3a2810, { map: texGen.getTexture('wood', 0x3a2810).map })
+    for (let lz = 16; lz < CHUNK_SIZE - 16; lz += 30) {
+      for (let lx = 16; lx < CHUNK_SIZE - 16; lx += 30) {
+        if (rng.next() > 0.08) continue
+        const wx = this.cx * CHUNK_SIZE + lx, wz = this.cz * CHUNK_SIZE + lz
+        if (biomeMap.getBiomeAt(wx, wz) !== BiomeType.Bog) continue
+        const h = sampleHeight(this.heightGrid, lx, lz)
+        const g = new THREE.Group(); g.position.set(lx, h + 0.5, lz)
+        const bridgeLen = rng.range(10, 20)
+        const deck = new THREE.Mesh(new THREE.BoxGeometry(3, 0.3, bridgeLen), woodMat)
+        deck.position.set(0, 0, 0); g.add(deck)
+        for (let i = 0; i < 3; i++) {
+          const post = new THREE.Mesh(new THREE.BoxGeometry(0.4, 2, 0.4), woodMat)
+          post.position.set(0, -1, -bridgeLen / 2 + i * bridgeLen / 2); g.add(post)
+        }
+        this.group.add(g); this.extras.push(g)
+        this.addWalkable(lx, lz, 1.5, bridgeLen / 2, h + 0.65)
+      }
+    }
+  }
+
+  private buildBadlandsHoodoos(rng: SeededRandom, biomeMap: BiomeMap) {
+    if (!this.heightGrid) return
+    const sandMat = this.matCache.getLambert(0xaa6633, { map: texGen.getTexture('sandstone', 0xaa6633).map })
+    for (let lz = 10; lz < CHUNK_SIZE - 10; lz += 14) {
+      for (let lx = 10; lx < CHUNK_SIZE - 10; lx += 14) {
+        if (rng.next() > 0.32) continue
+        const wx = this.cx * CHUNK_SIZE + lx, wz = this.cz * CHUNK_SIZE + lz
+        if (biomeMap.getBiomeAt(wx, wz) !== BiomeType.Badlands) continue
+        const h = sampleHeight(this.heightGrid, lx, lz)
+        if (h < WATER_LEVEL + 1) continue
+        const g = new THREE.Group(); g.position.set(lx, h, lz)
+        const pw = rng.range(1.5, 3), ph = rng.range(8, 22)
+        const pillar = new THREE.Mesh(new THREE.BoxGeometry(pw, ph, pw), sandMat)
+        pillar.position.set(0, ph / 2, 0)
+        pillar.rotation.set(rng.range(-0.05, 0.05), 0, rng.range(-0.05, 0.05)); g.add(pillar)
+        const cap = new THREE.Mesh(new THREE.BoxGeometry(pw * 2, 2, pw * 2), sandMat)
+        cap.position.set(0, ph + 1, 0); g.add(cap)
+        this.group.add(g); this.extras.push(g)
+      }
+    }
+  }
+
+  private buildBadlandsArches(rng: SeededRandom, biomeMap: BiomeMap) {
+    if (!this.heightGrid) return
+    const sandMat = this.matCache.getLambert(0x884422, { map: texGen.getTexture('sandstone', 0x884422).map })
+    for (let lz = 16; lz < CHUNK_SIZE - 16; lz += 30) {
+      for (let lx = 16; lx < CHUNK_SIZE - 16; lx += 30) {
+        if (rng.next() > 0.06) continue
+        const wx = this.cx * CHUNK_SIZE + lx, wz = this.cz * CHUNK_SIZE + lz
+        if (biomeMap.getBiomeAt(wx, wz) !== BiomeType.Badlands) continue
+        const h = sampleHeight(this.heightGrid, lx, lz)
+        if (h < WATER_LEVEL + 1) continue
+        const g = new THREE.Group(); g.position.set(lx, h, lz)
+        const span = rng.range(10, 18), archH = rng.range(6, 12)
+        for (const side of [-span / 2, span / 2]) {
+          const p = new THREE.Mesh(new THREE.BoxGeometry(3, archH, 3), sandMat)
+          p.position.set(side, archH / 2, 0); g.add(p)
+        }
+        const segs = 5
+        for (let i = 0; i < segs; i++) {
+          const t = (i + 0.5) / segs
+          const angle = Math.PI * t
+          const along = -span / 2 + span * t
+          const ay = archH + Math.sin(angle) * archH * 0.3
+          const seg = new THREE.Mesh(new THREE.BoxGeometry(span / segs + 0.3, 2.5, 3), sandMat)
+          seg.position.set(along, ay, 0); g.add(seg)
+        }
+        this.group.add(g); this.extras.push(g)
+        this.addWalkable(lx, lz, span / 2, 1.5, h + archH + archH * 0.3 + 1.25)
+      }
+    }
+  }
+
+  private buildTaigaLogs(rng: SeededRandom, biomeMap: BiomeMap) {
+    if (!this.heightGrid) return
+    const woodMat = this.matCache.getLambert(0x4a3018, { map: texGen.getTexture('wood', 0x4a3018).map })
+    for (let lz = 10; lz < CHUNK_SIZE - 10; lz += 16) {
+      for (let lx = 10; lx < CHUNK_SIZE - 10; lx += 16) {
+        if (rng.next() > 0.22) continue
+        const wx = this.cx * CHUNK_SIZE + lx, wz = this.cz * CHUNK_SIZE + lz
+        if (biomeMap.getBiomeAt(wx, wz) !== BiomeType.Taiga) continue
+        const h = sampleHeight(this.heightGrid, lx, lz)
+        if (h < WATER_LEVEL + 1) continue
+        const g = new THREE.Group(); g.position.set(lx, h, lz)
+        const logLen = rng.range(6, 16), logR = rng.range(0.5, 1.5)
+        const log = new THREE.Mesh(new THREE.BoxGeometry(logR * 2, logR * 2, logLen), woodMat)
+        log.position.set(0, logR, 0)
+        log.rotation.y = rng.range(0, Math.PI * 2); g.add(log)
+        this.group.add(g); this.extras.push(g)
+        this.addWalkable(lx, lz, logR, logLen / 2, h + logR * 2)
+      }
+    }
+  }
+
+  private buildTaigaCamps(rng: SeededRandom, biomeMap: BiomeMap) {
+    if (!this.heightGrid) return
+    const woodMat = this.matCache.getLambert(0x5a3a18, { map: texGen.getTexture('wood', 0x5a3a18).map })
+    const clothMat = this.matCache.getLambert(0x887766)
+    const stoneMat = this.matCache.getLambert(0x555555, { map: texGen.getTexture('stone', 0x555555).map })
+    for (let lz = 16; lz < CHUNK_SIZE - 16; lz += 32) {
+      for (let lx = 16; lx < CHUNK_SIZE - 16; lx += 32) {
+        if (rng.next() > 0.06) continue
+        const wx = this.cx * CHUNK_SIZE + lx, wz = this.cz * CHUNK_SIZE + lz
+        if (biomeMap.getBiomeAt(wx, wz) !== BiomeType.Taiga) continue
+        const h = sampleHeight(this.heightGrid, lx, lz)
+        if (h < WATER_LEVEL + 1) continue
+        const g = new THREE.Group(); g.position.set(lx, h, lz)
+        const tentW = 5, tentH = 4
+        const tentL = new THREE.Mesh(new THREE.BoxGeometry(tentW / 2, 0.3, 6), clothMat)
+        tentL.position.set(-tentW / 4, tentH / 2, 0); tentL.rotation.z = 0.5; g.add(tentL)
+        const tentR = new THREE.Mesh(new THREE.BoxGeometry(tentW / 2, 0.3, 6), clothMat)
+        tentR.position.set(tentW / 4, tentH / 2, 0); tentR.rotation.z = -0.5; g.add(tentR)
+        const ring = new THREE.Mesh(new THREE.BoxGeometry(2, 0.5, 2), stoneMat)
+        ring.position.set(5, 0.25, 0); g.add(ring)
+        const log1 = new THREE.Mesh(new THREE.BoxGeometry(3, 0.6, 0.6), woodMat)
+        log1.position.set(5, 0.3, 2.5); g.add(log1)
+        this.group.add(g); this.extras.push(g)
+        this.addWalkable(lx, lz, 6, 4, h + 0.5)
+      }
+    }
+  }
+
+  private buildOasisPalms(rng: SeededRandom, biomeMap: BiomeMap) {
+    if (!this.heightGrid) return
+    const trunkMat = this.matCache.getLambert(0x8a6830, { map: texGen.getTexture('wood', 0x8a6830).map })
+    const leafMat = this.matCache.getLambert(0x338822, { map: texGen.getTexture('vine', 0x338822).map })
+    for (let lz = 10; lz < CHUNK_SIZE - 10; lz += 14) {
+      for (let lx = 10; lx < CHUNK_SIZE - 10; lx += 14) {
+        if (rng.next() > 0.25) continue
+        const wx = this.cx * CHUNK_SIZE + lx, wz = this.cz * CHUNK_SIZE + lz
+        if (biomeMap.getBiomeAt(wx, wz) !== BiomeType.Oasis) continue
+        const h = sampleHeight(this.heightGrid, lx, lz)
+        if (h < WATER_LEVEL + 1) continue
+        const g = new THREE.Group(); g.position.set(lx, h, lz)
+        const count = rng.int(2, 4)
+        for (let i = 0; i < count; i++) {
+          const th = rng.range(6, 14)
+          const trunk = new THREE.Mesh(new THREE.BoxGeometry(0.8, th, 0.8), trunkMat)
+          const ox = rng.range(-3, 3), oz = rng.range(-3, 3)
+          trunk.position.set(ox, th / 2, oz); g.add(trunk)
+          const canopy = new THREE.Mesh(new THREE.BoxGeometry(4, 1.5, 4), leafMat)
+          canopy.position.set(ox, th + 0.75, oz); g.add(canopy)
+        }
+        this.group.add(g); this.extras.push(g)
+      }
+    }
+  }
+
+  private buildOasisWells(rng: SeededRandom, biomeMap: BiomeMap) {
+    if (!this.heightGrid) return
+    const stoneMat2 = this.matCache.getLambert(0xc8a060, { map: texGen.getTexture('sandstone', 0xc8a060).map })
+    const waterMat = this.matCache.getLambert(0x4488aa, { transparent: true, opacity: 0.7 })
+    for (let lz = 16; lz < CHUNK_SIZE - 16; lz += 32) {
+      for (let lx = 16; lx < CHUNK_SIZE - 16; lx += 32) {
+        if (rng.next() > 0.06) continue
+        const wx = this.cx * CHUNK_SIZE + lx, wz = this.cz * CHUNK_SIZE + lz
+        if (biomeMap.getBiomeAt(wx, wz) !== BiomeType.Oasis) continue
+        const h = sampleHeight(this.heightGrid, lx, lz)
+        if (h < WATER_LEVEL + 1) continue
+        const g = new THREE.Group(); g.position.set(lx, h, lz)
+        for (const [dx, dz, w, d] of [[0, -2, 4, 0.5], [0, 2, 4, 0.5], [-2, 0, 0.5, 4], [2, 0, 0.5, 4]] as [number,number,number,number][]) {
+          const wall = new THREE.Mesh(new THREE.BoxGeometry(w, 2, d), stoneMat2)
+          wall.position.set(dx, 1, dz); g.add(wall)
+        }
+        const water = new THREE.Mesh(new THREE.BoxGeometry(3.5, 0.2, 3.5), waterMat)
+        water.position.set(0, 0.5, 0); g.add(water)
+        const roof = new THREE.Mesh(new THREE.BoxGeometry(5, 0.5, 5), stoneMat2)
+        roof.position.set(0, 5.25, 0); g.add(roof)
+        for (const [sx, sz] of [[-1.5, -1.5], [1.5, -1.5], [-1.5, 1.5], [1.5, 1.5]] as [number,number][]) {
+          const post = new THREE.Mesh(new THREE.BoxGeometry(0.3, 4, 0.3), stoneMat2)
+          post.position.set(sx, 3, sz); g.add(post)
+        }
+        this.group.add(g); this.extras.push(g)
+        this.addWalkable(lx, lz, 2.5, 2.5, h + 2)
       }
     }
   }

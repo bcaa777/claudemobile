@@ -200,6 +200,33 @@ export class CreatureMesh {
         mane.position.set(0, bodyH * 0.2, bodyD * 0.55)
         this.group.add(mane)
       }
+      if (creature.species === 'crab') {
+        // Wide flat body with side-mounted eyes and claws
+        const eyeStalk1 = this.box(0.06, 0.15, 0.06, headColor)
+        eyeStalk1.position.set(-bodyW * 0.35, bodyH * 0.55, bodyD * 0.35)
+        const eyeStalk2 = this.box(0.06, 0.15, 0.06, headColor)
+        eyeStalk2.position.set(bodyW * 0.35, bodyH * 0.55, bodyD * 0.35)
+        this.group.add(eyeStalk1, eyeStalk2)
+        // Claws
+        const clawMat = getCachedMat(0xdd5533)
+        for (const side of [-1, 1]) {
+          const claw = new THREE.Mesh(getCachedBox(bodyW * 0.25, bodyH * 0.5, bodyD * 0.2), clawMat)
+          claw.position.set(side * bodyW * 0.6, 0, bodyD * 0.4)
+          this.group.add(claw)
+        }
+      }
+      if (creature.species === 'goat') {
+        // Small horns
+        const hornMat = getCachedMat(0x888877)
+        const hornGeo = getCachedBox(0.06, 0.2, 0.06)
+        const hL = new THREE.Mesh(hornGeo, hornMat)
+        hL.position.set(-bodyW * 0.15, bodyH * 0.7, bodyD * 0.48)
+        hL.rotation.z = 0.3
+        const hR = new THREE.Mesh(hornGeo, hornMat)
+        hR.position.set(bodyW * 0.15, bodyH * 0.7, bodyD * 0.48)
+        hR.rotation.z = -0.3
+        this.group.add(hL, hR)
+      }
       if (creature.species === 'mammoth') {
         const tuskMat = getCachedMat(0xfffff0)
         const tuskGeo = getCachedBox(bodyW * 0.12, bodyW * 0.12, bodyD * 0.35)
@@ -258,6 +285,20 @@ export class CreatureMesh {
           ridge.position.set(0, bodyH * 0.58, bodyD * 0.28 - i * bodyD * 0.18)
           this.group.add(ridge)
         }
+      }
+      if (creature.species === 'eagle') {
+        // Hooked beak
+        const beakMat = getCachedMat(0xccaa00)
+        const beak = new THREE.Mesh(getCachedBox(bodyW * 0.2, bodyH * 0.2, bodyD * 0.25), beakMat)
+        beak.position.set(0, bodyH * 0.0, bodyD * 0.75)
+        this.group.add(beak)
+      }
+      if (creature.species === 'parrot') {
+        // Colorful tail feathers
+        const tailMat = getCachedMat(0x2244ff)
+        const tail = new THREE.Mesh(getCachedBox(bodyW * 0.2, bodyH * 0.1, bodyD * 0.4), tailMat)
+        tail.position.set(0, 0, -bodyD * 0.5)
+        this.group.add(tail)
       }
 
     } else if (creature.species === 'croc') {
@@ -593,8 +634,8 @@ export class CreatureMesh {
 
     // Wing flap
     if (sp.mobility === 'air' && this.wings.length >= 2) {
-      const flapSpeed = sp.id === 'skywhale' ? 0.8 : sp.id === 'dragon' ? 2.5 : 6.0
-      const flapAmp  = sp.id === 'skywhale' ? 0.2 : sp.id === 'dragon' ? 0.4 : 0.6
+      const flapSpeed = sp.id === 'skywhale' ? 0.8 : sp.id === 'dragon' ? 2.5 : sp.id === 'eagle' ? 3.0 : 6.0
+      const flapAmp  = sp.id === 'skywhale' ? 0.2 : sp.id === 'dragon' ? 0.4 : sp.id === 'eagle' ? 0.5 : 0.6
       const angle = Math.sin(this.animTime * flapSpeed) * flapAmp
       this.wings[0].rotation.z =  angle
       this.wings[1].rotation.z = -angle

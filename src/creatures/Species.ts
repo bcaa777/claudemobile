@@ -3,6 +3,7 @@ import { BiomeType } from '../biomes/types'
 export type SpeciesId = 'deer' | 'rabbit' | 'bird' | 'dragon' | 'fish' | 'wolf' | 'croc'
   | 'bear' | 'camel' | 'fox' | 'bat' | 'scorpion' | 'lion' | 'mammoth' | 'toad'
   | 'titan' | 'skywhale' | 'wurm' | 'imp' | 'hellhound' | 'infernal'
+  | 'eagle' | 'parrot' | 'crab' | 'goat'
 
 export interface SpeciesDef {
   id: SpeciesId
@@ -528,6 +529,98 @@ export const SPECIES: Record<SpeciesId, SpeciesDef> = {
     adultScale: 12,
     babyScale: 6,
   },
+
+  eagle: {
+    id: 'eagle',
+    mobility: 'air',
+    role: 'predator',
+    bodyColor: 0x5a3a1a,
+    headColor: 0xf0f0e8,
+    legColor: 0xccaa00,
+    bodyW: 0.5, bodyH: 0.4, bodyD: 0.8,
+    maxSpeed: 12,
+    fleeSpeed: 12,
+    maxHunger: 300,
+    maxThirst: 180,
+    maxEnergy: 100,
+    maxAge: 600,
+    sightRange: 30,
+    attackRange: 2,
+    attackDamage: 12,
+    preferredBiomes: [BiomeType.Alpine, BiomeType.Cliffs, BiomeType.FloatingIslands, BiomeType.Mesa],
+    spawnWeight: 2,
+    adultScale: 1.0,
+    babyScale: 0.5,
+  },
+
+  parrot: {
+    id: 'parrot',
+    mobility: 'air',
+    role: 'herbivore',
+    bodyColor: 0x22cc44,
+    headColor: 0xff4444,
+    legColor: 0x666666,
+    bodyW: 0.3, bodyH: 0.25, bodyD: 0.4,
+    maxSpeed: 7,
+    fleeSpeed: 12,
+    maxHunger: 120,
+    maxThirst: 90,
+    maxEnergy: 100,
+    maxAge: 360,
+    sightRange: 10,
+    attackRange: 0,
+    attackDamage: 0,
+    preferredBiomes: [BiomeType.Jungle, BiomeType.Oasis],
+    spawnWeight: 3,
+    adultScale: 0.7,
+    babyScale: 0.35,
+  },
+
+  crab: {
+    id: 'crab',
+    mobility: 'ground',
+    role: 'herbivore',
+    bodyColor: 0xcc4422,
+    headColor: 0xdd5533,
+    legColor: 0xaa3311,
+    bodyW: 0.4, bodyH: 0.2, bodyD: 0.5,
+    maxSpeed: 3,
+    fleeSpeed: 5,
+    maxHunger: 180,
+    maxThirst: 60,
+    maxEnergy: 100,
+    maxAge: 300,
+    sightRange: 5,
+    attackRange: 0,
+    attackDamage: 0,
+    preferredBiomes: [BiomeType.CoralReef, BiomeType.Bog],
+    spawnWeight: 2,
+    adultScale: 0.8,
+    babyScale: 0.4,
+  },
+
+  goat: {
+    id: 'goat',
+    mobility: 'ground',
+    role: 'herbivore',
+    bodyColor: 0xccccbb,
+    headColor: 0xddddcc,
+    legColor: 0x888877,
+    bodyW: 0.6, bodyH: 0.5, bodyD: 0.9,
+    maxSpeed: 6,
+    fleeSpeed: 9,
+    maxHunger: 240,
+    maxThirst: 180,
+    maxEnergy: 100,
+    maxAge: 480,
+    sightRange: 10,
+    attackRange: 0,
+    attackDamage: 0,
+    preferredBiomes: [BiomeType.Alpine, BiomeType.Mesa, BiomeType.Badlands, BiomeType.Taiga],
+    spawnWeight: 2,
+    adultScale: 1.0,
+    babyScale: 0.5,
+  },
 }
 
-export const ALL_SPECIES: SpeciesId[] = ['deer', 'rabbit', 'bird', 'dragon', 'fish', 'wolf', 'croc', 'bear', 'camel', 'fox', 'bat', 'scorpion', 'lion', 'mammoth', 'toad', 'titan', 'skywhale', 'wurm', 'imp', 'hellhound', 'infernal']
+export const ALL_SPECIES: SpeciesId[] = ['deer', 'rabbit', 'bird', 'dragon', 'fish', 'wolf', 'croc', 'bear', 'camel', 'fox', 'bat', 'scorpion', 'lion', 'mammoth', 'toad', 'titan', 'skywhale', 'wurm', 'imp', 'hellhound', 'infernal', 'eagle', 'parrot', 'crab', 'goat']

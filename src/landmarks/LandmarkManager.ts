@@ -17,6 +17,16 @@ import { CrystalCathedral } from './CrystalCathedral'
 import { SavannaObelisk } from './SavannaObelisk'
 import { CloudTemple } from './CloudTemple'
 import { InfernalCitadel } from './InfernalCitadel'
+import { AlpineMonastery } from './AlpineMonastery'
+import { CliffFortress } from './CliffFortress'
+import { SkyTemple } from './SkyTemple'
+import { JunglePyramid } from './JunglePyramid'
+import { MesaCitadel } from './MesaCitadel'
+import { CoralPalace } from './CoralPalace'
+import { BogShrine } from './BogShrine'
+import { BadlandsMonolith } from './BadlandsMonolith'
+import { TaigaLonghouse } from './TaigaLonghouse'
+import { OasisMinaret } from './OasisMinaret'
 import { LandmarkCrystal } from './LandmarkCrystal'
 import { HEAVEN_ALTITUDE, HELL_DEPTH } from '../world/TerrainGenerator'
 
@@ -36,8 +46,18 @@ const CRYSTAL_COLORS: Partial<Record<BiomeType, number>> = {
   [BiomeType.AshWastes]: 0xff6633,
   [BiomeType.Crystal]:   0x88aaff,
   [BiomeType.Savanna]:   0xffcc22,
-  [BiomeType.Heaven]:    0xffeedd,
-  [BiomeType.Hell]:      0xff4422,
+  [BiomeType.Heaven]:          0xffeedd,
+  [BiomeType.Hell]:            0xff4422,
+  [BiomeType.Alpine]:          0xccddff,
+  [BiomeType.Cliffs]:          0x8899bb,
+  [BiomeType.FloatingIslands]: 0xaaddff,
+  [BiomeType.Jungle]:          0x44ff66,
+  [BiomeType.Mesa]:            0xffaa44,
+  [BiomeType.CoralReef]:       0xff88cc,
+  [BiomeType.Bog]:             0x66aa44,
+  [BiomeType.Badlands]:        0xdd8844,
+  [BiomeType.Taiga]:           0x88bbaa,
+  [BiomeType.Oasis]:           0xffdd66,
 }
 
 // 3 crystal offsets per landmark (world-space offsets from landmark centre)
@@ -112,7 +132,17 @@ export class LandmarkManager {
     spawn(BiomeType.Mushroom,  MyceliumCathedral, seed + 1007)
     spawn(BiomeType.AshWastes, AshColosseum,      seed + 1008)
     spawn(BiomeType.Crystal,   CrystalCathedral,  seed + 1009)
-    spawn(BiomeType.Savanna,   SavannaObelisk,    seed + 1010)
+    spawn(BiomeType.Savanna,         SavannaObelisk,    seed + 1010)
+    spawn(BiomeType.Alpine,          AlpineMonastery,   seed + 1013)
+    spawn(BiomeType.Cliffs,          CliffFortress,     seed + 1014)
+    spawn(BiomeType.FloatingIslands, SkyTemple,         seed + 1015)
+    spawn(BiomeType.Jungle,          JunglePyramid,     seed + 1016)
+    spawn(BiomeType.Mesa,            MesaCitadel,       seed + 1017)
+    spawn(BiomeType.CoralReef,       CoralPalace,       seed + 1018)
+    spawn(BiomeType.Bog,             BogShrine,         seed + 1019)
+    spawn(BiomeType.Badlands,        BadlandsMonolith,  seed + 1020)
+    spawn(BiomeType.Taiga,           TaigaLonghouse,    seed + 1021)
+    spawn(BiomeType.Oasis,           OasisMinaret,      seed + 1022)
 
     // Heaven — special: spawn CloudTemple at heaven center, not Voronoi seed
     const hc = biomeMap.getHeavenCenter()

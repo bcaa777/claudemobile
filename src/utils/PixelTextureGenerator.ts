@@ -5,6 +5,7 @@ export type TexturePattern =
   | 'stone' | 'darkStone' | 'wood' | 'sand' | 'ice' | 'obsidian'
   | 'gold' | 'moss' | 'mushroom' | 'ash' | 'crystal' | 'marble'
   | 'lava' | 'runeGlow' | 'crystalGlow' | 'mushroomGlow' | 'emberGlow' | 'beaconGlow' | 'scales'
+  | 'vine' | 'coral' | 'sandstone' | 'slate' | 'bamboo' | 'adobe' | 'lichen'
 
 const SIZE = 16
 
@@ -393,6 +394,118 @@ const patterns: Record<TexturePattern, PatternFn> = {
         const dist = Math.sqrt(dx * dx + dy * dy) / 10
         const shade = Math.max(0.3, 1 - dist * 0.6) + (rng.next() - 0.5) * 0.05
         setPixel(data, x, y, r * shade, g * shade, b * shade)
+      }
+    }
+  },
+
+  vine(data, baseColor, rng) {
+    const [r, g, b] = colorToRGB(baseColor)
+    // Dark background with green vertical streaks
+    fillBase(data, Math.round(r * 0.3), Math.round(g * 0.3), Math.round(b * 0.3))
+    for (let v = 0; v < 4; v++) {
+      let vx = rng.int(1, 14)
+      for (let y = 0; y < SIZE; y++) {
+        if (vx >= 0 && vx < SIZE) {
+          const bright = 0.7 + rng.next() * 0.3
+          setPixel(data, vx, y, r * bright, g * bright, b * bright)
+        }
+        vx += rng.int(-1, 1)
+        vx = Math.max(0, Math.min(15, vx))
+      }
+    }
+  },
+
+  coral(data, baseColor, rng) {
+    const [r, g, b] = colorToRGB(baseColor)
+    fillBase(data, r, g, b)
+    // Organic blobs
+    for (let i = 0; i < 5; i++) {
+      const cx = rng.int(2, 13)
+      const cy = rng.int(2, 13)
+      const rad = rng.int(1, 3)
+      const shift = [1.2 + rng.next() * 0.3, 0.8 + rng.next() * 0.2, 0.9 + rng.next() * 0.2]
+      for (let dy = -rad; dy <= rad; dy++) {
+        for (let dx = -rad; dx <= rad; dx++) {
+          const px = cx + dx, py = cy + dy
+          if (px >= 0 && px < SIZE && py >= 0 && py < SIZE && dx * dx + dy * dy <= rad * rad) {
+            setPixel(data, px, py, r * shift[0], g * shift[1], b * shift[2])
+          }
+        }
+      }
+    }
+  },
+
+  sandstone(data, baseColor, rng) {
+    const [r, g, b] = colorToRGB(baseColor)
+    // Layered horizontal bands
+    for (let y = 0; y < SIZE; y++) {
+      const band = 0.85 + (Math.sin(y * 0.9) * 0.12) + (rng.next() - 0.5) * 0.06
+      for (let x = 0; x < SIZE; x++) {
+        const noise = band + (rng.next() - 0.5) * 0.04
+        setPixel(data, x, y, r * noise, g * noise, b * noise)
+      }
+    }
+  },
+
+  slate(data, baseColor, rng) {
+    const [r, g, b] = colorToRGB(baseColor)
+    // Grey layered rock with subtle blue tint
+    for (let y = 0; y < SIZE; y++) {
+      const layer = y % 4 === 0 ? 0.7 : 0.9 + (rng.next() - 0.5) * 0.12
+      for (let x = 0; x < SIZE; x++) {
+        const noise = layer + (rng.next() - 0.5) * 0.08
+        setPixel(data, x, y, r * noise, g * noise, clamp(b * noise * 1.05))
+      }
+    }
+  },
+
+  bamboo(data, baseColor, rng) {
+    const [r, g, b] = colorToRGB(baseColor)
+    fillBase(data, r, g, b)
+    // Vertical segments with node lines
+    for (let y = 0; y < SIZE; y++) {
+      const isNode = y % 5 === 0
+      for (let x = 0; x < SIZE; x++) {
+        if (isNode) {
+          setPixel(data, x, y, r * 0.65, g * 0.65, b * 0.65)
+        } else {
+          const noise = 0.9 + (rng.next() - 0.5) * 0.1
+          setPixel(data, x, y, r * noise, g * noise, b * noise)
+        }
+      }
+    }
+  },
+
+  adobe(data, baseColor, rng) {
+    const [r, g, b] = colorToRGB(baseColor)
+    // Warm terracotta with crack lines
+    for (let y = 0; y < SIZE; y++) {
+      for (let x = 0; x < SIZE; x++) {
+        const noise = 1 + (rng.next() - 0.5) * 0.15
+        setPixel(data, x, y, r * noise, g * noise, b * noise)
+      }
+    }
+    // Crack lines
+    for (let c = 0; c < 2; c++) {
+      let cx = rng.int(0, 15), cy = rng.int(0, 15)
+      for (let s = 0; s < 6; s++) {
+        if (cx >= 0 && cx < SIZE && cy >= 0 && cy < SIZE) {
+          setPixel(data, cx, cy, r * 0.55, g * 0.55, b * 0.55)
+        }
+        cx += rng.int(-1, 1); cy += rng.int(0, 1)
+        cx = Math.max(0, Math.min(15, cx)); cy = cy % SIZE
+      }
+    }
+  },
+
+  lichen(data, baseColor, rng) {
+    const [r, g, b] = colorToRGB(baseColor)
+    // Grey-green crusty patches
+    for (let y = 0; y < SIZE; y++) {
+      for (let x = 0; x < SIZE; x++) {
+        const cluster = Math.sin(x * 2.0 + rng.next() * 3) * Math.cos(y * 1.8 + rng.next() * 3)
+        const shade = 0.75 + cluster * 0.25 + (rng.next() - 0.5) * 0.1
+        setPixel(data, x, y, r * shade, clamp(g * shade * 1.05), b * shade)
       }
     }
   },

@@ -13,6 +13,16 @@ export enum BiomeType {
   Savanna = 9,
   Heaven = 10,
   Hell = 11,
+  Alpine = 12,
+  Cliffs = 13,
+  FloatingIslands = 14,
+  Jungle = 15,
+  Mesa = 16,
+  CoralReef = 17,
+  Bog = 18,
+  Badlands = 19,
+  Taiga = 20,
+  Oasis = 21,
 }
 
 export type SpriteCategory = 'tree' | 'bush' | 'rock' | 'structure' | 'grass'

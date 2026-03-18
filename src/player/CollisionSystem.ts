@@ -4,11 +4,13 @@ import { FirstPersonController } from './FirstPersonController'
 
 const PLAYER_HEIGHT   = 1.8
 const TERRAIN_OFFSET  = 0.05
-const AUTO_STEP_HEIGHT = 1.5          // bumps up to this height are auto-stepped
-const MAX_SLOPE_TAN    = Math.tan(Math.PI / 3)  // tan(60°) ≈ 1.732
+const AUTO_STEP_HEIGHT = 0.6          // bumps up to this height are auto-stepped
+const MAX_SLOPE_TAN    = Math.tan(50 * Math.PI / 180)  // tan(50°) ≈ 1.19
 
 export class CollisionSystem {
   private world: World
+  private smoothY = 0
+  private prevGroundY = -Infinity
 
   constructor(world: World) {
     this.world = world
@@ -31,7 +33,7 @@ export class CollisionSystem {
     )
   }
 
-  update(camera: THREE.Camera, controller: FirstPersonController) {
+  update(camera: THREE.Camera, controller: FirstPersonController, delta: number) {
     if (controller.isFlying) return
 
     const pos     = camera.position
@@ -40,7 +42,7 @@ export class CollisionSystem {
     const groundYAtNew  = this.getGroundY(pos, pos.y)
     const groundYAtPrev = this.getGroundY(prevPos, pos.y)
 
-    // ── Slope blocking ────────────────────────────────────────────────────────
+    // ── Slope blocking with sliding ──────────────────────────────────────────
     // Only block when grounded (not jumping/falling) and the step is large enough
     // to be a steep slope rather than a small bump.
     if (controller.verticalVelocity <= 0 && groundYAtNew > -Infinity && groundYAtPrev > -Infinity) {
@@ -52,25 +54,45 @@ export class CollisionSystem {
         if (horizDist > 0.001) {
           const slopeTan = stepUp / horizDist
           if (slopeTan > MAX_SLOPE_TAN) {
-            // Revert horizontal movement; keep Y so gravity still applies
-            pos.x = prevPos.x
-            pos.z = prevPos.z
+            // Slope sliding: project velocity along the slope face instead of full stop
+            const nx = dx / horizDist
+            const nz = dz / horizDist
+            // Try sliding along each axis independently
+            const gX = this.getGroundY(new THREE.Vector3(pos.x, pos.y, prevPos.z), pos.y)
+            const gZ = this.getGroundY(new THREE.Vector3(prevPos.x, pos.y, pos.z), pos.y)
+            const stepX = gX - groundYAtPrev
+            const stepZ = gZ - groundYAtPrev
+            const canSlideX = stepX <= AUTO_STEP_HEIGHT || (Math.abs(dx) > 0.001 && stepX / Math.abs(dx) <= MAX_SLOPE_TAN)
+            const canSlideZ = stepZ <= AUTO_STEP_HEIGHT || (Math.abs(dz) > 0.001 && stepZ / Math.abs(dz) <= MAX_SLOPE_TAN)
+            if (!canSlideX) pos.x = prevPos.x
+            if (!canSlideZ) pos.z = prevPos.z
           }
         }
       }
     }
 
-    // ── Ground snap ───────────────────────────────────────────────────────────
+    // ── Ground snap (smoothed) ───────────────────────────────────────────────
     const groundY = this.getGroundY(pos, pos.y)
 
-    if (groundY > -Infinity) {
-      const minY = groundY + PLAYER_HEIGHT + TERRAIN_OFFSET
-      if (pos.y <= minY) {
-        pos.y = minY
+    // Average ground height over 2 frames to reduce jitter
+    const avgGroundY = this.prevGroundY > -Infinity
+      ? (groundY + this.prevGroundY) * 0.5
+      : groundY
+    this.prevGroundY = groundY
+
+    if (avgGroundY > -Infinity) {
+      const targetY = avgGroundY + PLAYER_HEIGHT + TERRAIN_OFFSET
+      if (pos.y <= targetY) {
+        // Smooth ground snap: lerp toward target instead of instant teleport
+        const lerpRate = Math.min(1, delta * 20)
+        if (this.smoothY === 0) this.smoothY = pos.y
+        this.smoothY = this.smoothY + (targetY - this.smoothY) * lerpRate
+        pos.y = this.smoothY
         controller.isGrounded = true
         if (controller.verticalVelocity < 0) controller.verticalVelocity = 0
       } else {
         controller.isGrounded = false
+        this.smoothY = pos.y
       }
     }
   }

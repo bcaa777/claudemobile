@@ -24,8 +24,18 @@ const LANDMARK_INFO: Partial<Record<BiomeType, { color: string; label: string }>
   [BiomeType.AshWastes]: { color: '#888877', label: 'AW' },
   [BiomeType.Crystal]:   { color: '#4466ee', label: 'CR' },
   [BiomeType.Savanna]:   { color: '#cc8833', label: 'SV' },
-  [BiomeType.Heaven]:    { color: '#ffdd44', label: 'HV' },
-  [BiomeType.Hell]:      { color: '#ff3300', label: 'HL' },
+  [BiomeType.Heaven]:          { color: '#ffdd44', label: 'HV' },
+  [BiomeType.Hell]:            { color: '#ff3300', label: 'HL' },
+  [BiomeType.Alpine]:          { color: '#e0e8f0', label: 'AL' },
+  [BiomeType.Cliffs]:          { color: '#8899aa', label: 'CL' },
+  [BiomeType.FloatingIslands]: { color: '#aaddff', label: 'FI' },
+  [BiomeType.Jungle]:          { color: '#226622', label: 'JG' },
+  [BiomeType.Mesa]:            { color: '#cc6633', label: 'ME' },
+  [BiomeType.CoralReef]:       { color: '#ff88aa', label: 'CR' },
+  [BiomeType.Bog]:             { color: '#445533', label: 'BG' },
+  [BiomeType.Badlands]:        { color: '#aa5533', label: 'BL' },
+  [BiomeType.Taiga]:           { color: '#446655', label: 'TA' },
+  [BiomeType.Oasis]:           { color: '#88cc44', label: 'OA' },
 }
 
 export class DebugMap {

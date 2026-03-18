@@ -179,7 +179,7 @@ export class Engine {
     this.lastTime = time
 
     this.controller.update(delta)
-    this.collision.update(this.renderer.camera, this.controller)
+    this.collision.update(this.renderer.camera, this.controller, delta)
     this.world.update(this.renderer.camera.position)
     this.dayNight.update(delta)
 

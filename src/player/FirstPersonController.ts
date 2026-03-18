@@ -13,6 +13,7 @@ export class FirstPersonController {
   public isGrounded = false
   public isFlying = false
   public prevPos = new THREE.Vector3()
+  public targetY = 0
   public get heading(): number { return this.yaw }
 
   constructor(camera: THREE.Camera, input: InputManager) {

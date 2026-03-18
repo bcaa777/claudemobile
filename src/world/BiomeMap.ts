@@ -19,6 +19,9 @@ const BIOME_TYPES = [
   BiomeType.Forest, BiomeType.Desert, BiomeType.Volcanic, BiomeType.Snow,
   BiomeType.Swamp, BiomeType.Tundra, BiomeType.Mushroom, BiomeType.AshWastes,
   BiomeType.Crystal, BiomeType.Savanna,
+  BiomeType.Alpine, BiomeType.Cliffs, BiomeType.FloatingIslands, BiomeType.Jungle,
+  BiomeType.Mesa, BiomeType.CoralReef, BiomeType.Bog, BiomeType.Badlands,
+  BiomeType.Taiga, BiomeType.Oasis,
 ]
 const SEED_SPACING = BIOME_CONFIG.seedSpacing
 

@@ -31,8 +31,18 @@ const BIOME_SPAWN_TABLE: Partial<Record<BiomeType, SpeciesId[]>> = {
   [BiomeType.AshWastes]: ['dragon', 'dragon', 'bat', 'wolf', 'wurm'],
   [BiomeType.Crystal]:   ['dragon', 'bird', 'deer', 'skywhale'],
   [BiomeType.Savanna]:   ['rabbit', 'rabbit', 'deer', 'deer', 'bird', 'lion', 'camel', 'fox', 'titan'],
-  [BiomeType.Heaven]:    ['bird', 'bird', 'bird', 'deer', 'skywhale'],
-  [BiomeType.Hell]:      ['imp', 'imp', 'imp', 'hellhound', 'hellhound', 'bat', 'infernal'],
+  [BiomeType.Heaven]:          ['bird', 'bird', 'bird', 'deer', 'skywhale'],
+  [BiomeType.Hell]:            ['imp', 'imp', 'imp', 'hellhound', 'hellhound', 'bat', 'infernal'],
+  [BiomeType.Alpine]:          ['goat', 'goat', 'eagle', 'rabbit', 'deer'],
+  [BiomeType.Cliffs]:          ['eagle', 'eagle', 'goat', 'bat'],
+  [BiomeType.FloatingIslands]: ['eagle', 'bird', 'bird', 'bat'],
+  [BiomeType.Jungle]:          ['parrot', 'parrot', 'toad', 'toad', 'fox'],
+  [BiomeType.Mesa]:            ['goat', 'scorpion', 'eagle'],
+  [BiomeType.CoralReef]:       ['crab', 'crab', 'fish', 'fish', 'toad'],
+  [BiomeType.Bog]:             ['crab', 'toad', 'toad', 'fox'],
+  [BiomeType.Badlands]:        ['goat', 'scorpion', 'scorpion', 'eagle'],
+  [BiomeType.Taiga]:           ['goat', 'deer', 'wolf', 'rabbit', 'bear'],
+  [BiomeType.Oasis]:           ['parrot', 'deer', 'rabbit', 'toad'],
 }
 
 export class CreatureManager {
