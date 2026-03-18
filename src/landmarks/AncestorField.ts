@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import type { CastleWalkable } from '../castle/Castle'
+import { texGen } from '../utils/PixelTextureGenerator'
 
 function box(
   w: number, h: number, d: number,
@@ -27,11 +28,11 @@ export class AncestorField {
     const py = this.position.y
     const pz = this.position.z
 
-    const granite  = new THREE.MeshLambertMaterial({ color: 0x3a3a45 })
-    const runeStone = new THREE.MeshLambertMaterial({ color: 0x4a4a58 })
-    const central  = new THREE.MeshLambertMaterial({ color: 0x2a2a38 })
-    const runeMat  = new THREE.MeshBasicMaterial({ color: 0x225555 })
-    const emberMat = new THREE.MeshBasicMaterial({ color: 0xff5500 })
+    const granite  = new THREE.MeshLambertMaterial({ color: 0x3a3a45, map: texGen.getTexture('stone', 0x3a3a45).map })
+    const runeStone = new THREE.MeshLambertMaterial({ color: 0x4a4a58, map: texGen.getTexture('stone', 0x4a4a58).map })
+    const central  = new THREE.MeshLambertMaterial({ color: 0x2a2a38, map: texGen.getTexture('darkStone', 0x2a2a38).map })
+    const runeMat  = new THREE.MeshBasicMaterial({ color: 0x225555, map: texGen.getTexture('runeGlow', 0x225555).map })
+    const emberMat = new THREE.MeshBasicMaterial({ color: 0xff5500, map: texGen.getTexture('emberGlow', 0xff5500).map })
 
     // ── Ground slab ───────────────────────────────────────────────────────
     const ground = box(260, 2, 260, granite)

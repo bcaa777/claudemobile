@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import type { CastleWalkable } from '../castle/Castle'
+import { texGen } from '../utils/PixelTextureGenerator'
 
 function box(
   w: number, h: number, d: number,
@@ -27,9 +28,9 @@ export class AshColosseum {
     const py = this.position.y
     const pz = this.position.z
 
-    const ashStone = new THREE.MeshLambertMaterial({ color: 0x3a3830 })
-    const darkAsh  = new THREE.MeshLambertMaterial({ color: 0x252320 })
-    const crackMat = new THREE.MeshBasicMaterial({ color: 0xff3300 })
+    const ashStone = new THREE.MeshLambertMaterial({ color: 0x3a3830, map: texGen.getTexture('ash', 0x3a3830).map })
+    const darkAsh  = new THREE.MeshLambertMaterial({ color: 0x252320, map: texGen.getTexture('ash', 0x252320).map })
+    const crackMat = new THREE.MeshBasicMaterial({ color: 0xff3300, map: texGen.getTexture('lava', 0xff3300).map })
 
     // ── Arena floor ───────────────────────────────────────────────────────
     const arenaFloor = box(160, 2, 160, ashStone)

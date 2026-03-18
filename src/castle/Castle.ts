@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import { SeededRandom } from '../utils/SeededRandom'
 import { mergeStaticMeshes } from '../utils/mergeStaticMeshes'
 import { WATER_LEVEL } from '../world/TerrainGenerator'
+import { texGen } from '../utils/PixelTextureGenerator'
 
 export interface CastleWalkable {
   minX: number
@@ -45,11 +46,11 @@ export class Castle {
     const py = this.position.y
     const pz = this.position.z
 
-    const stoneMat     = new THREE.MeshLambertMaterial({ color: 0x888888 })
-    const darkStoneMat = new THREE.MeshLambertMaterial({ color: 0x666666 })
-    const floorMat     = new THREE.MeshLambertMaterial({ color: 0x777777 })
-    const woodMat      = new THREE.MeshLambertMaterial({ color: 0x8B6914 })
-    const ironMat      = new THREE.MeshLambertMaterial({ color: 0x445544 })
+    const stoneMat     = new THREE.MeshLambertMaterial({ color: 0x888888, map: texGen.getTexture('stone', 0x888888).map })
+    const darkStoneMat = new THREE.MeshLambertMaterial({ color: 0x666666, map: texGen.getTexture('darkStone', 0x666666).map })
+    const floorMat     = new THREE.MeshLambertMaterial({ color: 0x777777, map: texGen.getTexture('stone', 0x777777).map })
+    const woodMat      = new THREE.MeshLambertMaterial({ color: 0x8B6914, map: texGen.getTexture('wood', 0x8B6914).map })
+    const ironMat      = new THREE.MeshLambertMaterial({ color: 0x445544, map: texGen.getTexture('darkStone', 0x445544).map })
 
     this.buildFoundation(group, floorMat, px, py, pz)
     this.buildOuterWalls(group, stoneMat, px, py, pz)
@@ -201,7 +202,7 @@ export class Castle {
   }
 
   private buildBeacon(group: THREE.Group, px: number, py: number, pz: number) {
-    const beaconMat = new THREE.MeshBasicMaterial({ color: 0x88aaff })
+    const beaconMat = new THREE.MeshBasicMaterial({ color: 0x88aaff, map: texGen.getTexture('beaconGlow', 0x88aaff).map })
     const beacon = box(3, 3, 3, beaconMat)
     beacon.position.set(44, 48, -44)
     group.add(beacon)

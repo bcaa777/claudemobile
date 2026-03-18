@@ -1,11 +1,24 @@
 import * as THREE from 'three'
 import { Creature } from './Creature'
 import { SPECIES } from './Species'
+import { texGen, type TexturePattern } from '../utils/PixelTextureGenerator'
 
 // Phase 6: Shared geometry and material caches
 const _geoCache = new Map<string, THREE.BoxGeometry>()
 const _matCache = new Map<number, THREE.MeshLambertMaterial>()
 const _sphereCache = new Map<string, THREE.SphereGeometry>()
+const _texMatCache = new Map<string, THREE.MeshLambertMaterial>()
+
+function getTexturedMat(color: number, pattern: TexturePattern, opts?: { side?: THREE.Side, emissive?: number, emissiveIntensity?: number }): THREE.MeshLambertMaterial {
+  const key = `${color}_${pattern}_${opts?.side ?? 0}_${opts?.emissive ?? 0}`
+  let mat = _texMatCache.get(key)
+  if (!mat) {
+    const tex = texGen.getTexture(pattern, color)
+    mat = new THREE.MeshLambertMaterial({ color, map: tex.map, ...opts })
+    _texMatCache.set(key, mat)
+  }
+  return mat
+}
 
 function getCachedBox(w: number, h: number, d: number): THREE.BoxGeometry {
   const key = `${w}_${h}_${d}`
@@ -100,16 +113,37 @@ export class CreatureMesh {
     const sp = SPECIES[creature.species]
     const { bodyW, bodyH, bodyD, bodyColor, headColor, legColor } = sp
 
-    if (sp.mobility === 'ground') {
-      this.group.add(this.box(bodyW, bodyH, bodyD, bodyColor))
+    // ── Giant creatures — special detailed meshes ──────────────────────────
+    if (creature.species === 'titan') {
+      this.buildTitan(sp)
+      return
+    }
+    if (creature.species === 'skywhale') {
+      this.buildSkywhale(sp)
+      return
+    }
+    if (creature.species === 'wurm') {
+      this.buildWurm(sp)
+      return
+    }
+    if (creature.species === 'infernal') {
+      this.buildInfernal(sp)
+      return
+    }
 
-      const head = this.box(bodyW * 0.6, bodyH * 0.7, bodyD * 0.5, headColor)
+    if (sp.mobility === 'ground') {
+      const bodyMesh = new THREE.Mesh(getCachedBox(bodyW, bodyH, bodyD), getTexturedMat(bodyColor, 'scales'))
+      this.group.add(bodyMesh)
+
+      const head = new THREE.Mesh(getCachedBox(bodyW * 0.6, bodyH * 0.7, bodyD * 0.5), getTexturedMat(headColor, 'scales'))
       head.position.set(0, bodyH * 0.2, bodyD * 0.55)
       this.group.add(head)
 
       // Eyes
       const eyeGeo = getCachedSphere(0.06, 4, 4)
-      const eyeMat = getCachedMat(0x111111)
+      const eyeMat = sp.role === 'predator'
+        ? getTexturedMat(0xff4400, 'scales', { emissive: 0xff2200, emissiveIntensity: 0.6 })
+        : getCachedMat(0x111111)
       const eyeL = new THREE.Mesh(eyeGeo, eyeMat)
       eyeL.position.set(-bodyW * 0.22, bodyH * 0.35, bodyD * 0.79)
       const eyeR = new THREE.Mesh(eyeGeo, eyeMat)
@@ -126,7 +160,7 @@ export class CreatureMesh {
         [ bodyW * 0.35, -bodyH * 0.95, -bodyD * 0.28],
       ]
       for (const [lx, ly, lz] of legOffsets) {
-        const leg = this.box(legW, legH, legW, legColor)
+        const leg = new THREE.Mesh(getCachedBox(legW, legH, legW), getTexturedMat(legColor, 'scales'))
         leg.position.set(lx, ly, lz)
         this.group.add(leg)
         this.legs.push(leg)
@@ -152,6 +186,15 @@ export class CreatureMesh {
         tail.position.set(0, bodyH * 0.35, -bodyD * 0.55)
         this.group.add(tail)
       }
+      if (creature.species === 'hellhound') {
+        // Ridge spines along back
+        const spineMat = getCachedMat(0x661100)
+        for (let i = 0; i < 4; i++) {
+          const spine = new THREE.Mesh(getCachedBox(0.08, 0.25 - i * 0.04, 0.08), spineMat)
+          spine.position.set(0, bodyH * 0.7, bodyD * 0.2 - i * bodyD * 0.15)
+          this.group.add(spine)
+        }
+      }
       if (creature.species === 'lion') {
         const mane = this.box(bodyW * 1.0, bodyH * 1.0, bodyD * 0.35, 0xb8780a)
         mane.position.set(0, bodyH * 0.2, bodyD * 0.55)
@@ -168,14 +211,17 @@ export class CreatureMesh {
       }
 
     } else if (sp.mobility === 'air') {
-      this.group.add(this.box(bodyW, bodyH, bodyD, bodyColor))
+      const airBody = new THREE.Mesh(getCachedBox(bodyW, bodyH, bodyD), getTexturedMat(bodyColor, 'scales'))
+      this.group.add(airBody)
 
-      const head = this.box(bodyW * 0.7, bodyH * 0.65, bodyD * 0.4, headColor)
+      const head = new THREE.Mesh(getCachedBox(bodyW * 0.7, bodyH * 0.65, bodyD * 0.4), getTexturedMat(headColor, 'scales'))
       head.position.set(0, bodyH * 0.12, bodyD * 0.58)
       this.group.add(head)
 
       const eyeGeo2 = getCachedSphere(0.05, 4, 4)
-      const eyeMat2 = getCachedMat(0x111111)
+      const eyeMat2 = sp.role === 'predator'
+        ? getTexturedMat(0xff4400, 'scales', { emissive: 0xff2200, emissiveIntensity: 0.6 })
+        : getCachedMat(0x111111)
       const eyeL = new THREE.Mesh(eyeGeo2, eyeMat2)
       eyeL.position.set(-bodyW * 0.28, bodyH * 0.2, bodyD * 0.76)
       const eyeR = new THREE.Mesh(eyeGeo2, eyeMat2)
@@ -184,7 +230,7 @@ export class CreatureMesh {
 
       const wingSpan = sp.id === 'dragon' ? bodyD * 1.5 : bodyD * 1.1
       const wingD = bodyD * 0.45
-      const wingMat = getCachedMat(bodyColor, { side: THREE.DoubleSide })
+      const wingMat = getTexturedMat(bodyColor, 'scales', { side: THREE.DoubleSide })
       const wingGeo = getCachedBox(wingSpan, 0.1, wingD)
 
       const wingL = new THREE.Mesh(wingGeo, wingMat)
@@ -193,6 +239,17 @@ export class CreatureMesh {
       wingR.position.set( bodyW * 0.5 + wingSpan * 0.5, 0, -bodyD * 0.1)
       this.group.add(wingL, wingR)
       this.wings.push(wingL, wingR)
+
+      if (creature.species === 'imp') {
+        // Two small horns on head
+        const hornMat = getCachedMat(0x661100)
+        const hornGeo = getCachedBox(0.06, 0.18, 0.06)
+        const hornL = new THREE.Mesh(hornGeo, hornMat)
+        hornL.position.set(-bodyW * 0.2, bodyH * 0.45, bodyD * 0.55)
+        const hornR = new THREE.Mesh(hornGeo, hornMat)
+        hornR.position.set(bodyW * 0.2, bodyH * 0.45, bodyD * 0.55)
+        this.group.add(hornL, hornR)
+      }
 
       if (sp.id === 'dragon') {
         const ridgeMat = getCachedMat(0x440000)
@@ -204,13 +261,14 @@ export class CreatureMesh {
       }
 
     } else if (creature.species === 'croc') {
-      this.group.add(this.box(bodyW, bodyH, bodyD, bodyColor))
+      const crocBody = new THREE.Mesh(getCachedBox(bodyW, bodyH, bodyD), getTexturedMat(bodyColor, 'scales'))
+      this.group.add(crocBody)
 
-      const snout = this.box(bodyW * 0.65, bodyH * 0.7, bodyD * 0.38, headColor)
+      const snout = new THREE.Mesh(getCachedBox(bodyW * 0.65, bodyH * 0.7, bodyD * 0.38), getTexturedMat(headColor, 'scales'))
       snout.position.set(0, -bodyH * 0.15, bodyD * 0.69)
       this.group.add(snout)
 
-      const tail = this.box(bodyW * 0.5, bodyH * 0.5, bodyD * 0.4, bodyColor)
+      const tail = new THREE.Mesh(getCachedBox(bodyW * 0.5, bodyH * 0.5, bodyD * 0.4), getTexturedMat(bodyColor, 'scales'))
       tail.position.set(0, -bodyH * 0.1, -bodyD * 0.7)
       tail.rotation.x = 0.2
       this.group.add(tail)
@@ -223,14 +281,14 @@ export class CreatureMesh {
         [ bodyW * 0.55, -bodyH * 0.5, -bodyD * 0.25],
       ]
       for (const [lx, ly, lz] of legOffsets) {
-        const leg = this.box(bodyW * 0.18, bodyH * 0.9, bodyW * 0.18, sp.legColor)
+        const leg = new THREE.Mesh(getCachedBox(bodyW * 0.18, bodyH * 0.9, bodyW * 0.18), getTexturedMat(sp.legColor, 'scales'))
         leg.position.set(lx, ly, lz)
         this.group.add(leg)
         this.crocLegs.push(leg)
       }
 
       const crocEyeGeo = getCachedSphere(0.07, 5, 4)
-      const crocEyeMat = getCachedMat(0xffcc00)
+      const crocEyeMat = getTexturedMat(0xffcc00, 'scales', { emissive: 0xccaa00, emissiveIntensity: 0.5 })
       const eyeL = new THREE.Mesh(crocEyeGeo, crocEyeMat)
       eyeL.position.set(-bodyW * 0.28, bodyH * 0.55, bodyD * 0.35)
       const eyeR = new THREE.Mesh(crocEyeGeo, crocEyeMat)
@@ -238,16 +296,259 @@ export class CreatureMesh {
       this.group.add(eyeL, eyeR)
 
     } else {
-      this.group.add(this.box(bodyW, bodyH, bodyD, bodyColor))
+      const fishBody = new THREE.Mesh(getCachedBox(bodyW, bodyH, bodyD), getTexturedMat(bodyColor, 'scales'))
+      this.group.add(fishBody)
 
-      const tail = this.box(bodyW * 0.8, bodyH * 0.9, bodyD * 0.22, headColor)
+      const tail = new THREE.Mesh(getCachedBox(bodyW * 0.8, bodyH * 0.9, bodyD * 0.22), getTexturedMat(headColor, 'scales'))
       tail.position.set(0, 0, -bodyD * 0.6)
       this.group.add(tail)
       this.tailFin = tail
 
-      const dorsal = this.box(bodyW * 0.12, bodyH * 0.5, bodyD * 0.28, headColor)
+      const dorsal = new THREE.Mesh(getCachedBox(bodyW * 0.12, bodyH * 0.5, bodyD * 0.28), getTexturedMat(headColor, 'scales'))
       dorsal.position.set(0, bodyH * 0.62, 0)
       this.group.add(dorsal)
+    }
+  }
+
+  // ── Giant: Titan — massive stone golem ─────────────────────────────────
+  private buildTitan(sp: typeof SPECIES[keyof typeof SPECIES]) {
+    const { bodyW, bodyH, bodyD, bodyColor, headColor, legColor } = sp
+
+    // Massive body — slightly hunched
+    const torso = new THREE.Mesh(getCachedBox(bodyW, bodyH, bodyD), getTexturedMat(bodyColor, 'stone'))
+    torso.position.set(0, bodyH * 0.1, 0)
+    this.group.add(torso)
+
+    // Upper body / shoulders — wider
+    const shoulders = new THREE.Mesh(getCachedBox(bodyW * 1.3, bodyH * 0.5, bodyD * 0.6), getTexturedMat(bodyColor, 'stone'))
+    shoulders.position.set(0, bodyH * 0.75, bodyD * 0.1)
+    this.group.add(shoulders)
+
+    // Head — small relative to body (like a colossus)
+    const head = new THREE.Mesh(getCachedBox(bodyW * 0.5, bodyH * 0.45, bodyD * 0.35), getTexturedMat(headColor, 'stone'))
+    head.position.set(0, bodyH * 1.15, bodyD * 0.3)
+    this.group.add(head)
+
+    // Eyes — glowing
+    const eyeMat = getTexturedMat(0xffcc44, 'scales', { emissive: 0xffcc00, emissiveIntensity: 0.8 })
+    const eyeGeo = getCachedSphere(0.18, 4, 4)
+    const eyeL = new THREE.Mesh(eyeGeo, eyeMat)
+    eyeL.position.set(-bodyW * 0.15, bodyH * 1.22, bodyD * 0.48)
+    const eyeR = new THREE.Mesh(eyeGeo, eyeMat)
+    eyeR.position.set(bodyW * 0.15, bodyH * 1.22, bodyD * 0.48)
+    this.group.add(eyeL, eyeR)
+
+    // 4 massive legs — thick pillars
+    const legH = bodyH * 1.2
+    const legW = bodyW * 0.3
+    const legOffsets: [number, number, number][] = [
+      [-bodyW * 0.35, -bodyH * 0.95, bodyD * 0.25],
+      [ bodyW * 0.35, -bodyH * 0.95, bodyD * 0.25],
+      [-bodyW * 0.35, -bodyH * 0.95, -bodyD * 0.25],
+      [ bodyW * 0.35, -bodyH * 0.95, -bodyD * 0.25],
+    ]
+    for (const [lx, ly, lz] of legOffsets) {
+      const leg = new THREE.Mesh(getCachedBox(legW, legH, legW), getTexturedMat(legColor, 'stone'))
+      leg.position.set(lx, ly, lz)
+      this.group.add(leg)
+      this.legs.push(leg)
+    }
+
+    // Back spines / ridges
+    const ridgeMat = getCachedMat(0x4a4a50)
+    for (let i = 0; i < 5; i++) {
+      const rh = bodyH * (0.4 - i * 0.05)
+      const ridge = new THREE.Mesh(getCachedBox(bodyW * 0.15, rh, bodyD * 0.12), ridgeMat)
+      ridge.position.set(0, bodyH * 0.85, bodyD * 0.25 - i * bodyD * 0.15)
+      this.group.add(ridge)
+    }
+
+    // Arms — hanging massive slabs
+    for (const side of [-1, 1]) {
+      const arm = new THREE.Mesh(getCachedBox(bodyW * 0.22, bodyH * 0.9, bodyW * 0.22), getTexturedMat(legColor, 'stone'))
+      arm.position.set(side * bodyW * 0.75, bodyH * 0.1, bodyD * 0.15)
+      this.group.add(arm)
+    }
+  }
+
+  // ── Giant: Skywhale — enormous flying whale ──────────────────────────────
+  private buildSkywhale(sp: typeof SPECIES[keyof typeof SPECIES]) {
+    const { bodyW, bodyH, bodyD, bodyColor, headColor, legColor } = sp
+
+    // Main body — elongated, slightly tapered
+    const body = new THREE.Mesh(getCachedBox(bodyW, bodyH, bodyD), getTexturedMat(bodyColor, 'ice'))
+    this.group.add(body)
+
+    // Belly — lighter underside
+    const belly = new THREE.Mesh(getCachedBox(bodyW * 0.85, bodyH * 0.4, bodyD * 0.9), getTexturedMat(0x7799cc, 'ice'))
+    belly.position.set(0, -bodyH * 0.35, 0)
+    this.group.add(belly)
+
+    // Head / front — rounded snout
+    const snout = new THREE.Mesh(getCachedBox(bodyW * 0.7, bodyH * 0.8, bodyD * 0.25), getTexturedMat(headColor, 'ice'))
+    snout.position.set(0, 0, bodyD * 0.55)
+    this.group.add(snout)
+
+    // Eyes — large, gentle
+    const eyeMat = getCachedMat(0x222244)
+    const eyeGeo = getCachedSphere(0.25, 5, 5)
+    const eyeL = new THREE.Mesh(eyeGeo, eyeMat)
+    eyeL.position.set(-bodyW * 0.38, bodyH * 0.1, bodyD * 0.45)
+    const eyeR = new THREE.Mesh(eyeGeo, eyeMat)
+    eyeR.position.set(bodyW * 0.38, bodyH * 0.1, bodyD * 0.45)
+    this.group.add(eyeL, eyeR)
+
+    // Huge wings / fins
+    const wingSpan = bodyD * 1.2
+    const wingD = bodyD * 0.5
+    const wingMat = getTexturedMat(bodyColor, 'ice', { side: THREE.DoubleSide })
+    const wingGeo = getCachedBox(wingSpan, 0.2, wingD)
+
+    const wingL = new THREE.Mesh(wingGeo, wingMat)
+    wingL.position.set(-(bodyW * 0.5 + wingSpan * 0.5), 0, -bodyD * 0.1)
+    const wingR = new THREE.Mesh(wingGeo, wingMat)
+    wingR.position.set(bodyW * 0.5 + wingSpan * 0.5, 0, -bodyD * 0.1)
+    this.group.add(wingL, wingR)
+    this.wings.push(wingL, wingR)
+
+    // Tail flukes
+    const tailW = bodyW * 0.8
+    const tailH = bodyH * 0.15
+    const tailD = bodyD * 0.3
+    const tail = new THREE.Mesh(getCachedBox(tailW, tailH, tailD), getTexturedMat(legColor, 'ice'))
+    tail.position.set(0, 0, -bodyD * 0.6)
+    this.group.add(tail)
+    this.tailFin = tail
+
+    // Dorsal ridge bumps
+    const ridgeMat = getTexturedMat(0x3355aa, 'ice')
+    for (let i = 0; i < 4; i++) {
+      const bump = new THREE.Mesh(getCachedBox(bodyW * 0.2, bodyH * (0.3 - i * 0.05), bodyD * 0.08), ridgeMat)
+      bump.position.set(0, bodyH * 0.6, bodyD * 0.2 - i * bodyD * 0.15)
+      this.group.add(bump)
+    }
+  }
+
+  // ── Giant: Wurm — massive segmented worm ─────────────────────────────────
+  private buildWurm(sp: typeof SPECIES[keyof typeof SPECIES]) {
+    const { bodyW, bodyH, bodyD, bodyColor, headColor } = sp
+
+    // Head segment — rounded, with mandibles
+    const head = new THREE.Mesh(getCachedBox(bodyW * 1.1, bodyH * 1.1, bodyD * 0.15), getTexturedMat(headColor, 'obsidian'))
+    head.position.set(0, bodyH * 0.1, bodyD * 0.5)
+    this.group.add(head)
+
+    // Eyes — menacing
+    const eyeMat = getTexturedMat(0xff4400, 'scales', { emissive: 0xff2200, emissiveIntensity: 0.8 })
+    const eyeGeo = getCachedSphere(0.2, 4, 4)
+    const eyeL = new THREE.Mesh(eyeGeo, eyeMat)
+    eyeL.position.set(-bodyW * 0.35, bodyH * 0.35, bodyD * 0.52)
+    const eyeR = new THREE.Mesh(eyeGeo, eyeMat)
+    eyeR.position.set(bodyW * 0.35, bodyH * 0.35, bodyD * 0.52)
+    this.group.add(eyeL, eyeR)
+
+    // Mandibles
+    const mandMat = getTexturedMat(0x5a2a10, 'obsidian')
+    for (const side of [-1, 1]) {
+      const mandible = new THREE.Mesh(getCachedBox(bodyW * 0.15, bodyH * 0.3, bodyD * 0.1), mandMat)
+      mandible.position.set(side * bodyW * 0.5, -bodyH * 0.2, bodyD * 0.55)
+      this.group.add(mandible)
+    }
+
+    // Body segments — 6 segments creating a long body
+    const segCount = 6
+    const segLen = bodyD / segCount
+    for (let i = 0; i < segCount; i++) {
+      // Each segment slightly smaller toward the tail
+      const taper = 1 - i * 0.08
+      const segW = bodyW * taper
+      const segH = bodyH * taper
+      const seg = new THREE.Mesh(getCachedBox(segW, segH, segLen * 0.9), getTexturedMat(bodyColor, 'obsidian'))
+      seg.position.set(0, 0, bodyD * 0.35 - i * segLen)
+      this.group.add(seg)
+
+      // Ridge plates on top of each segment
+      if (i < segCount - 1) {
+        const plate = new THREE.Mesh(
+          getCachedBox(segW * 0.7, segH * 0.35, segLen * 0.5),
+          getTexturedMat(0x9a5430, 'obsidian')
+        )
+        plate.position.set(0, segH * 0.65, bodyD * 0.35 - i * segLen)
+        this.group.add(plate)
+      }
+    }
+
+    // Tail spike
+    const spike = new THREE.Mesh(getCachedBox(bodyW * 0.3, bodyH * 0.3, bodyD * 0.12), getTexturedMat(0x5a2a10, 'obsidian'))
+    spike.position.set(0, bodyH * 0.2, -bodyD * 0.5)
+    this.group.add(spike)
+  }
+
+  // ── Giant: Infernal — massive fire titan ────────────────────────────
+  private buildInfernal(sp: typeof SPECIES[keyof typeof SPECIES]) {
+    const { bodyW, bodyH, bodyD, bodyColor, headColor, legColor } = sp
+
+    // Massive body
+    const torso = new THREE.Mesh(getCachedBox(bodyW, bodyH, bodyD), getTexturedMat(bodyColor, 'obsidian'))
+    torso.position.set(0, bodyH * 0.1, 0)
+    this.group.add(torso)
+
+    // Lava vein accents on torso
+    const lavaMat = getTexturedMat(0xff3300, 'lava', { emissive: 0xff2200, emissiveIntensity: 0.5 })
+    for (let i = 0; i < 3; i++) {
+      const vein = new THREE.Mesh(getCachedBox(bodyW * 0.08, bodyH * 0.6, bodyD * 0.15), lavaMat)
+      vein.position.set(bodyW * (0.3 - i * 0.3), bodyH * 0.1, bodyD * 0.1)
+      this.group.add(vein)
+    }
+
+    // Upper body / shoulders
+    const shoulders = new THREE.Mesh(getCachedBox(bodyW * 1.3, bodyH * 0.5, bodyD * 0.6), getTexturedMat(bodyColor, 'obsidian'))
+    shoulders.position.set(0, bodyH * 0.75, bodyD * 0.1)
+    this.group.add(shoulders)
+
+    // Head
+    const head = new THREE.Mesh(getCachedBox(bodyW * 0.5, bodyH * 0.45, bodyD * 0.35), getTexturedMat(headColor, 'obsidian'))
+    head.position.set(0, bodyH * 1.15, bodyD * 0.3)
+    this.group.add(head)
+
+    // Crown of flame spikes
+    const flameMat = getCachedMat(0xff4400)
+    for (let i = 0; i < 4; i++) {
+      const spike = new THREE.Mesh(getCachedBox(0.15, bodyH * (0.35 - i * 0.05), 0.15), flameMat)
+      spike.position.set(bodyW * (0.15 - i * 0.1), bodyH * 1.5, bodyD * 0.3)
+      this.group.add(spike)
+    }
+
+    // Glowing eyes
+    const eyeMat = getTexturedMat(0xff4400, 'scales', { emissive: 0xff2200, emissiveIntensity: 0.8 })
+    const eyeGeo = getCachedSphere(0.18, 4, 4)
+    const eyeL = new THREE.Mesh(eyeGeo, eyeMat)
+    eyeL.position.set(-bodyW * 0.15, bodyH * 1.22, bodyD * 0.48)
+    const eyeR = new THREE.Mesh(eyeGeo, eyeMat)
+    eyeR.position.set(bodyW * 0.15, bodyH * 1.22, bodyD * 0.48)
+    this.group.add(eyeL, eyeR)
+
+    // 4 massive legs
+    const legH = bodyH * 1.2
+    const legW = bodyW * 0.3
+    const legOffsets: [number, number, number][] = [
+      [-bodyW * 0.35, -bodyH * 0.95, bodyD * 0.25],
+      [ bodyW * 0.35, -bodyH * 0.95, bodyD * 0.25],
+      [-bodyW * 0.35, -bodyH * 0.95, -bodyD * 0.25],
+      [ bodyW * 0.35, -bodyH * 0.95, -bodyD * 0.25],
+    ]
+    for (const [lx, ly, lz] of legOffsets) {
+      const leg = new THREE.Mesh(getCachedBox(legW, legH, legW), getTexturedMat(legColor, 'obsidian'))
+      leg.position.set(lx, ly, lz)
+      this.group.add(leg)
+      this.legs.push(leg)
+    }
+
+    // Arms
+    for (const side of [-1, 1]) {
+      const arm = new THREE.Mesh(getCachedBox(bodyW * 0.22, bodyH * 0.9, bodyW * 0.22), getTexturedMat(legColor, 'obsidian'))
+      arm.position.set(side * bodyW * 0.75, bodyH * 0.1, bodyD * 0.15)
+      this.group.add(arm)
     }
   }
 
@@ -271,8 +572,10 @@ export class CreatureMesh {
     // Leg animation
     if (sp.mobility === 'ground' && this.legs.length >= 4) {
       if (moving) {
-        const freq = creature.velocity.length() * 2.5
-        const sinVal = Math.sin(this.animTime * freq) * 0.5
+        // Giants: slow, heavy footsteps
+        const freq = sp.isGiant ? creature.velocity.length() * 0.8 : creature.velocity.length() * 2.5
+        const amp  = sp.isGiant ? 0.25 : 0.5
+        const sinVal = Math.sin(this.animTime * freq) * amp
         this.legs[0].rotation.x =  sinVal
         this.legs[1].rotation.x = -sinVal
         this.legs[2].rotation.x = -sinVal
@@ -282,13 +585,24 @@ export class CreatureMesh {
       }
     }
 
+    // Giant body sway (gentle rocking as they move)
+    if (sp.isGiant && sp.mobility === 'ground') {
+      this.group.rotation.x = Math.sin(this.animTime * 0.6) * 0.015
+      this.group.rotation.z = Math.sin(this.animTime * 0.4 + 1.5) * 0.01
+    }
+
     // Wing flap
     if (sp.mobility === 'air' && this.wings.length >= 2) {
-      const flapSpeed = sp.id === 'dragon' ? 2.5 : 6.0
-      const flapAmp  = sp.id === 'dragon' ? 0.4 : 0.6
+      const flapSpeed = sp.id === 'skywhale' ? 0.8 : sp.id === 'dragon' ? 2.5 : 6.0
+      const flapAmp  = sp.id === 'skywhale' ? 0.2 : sp.id === 'dragon' ? 0.4 : 0.6
       const angle = Math.sin(this.animTime * flapSpeed) * flapAmp
       this.wings[0].rotation.z =  angle
       this.wings[1].rotation.z = -angle
+    }
+
+    // Skywhale tail sway
+    if (creature.species === 'skywhale' && this.tailFin) {
+      this.tailFin.rotation.y = Math.sin(this.animTime * 0.6) * 0.2
     }
 
     // Tail fin / croc tail

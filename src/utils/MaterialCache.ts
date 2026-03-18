@@ -11,8 +11,10 @@ export class MaterialCache {
     emissiveIntensity?: number
     depthWrite?: boolean
     fog?: boolean
+    map?: THREE.Texture
+    emissiveMap?: THREE.Texture
   }): THREE.MeshLambertMaterial {
-    const key = `${color}_${opts?.transparent ?? false}_${opts?.opacity ?? 1}_${opts?.side ?? THREE.FrontSide}_${opts?.emissive ?? 0}_${opts?.emissiveIntensity ?? 1}_${opts?.depthWrite ?? true}_${opts?.fog ?? true}`
+    const key = `${color}_${opts?.transparent ?? false}_${opts?.opacity ?? 1}_${opts?.side ?? THREE.FrontSide}_${opts?.emissive ?? 0}_${opts?.emissiveIntensity ?? 1}_${opts?.depthWrite ?? true}_${opts?.fog ?? true}_${opts?.map?.id ?? 0}_${opts?.emissiveMap?.id ?? 0}`
 
     let mat = this.cache.get(key)
     if (!mat) {

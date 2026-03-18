@@ -16,7 +16,10 @@ import { DebugMap } from '../debug/DebugMap'
 import { DebugPanel } from '../debug/DebugPanel'
 import { PerfOverlay } from '../debug/PerfOverlay'
 import { WORLD_CONFIG } from '../config'
-import { WATER_LEVEL } from '../world/TerrainGenerator'
+import { WATER_LEVEL, CHUNK_SIZE, sampleWorldHeight } from '../world/TerrainGenerator'
+import { GrandStaircase } from '../landmarks/GrandStaircase'
+import { InfernalStaircase } from '../landmarks/InfernalStaircase'
+import { BiomeType } from '../biomes/types'
 
 export class Engine {
   private renderer: Renderer
@@ -32,10 +35,13 @@ export class Engine {
   private castle: Castle
   private castleBreeze: CastleBreeze
   private landmarkManager: LandmarkManager
+  private grandStaircase: GrandStaircase
+  private infernalStaircase: InfernalStaircase
   private debugMap: DebugMap
   private debugPanel: DebugPanel
   private perfOverlay: PerfOverlay
   private flashlight: THREE.SpotLight
+  private monumentObjects: { pos: THREE.Vector3; objects: THREE.Object3D[] }[] = []
 
   private lastTime = 0
   private running = false
@@ -72,14 +78,51 @@ export class Engine {
       this.skyDome
     )
 
+    let cc0 = this.renderer.scene.children.length
     this.castle = new Castle(WORLD_CONFIG.seed, this.renderer.scene)
     this.world.setCastleWalkables(this.castle.walkables)
     this.castleBreeze = new CastleBreeze(this.castle.position, this.renderer.scene)
+    {
+      const added: THREE.Object3D[] = []
+      for (let i = cc0; i < this.renderer.scene.children.length; i++) added.push(this.renderer.scene.children[i])
+      this.monumentObjects.push({ pos: this.castle.position, objects: added })
+    }
+
+    // Grand Staircase — base at closest Forest seed
+    const stairSeed = this.biomeMap.getClosestSeedOf(BiomeType.Forest)
+    const stairTerrainY = sampleWorldHeight(stairSeed.x, stairSeed.z, this.biomeMap)
+    const stairPos = new THREE.Vector3(stairSeed.x, stairTerrainY, stairSeed.z)
+    cc0 = this.renderer.scene.children.length
+    this.grandStaircase = new GrandStaircase(stairPos, this.renderer.scene, WORLD_CONFIG.seed)
+    this.world.addMonumentWalkables(this.grandStaircase.walkables)
+    {
+      const added: THREE.Object3D[] = []
+      for (let i = cc0; i < this.renderer.scene.children.length; i++) added.push(this.renderer.scene.children[i])
+      this.monumentObjects.push({ pos: stairPos, objects: added })
+    }
+
+    // Heaven circle centered 150 units from staircase base
+    this.biomeMap.setHeavenCenter(stairSeed.x + 150, stairSeed.z)
+
+    // Infernal Staircase — at closest Volcanic seed
+    const hellSeed = this.biomeMap.getClosestSeedOf(BiomeType.Volcanic)
+    const hellTerrainY = sampleWorldHeight(hellSeed.x, hellSeed.z, this.biomeMap)
+    const hellStairPos = new THREE.Vector3(hellSeed.x, hellTerrainY, hellSeed.z)
+    cc0 = this.renderer.scene.children.length
+    this.infernalStaircase = new InfernalStaircase(hellStairPos, this.renderer.scene, WORLD_CONFIG.seed)
+    this.world.addMonumentWalkables(this.infernalStaircase.walkables)
+    {
+      const added: THREE.Object3D[] = []
+      for (let i = cc0; i < this.renderer.scene.children.length; i++) added.push(this.renderer.scene.children[i])
+      this.monumentObjects.push({ pos: hellStairPos, objects: added })
+    }
+    // Hell circle 150 units from staircase
+    this.biomeMap.setHellCenter(hellSeed.x + 150, hellSeed.z)
 
     this.landmarkManager = new LandmarkManager(this.biomeMap, this.renderer.scene, WORLD_CONFIG.seed)
     this.world.addMonumentWalkables(this.landmarkManager.allWalkables)
 
-    this.debugMap = new DebugMap(this.castle.position, this.landmarkManager.positions)
+    this.debugMap = new DebugMap(this.castle.position, this.landmarkManager.positions, stairPos, hellStairPos)
 
     // Flashlight — SpotLight attached to camera, auto-enables at night
     this.flashlight = new THREE.SpotLight(0xffe8cc, 0, 40, Math.PI / 5, 0.3, 1.5)
@@ -207,7 +250,19 @@ export class Engine {
     }
 
     this.castle.update(delta, this.lastTime / 1000)
-    this.landmarkManager.update(delta, this.lastTime / 1000)
+    this.grandStaircase.update(delta, this.lastTime / 1000)
+    this.infernalStaircase.update(delta, this.lastTime / 1000)
+
+    // Distance-cull monuments to match terrain loading radius
+    const mCullDist = WORLD_CONFIG.viewRadius * CHUNK_SIZE
+    const mCullDistSq = mCullDist * mCullDist
+    for (const entry of this.monumentObjects) {
+      const dx = entry.pos.x - this.renderer.camera.position.x
+      const dz = entry.pos.z - this.renderer.camera.position.z
+      const vis = dx * dx + dz * dz < mCullDistSq
+      for (const obj of entry.objects) obj.visible = vis
+    }
+    this.landmarkManager.update(delta, this.lastTime / 1000, this.renderer.camera.position)
     this.castleBreeze.update(delta, this.renderer.camera.position)
     this.debugMap.update(this.renderer.camera.position, this.controller.heading)
 

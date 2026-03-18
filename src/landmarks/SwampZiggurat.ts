@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import type { CastleWalkable } from '../castle/Castle'
+import { texGen } from '../utils/PixelTextureGenerator'
 
 function box(
   w: number, h: number, d: number,
@@ -26,9 +27,9 @@ export class SwampZiggurat {
     const py = this.position.y
     const pz = this.position.z
 
-    const mossy   = new THREE.MeshLambertMaterial({ color: 0x2a3a20 })
-    const darkMoss = new THREE.MeshLambertMaterial({ color: 0x1a2a18 })
-    const wetWood  = new THREE.MeshLambertMaterial({ color: 0x3a2814 })
+    const mossy   = new THREE.MeshLambertMaterial({ color: 0x2a3a20, map: texGen.getTexture('moss', 0x2a3a20).map })
+    const darkMoss = new THREE.MeshLambertMaterial({ color: 0x1a2a18, map: texGen.getTexture('moss', 0x1a2a18).map })
+    const wetWood  = new THREE.MeshLambertMaterial({ color: 0x3a2814, map: texGen.getTexture('wood', 0x3a2814).map })
 
     // ── 4 tiers ───────────────────────────────────────────────────────────
     const tierTops = [15, 30, 45, 60]

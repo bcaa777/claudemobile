@@ -10,6 +10,9 @@ export const CHUNK_SEGMENTS = 32
 const VERTICES = CHUNK_SEGMENTS + 1
 
 export const WATER_LEVEL = TERRAIN_CONFIG.waterLevel
+export const HEAVEN_ALTITUDE = 100
+export const HELL_DEPTH = -60
+export const HELL_PIT_RADIUS = 50
 
 // ─── Noise singletons ────────────────────────────────────────────────────────
 let terrainNoise: Noise2DFn | null = null
@@ -144,6 +147,36 @@ export function generateHeightmap(cx: number, cz: number, biomeMap: BiomeMap): H
 
       let height = hA + (hB - hA) * blend.blend
 
+      // Mega mountain boost — sharp conical peaks scattered across the world
+      for (const mt of biomeMap.megaMountains) {
+        const mdx = wx - mt.x
+        const mdz = wz - mt.z
+        const dist = Math.sqrt(mdx * mdx + mdz * mdz)
+        if (dist < mt.radius) {
+          // Sharp peak: (1 - dist/radius)^2 gives a pointy cone shape
+          const t = 1 - dist / mt.radius
+          const peak = t * t * mt.height
+          // Add ridge noise for craggy surface
+          const ridgeDetail = ridgeFbm(noise, wx, wz, 0.02, 4) * mt.height * 0.15 * t
+          height += peak + ridgeDetail
+        } else if (dist < mt.radius * 1.6) {
+          // Foothills: gentle falloff beyond the peak radius
+          const t = 1 - (dist - mt.radius) / (mt.radius * 0.6)
+          height += t * t * mt.height * 0.15
+        }
+      }
+
+      // Hell pit carving
+      const hellC = biomeMap.getHellCenter()
+      if (hellC) {
+        const hdx = wx - hellC.x, hdz = wz - hellC.z
+        const hDist = Math.sqrt(hdx * hdx + hdz * hdz)
+        if (hDist < HELL_PIT_RADIUS) {
+          const ht = 1 - hDist / HELL_PIT_RADIUS
+          height -= ht * ht * (height - HELL_DEPTH)
+        }
+      }
+
       // River carving
       const rm = riverMask(wx, wz)
       if (rm < 1) {
@@ -229,6 +262,61 @@ function computeNormals(positions: Float32Array, indices: Uint32Array, normals: 
     const len = Math.sqrt(x*x + y*y + z*z) || 1
     normals[i*3]   = x/len; normals[i*3+1] = y/len; normals[i*3+2] = z/len
   }
+}
+
+// ─── Standalone world-space height query (for landmark placement etc.) ───────
+
+export function sampleWorldHeight(wx: number, wz: number, biomeMap: BiomeMap): number {
+  const noise = getTerrainNoise()
+
+  const blend = biomeMap.getBlend(wx, wz)
+  const bA    = getBiome(blend.primary)
+  const bB    = getBiome(blend.secondary)
+
+  const domain = fbm(noise, wx * TERRAIN_CONFIG.domainFrequency, wz * TERRAIN_CONFIG.domainFrequency, 3)
+
+  const hA = computeHeight(noise, domain, wx, wz,
+    bA.heightScale, bA.heightFrequency, bA.mountainScale, bA.terraceStrength, bA.terraceStep)
+  const hB = computeHeight(noise, domain, wx, wz,
+    bB.heightScale, bB.heightFrequency, bB.mountainScale, bB.terraceStrength, bB.terraceStep)
+
+  let height = hA + (hB - hA) * blend.blend
+
+  // Mega mountain boost
+  for (const mt of biomeMap.megaMountains) {
+    const mdx = wx - mt.x
+    const mdz = wz - mt.z
+    const dist = Math.sqrt(mdx * mdx + mdz * mdz)
+    if (dist < mt.radius) {
+      const t = 1 - dist / mt.radius
+      height += t * t * mt.height + ridgeFbm(noise, wx, wz, 0.02, 4) * mt.height * 0.15 * t
+    } else if (dist < mt.radius * 1.6) {
+      const t = 1 - (dist - mt.radius) / (mt.radius * 0.6)
+      height += t * t * mt.height * 0.15
+    }
+  }
+
+  // Hell pit carving
+  const hellC = biomeMap.getHellCenter()
+  let inHellPit = false
+  if (hellC) {
+    const hdx = wx - hellC.x, hdz = wz - hellC.z
+    const hDist = Math.sqrt(hdx * hdx + hdz * hdz)
+    if (hDist < HELL_PIT_RADIUS) {
+      const ht = 1 - hDist / HELL_PIT_RADIUS
+      height -= ht * ht * (height - HELL_DEPTH)
+      inHellPit = true
+    }
+  }
+
+  // River carving
+  const rm = riverMask(wx, wz)
+  if (rm < 1) {
+    const bed = WATER_LEVEL - TERRAIN_CONFIG.riverCarveDepth
+    height = height * rm + bed * (1 - rm)
+  }
+
+  return inHellPit ? height : Math.max(height, WATER_LEVEL)
 }
 
 // ─── Height sampler (bilinear) ───────────────────────────────────────────────

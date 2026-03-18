@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import type { CastleWalkable } from '../castle/Castle'
+import { texGen } from '../utils/PixelTextureGenerator'
 
 function box(
   w: number, h: number, d: number,
@@ -27,9 +28,9 @@ export class SavannaObelisk {
     const py = this.position.y
     const pz = this.position.z
 
-    const sandMat  = new THREE.MeshLambertMaterial({ color: 0xc87832 })
-    const carvedMat = new THREE.MeshLambertMaterial({ color: 0xa06020 })
-    const goldMat  = new THREE.MeshBasicMaterial({ color: 0xffc840 })
+    const sandMat  = new THREE.MeshLambertMaterial({ color: 0xc87832, map: texGen.getTexture('sand', 0xc87832).map })
+    const carvedMat = new THREE.MeshLambertMaterial({ color: 0xa06020, map: texGen.getTexture('stone', 0xa06020).map })
+    const goldMat  = new THREE.MeshBasicMaterial({ color: 0xffc840, map: texGen.getTexture('gold', 0xffc840).map })
 
     // ── Ceremonial plaza ──────────────────────────────────────────────────
     const plaza = box(220, 2, 220, sandMat)

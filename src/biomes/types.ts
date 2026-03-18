@@ -11,6 +11,8 @@ export enum BiomeType {
   AshWastes = 7,
   Crystal = 8,
   Savanna = 9,
+  Heaven = 10,
+  Hell = 11,
 }
 
 export type SpriteCategory = 'tree' | 'bush' | 'rock' | 'structure' | 'grass'

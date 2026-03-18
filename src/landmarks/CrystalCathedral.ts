@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import type { CastleWalkable } from '../castle/Castle'
+import { texGen } from '../utils/PixelTextureGenerator'
 
 function box(
   w: number, h: number, d: number,
@@ -27,11 +28,11 @@ export class CrystalCathedral {
     const pz = this.position.z
 
     const crystalMat = new THREE.MeshLambertMaterial({
-      color: 0x4466bb, transparent: true, opacity: 0.85,
+      color: 0x4466bb, transparent: true, opacity: 0.85, map: texGen.getTexture('crystal', 0x4466bb).map,
     })
-    const darkMat  = new THREE.MeshLambertMaterial({ color: 0x2233aa })
-    const glowMat  = new THREE.MeshBasicMaterial({ color: 0x88aaff })
-    const baseMat  = new THREE.MeshLambertMaterial({ color: 0x334466 })
+    const darkMat  = new THREE.MeshLambertMaterial({ color: 0x2233aa, map: texGen.getTexture('crystal', 0x2233aa).map })
+    const glowMat  = new THREE.MeshBasicMaterial({ color: 0x88aaff, map: texGen.getTexture('crystalGlow', 0x88aaff).map })
+    const baseMat  = new THREE.MeshLambertMaterial({ color: 0x334466, map: texGen.getTexture('stone', 0x334466).map })
 
     // ── Foundation ────────────────────────────────────────────────────────
     const foundation = box(180, 4, 180, baseMat)

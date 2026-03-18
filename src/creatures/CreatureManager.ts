@@ -21,16 +21,18 @@ const ACTIVE_STATES = new Set(['flee', 'chase', 'hunt', 'wander', 'seek_food', '
 
 // Species that can spawn per biome
 const BIOME_SPAWN_TABLE: Partial<Record<BiomeType, SpeciesId[]>> = {
-  [BiomeType.Forest]:    ['rabbit', 'rabbit', 'deer', 'deer', 'bird', 'wolf', 'bear', 'fox', 'fish', 'croc', 'toad'],
-  [BiomeType.Desert]:    ['camel', 'camel', 'rabbit', 'bird', 'scorpion'],
-  [BiomeType.Volcanic]:  ['dragon', 'bat', 'wolf'],
-  [BiomeType.Snow]:      ['rabbit', 'deer', 'bird', 'fish', 'wolf', 'mammoth', 'bear'],
-  [BiomeType.Swamp]:     ['rabbit', 'deer', 'bird', 'fish', 'fish', 'croc', 'toad', 'toad'],
-  [BiomeType.Tundra]:    ['rabbit', 'rabbit', 'deer', 'bird', 'wolf', 'fox', 'mammoth'],
-  [BiomeType.Mushroom]:  ['rabbit', 'rabbit', 'deer', 'bird', 'toad', 'toad', 'bat'],
-  [BiomeType.AshWastes]: ['dragon', 'dragon', 'bat', 'wolf'],
-  [BiomeType.Crystal]:   ['dragon', 'bird', 'deer'],
-  [BiomeType.Savanna]:   ['rabbit', 'rabbit', 'deer', 'deer', 'bird', 'lion', 'camel', 'fox'],
+  [BiomeType.Forest]:    ['rabbit', 'rabbit', 'deer', 'deer', 'bird', 'wolf', 'bear', 'fox', 'fish', 'croc', 'toad', 'titan'],
+  [BiomeType.Desert]:    ['camel', 'camel', 'rabbit', 'bird', 'scorpion', 'wurm'],
+  [BiomeType.Volcanic]:  ['dragon', 'bat', 'wolf', 'wurm'],
+  [BiomeType.Snow]:      ['rabbit', 'deer', 'bird', 'fish', 'wolf', 'mammoth', 'bear', 'titan'],
+  [BiomeType.Swamp]:     ['rabbit', 'deer', 'bird', 'fish', 'fish', 'croc', 'toad', 'toad', 'titan'],
+  [BiomeType.Tundra]:    ['rabbit', 'rabbit', 'deer', 'bird', 'wolf', 'fox', 'mammoth', 'titan'],
+  [BiomeType.Mushroom]:  ['rabbit', 'rabbit', 'deer', 'bird', 'toad', 'toad', 'bat', 'wurm'],
+  [BiomeType.AshWastes]: ['dragon', 'dragon', 'bat', 'wolf', 'wurm'],
+  [BiomeType.Crystal]:   ['dragon', 'bird', 'deer', 'skywhale'],
+  [BiomeType.Savanna]:   ['rabbit', 'rabbit', 'deer', 'deer', 'bird', 'lion', 'camel', 'fox', 'titan'],
+  [BiomeType.Heaven]:    ['bird', 'bird', 'bird', 'deer', 'skywhale'],
+  [BiomeType.Hell]:      ['imp', 'imp', 'imp', 'hellhound', 'hellhound', 'bat', 'infernal'],
 }
 
 export class CreatureManager {
@@ -66,7 +68,13 @@ export class CreatureManager {
 
     for (const speciesId of candidates) {
       const sp = SPECIES[speciesId]
-      const count = Math.round(rng.int(14, 28) * CREATURE_CONFIG.spawnMultiplier)
+
+      // Giants: extremely rare — ~5% chance to spawn 1 per chunk
+      if (sp.isGiant) {
+        if (rng.next() > 0.05) continue
+      }
+
+      const count = sp.isGiant ? 1 : Math.round(rng.int(14, 28) * CREATURE_CONFIG.spawnMultiplier)
       for (let i = 0; i < count; i++) {
         if (this.creatures.size >= MAX_POPULATION) return
 
@@ -81,7 +89,7 @@ export class CreatureManager {
           spawnY = WATER_LEVEL - 0.5
         } else if (sp.mobility === 'air') {
           if (h < WATER_LEVEL - 1) continue
-          spawnY = h + rng.range(6, 15)
+          spawnY = sp.isGiant ? h + rng.range(25, 50) : h + rng.range(6, 15)
         } else {
           if (h < WATER_LEVEL) continue
           spawnY = h + sp.bodyH * sp.adultScale + 0.1
@@ -135,7 +143,10 @@ export class CreatureManager {
       }
 
       // Mesh lifecycle (limit mesh creation to 4 per frame, cap total visible)
-      if (distSq <= meshViewDistSq) {
+      // Giants visible from much farther away
+      const sp2 = SPECIES[c.species]
+      const effectiveMeshDistSq = sp2.isGiant ? meshViewDistSq * 9 : meshViewDistSq
+      if (distSq <= effectiveMeshDistSq) {
         if (!c.hasMesh && meshesCreated < 4 && this.meshes.size < MAX_VISIBLE_MESHES) {
           const mesh = new CreatureMesh(c, this.scene, distSq)
           this.meshes.set(c.id, mesh)

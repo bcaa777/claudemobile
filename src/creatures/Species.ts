@@ -2,6 +2,7 @@ import { BiomeType } from '../biomes/types'
 
 export type SpeciesId = 'deer' | 'rabbit' | 'bird' | 'dragon' | 'fish' | 'wolf' | 'croc'
   | 'bear' | 'camel' | 'fox' | 'bat' | 'scorpion' | 'lion' | 'mammoth' | 'toad'
+  | 'titan' | 'skywhale' | 'wurm' | 'imp' | 'hellhound' | 'infernal'
 
 export interface SpeciesDef {
   id: SpeciesId
@@ -26,6 +27,7 @@ export interface SpeciesDef {
   spawnWeight: number
   adultScale: number
   babyScale: number
+  isGiant?: boolean    // building-sized creatures, extremely rare
 }
 
 export const SPECIES: Record<SpeciesId, SpeciesDef> = {
@@ -379,6 +381,153 @@ export const SPECIES: Record<SpeciesId, SpeciesDef> = {
     adultScale: 0.8,
     babyScale: 0.4,
   },
+
+  // ── Giants — building-sized, extremely rare ─────────────────────────────
+
+  titan: {
+    id: 'titan',
+    mobility: 'ground',
+    role: 'herbivore',
+    isGiant: true,
+    bodyColor: 0x6a6a70,
+    headColor: 0x7a7a80,
+    legColor: 0x5a5a60,
+    bodyW: 5, bodyH: 4, bodyD: 7,
+    maxSpeed: 1.2,
+    fleeSpeed: 1.8,
+    maxHunger: 9999,
+    maxThirst: 9999,
+    maxEnergy: 200,
+    maxAge: 99999,
+    sightRange: 30,
+    attackRange: 0,
+    attackDamage: 0,
+    preferredBiomes: [BiomeType.Forest, BiomeType.Snow, BiomeType.Tundra, BiomeType.Savanna, BiomeType.Swamp],
+    spawnWeight: 1,
+    adultScale: 12,
+    babyScale: 6,
+  },
+
+  skywhale: {
+    id: 'skywhale',
+    mobility: 'air',
+    role: 'herbivore',
+    isGiant: true,
+    bodyColor: 0x4466aa,
+    headColor: 0x5577bb,
+    legColor: 0x3355aa,
+    bodyW: 6, bodyH: 3.5, bodyD: 10,
+    maxSpeed: 1.5,
+    fleeSpeed: 2,
+    maxHunger: 9999,
+    maxThirst: 9999,
+    maxEnergy: 200,
+    maxAge: 99999,
+    sightRange: 40,
+    attackRange: 0,
+    attackDamage: 0,
+    preferredBiomes: [
+      BiomeType.Forest, BiomeType.Desert, BiomeType.Snow, BiomeType.Tundra,
+      BiomeType.Savanna, BiomeType.Crystal, BiomeType.Heaven,
+    ],
+    spawnWeight: 1,
+    adultScale: 10,
+    babyScale: 5,
+  },
+
+  wurm: {
+    id: 'wurm',
+    mobility: 'ground',
+    role: 'herbivore',
+    isGiant: true,
+    bodyColor: 0x8a4420,
+    headColor: 0x9a5430,
+    legColor: 0x7a3410,
+    bodyW: 3, bodyH: 3, bodyD: 12,
+    maxSpeed: 1.0,
+    fleeSpeed: 1.5,
+    maxHunger: 9999,
+    maxThirst: 9999,
+    maxEnergy: 200,
+    maxAge: 99999,
+    sightRange: 20,
+    attackRange: 0,
+    attackDamage: 0,
+    preferredBiomes: [BiomeType.Desert, BiomeType.Volcanic, BiomeType.AshWastes, BiomeType.Mushroom],
+    spawnWeight: 1,
+    adultScale: 10,
+    babyScale: 5,
+  },
+
+  imp: {
+    id: 'imp',
+    mobility: 'air',
+    role: 'predator',
+    bodyColor: 0xaa2200,
+    headColor: 0x881100,
+    legColor: 0x661100,
+    bodyW: 0.35, bodyH: 0.3, bodyD: 0.5,
+    maxSpeed: 10,
+    fleeSpeed: 10,
+    maxHunger: 200,
+    maxThirst: 120,
+    maxEnergy: 100,
+    maxAge: 300,
+    sightRange: 16,
+    attackRange: 1.5,
+    attackDamage: 8,
+    preferredBiomes: [BiomeType.Hell],
+    spawnWeight: 3,
+    adultScale: 0.9,
+    babyScale: 0.4,
+  },
+
+  hellhound: {
+    id: 'hellhound',
+    mobility: 'ground',
+    role: 'predator',
+    bodyColor: 0x331100,
+    headColor: 0x441100,
+    legColor: 0x220800,
+    bodyW: 0.7, bodyH: 0.6, bodyD: 1.2,
+    maxSpeed: 8,
+    fleeSpeed: 8,
+    maxHunger: 360,
+    maxThirst: 240,
+    maxEnergy: 100,
+    maxAge: 720,
+    sightRange: 20,
+    attackRange: 2.5,
+    attackDamage: 20,
+    preferredBiomes: [BiomeType.Hell, BiomeType.Volcanic],
+    spawnWeight: 2,
+    adultScale: 1.1,
+    babyScale: 0.5,
+  },
+
+  infernal: {
+    id: 'infernal',
+    mobility: 'ground',
+    role: 'herbivore',
+    isGiant: true,
+    bodyColor: 0x441100,
+    headColor: 0x551500,
+    legColor: 0x330800,
+    bodyW: 5, bodyH: 4.5, bodyD: 7,
+    maxSpeed: 1.2,
+    fleeSpeed: 1.8,
+    maxHunger: 9999,
+    maxThirst: 9999,
+    maxEnergy: 200,
+    maxAge: 99999,
+    sightRange: 30,
+    attackRange: 0,
+    attackDamage: 0,
+    preferredBiomes: [BiomeType.Hell],
+    spawnWeight: 1,
+    adultScale: 12,
+    babyScale: 6,
+  },
 }
 
-export const ALL_SPECIES: SpeciesId[] = ['deer', 'rabbit', 'bird', 'dragon', 'fish', 'wolf', 'croc', 'bear', 'camel', 'fox', 'bat', 'scorpion', 'lion', 'mammoth', 'toad']
+export const ALL_SPECIES: SpeciesId[] = ['deer', 'rabbit', 'bird', 'dragon', 'fish', 'wolf', 'croc', 'bear', 'camel', 'fox', 'bat', 'scorpion', 'lion', 'mammoth', 'toad', 'titan', 'skywhale', 'wurm', 'imp', 'hellhound', 'infernal']

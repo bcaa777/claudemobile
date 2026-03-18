@@ -9,6 +9,8 @@ import { mushroomBiome } from './definitions/mushroom'
 import { ashWastesBiome } from './definitions/ashwastes'
 import { crystalBiome } from './definitions/crystal'
 import { savannaBiome } from './definitions/savanna'
+import { heavenBiome } from './definitions/heaven'
+import { hellBiome } from './definitions/hell'
 
 const registry: Map<BiomeType, BiomeConfig> = new Map([
   [BiomeType.Forest,    forestBiome],
@@ -21,6 +23,8 @@ const registry: Map<BiomeType, BiomeConfig> = new Map([
   [BiomeType.AshWastes, ashWastesBiome],
   [BiomeType.Crystal,   crystalBiome],
   [BiomeType.Savanna,   savannaBiome],
+  [BiomeType.Heaven,    heavenBiome],
+  [BiomeType.Hell,      hellBiome],
 ])
 
 export function getBiome(type: BiomeType): BiomeConfig {

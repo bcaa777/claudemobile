@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
-import { generateHeightmap, sampleHeight, CHUNK_SIZE, CHUNK_SEGMENTS, WATER_LEVEL, riverMask } from './TerrainGenerator'
+import { generateHeightmap, sampleHeight, CHUNK_SIZE, CHUNK_SEGMENTS, WATER_LEVEL, HELL_DEPTH, riverMask } from './TerrainGenerator'
 import { BiomeMap } from './BiomeMap'
 import { getBiome } from '../biomes/BiomeRegistry'
 import { BiomeType, SpriteCategory } from '../biomes/types'
@@ -10,6 +10,7 @@ import { ParticleSystem } from '../sprites/ParticleSystem'
 import { PointLightPool } from '../lighting/PointLightPool'
 import { MaterialCache } from '../utils/MaterialCache'
 import { SeededRandom, chunkSeed } from '../utils/SeededRandom'
+import { texGen } from '../utils/PixelTextureGenerator'
 import { SPRITE_CONFIG, TERRAIN_CONFIG } from '../config'
 import { ExplodableStructure } from './ExplodableStructure'
 
@@ -35,7 +36,8 @@ const ROCK_COLORS: Record<number, number> = {
 function buildRockFormation(rng: SeededRandom, pos: THREE.Vector3, biome: BiomeType, matCache: MaterialCache): { group: THREE.Group, topY: number, topX: number, topZ: number, topHalfW: number } {
   const g   = new THREE.Group()
   g.position.copy(pos)
-  const mat = matCache.getLambert(ROCK_COLORS[biome] ?? 0x404040)
+  const rockColor = ROCK_COLORS[biome] ?? 0x404040
+  const mat = matCache.getLambert(rockColor, { map: texGen.getTexture('stone', rockColor).map })
 
   let topY = 0, topX = 0, topZ = 0, topHalfW = 1
   const count = 1 + rng.int(0, 3)
@@ -73,7 +75,8 @@ const ARCH_COLORS: Record<number, number> = {
 function buildCaveArch(rng: SeededRandom, pos: THREE.Vector3, biome: BiomeType, axis: 'x' | 'z', matCache: MaterialCache): { group: THREE.Group, span: number, pillarH: number, thick: number } {
   const g   = new THREE.Group()
   g.position.copy(pos)
-  const mat = matCache.getLambert(ARCH_COLORS[biome] ?? 0x303030)
+  const archColor = ARCH_COLORS[biome] ?? 0x303030
+  const mat = matCache.getLambert(archColor, { map: texGen.getTexture('stone', archColor).map })
 
   const span  = rng.range(9, 18)
   const h     = rng.range(5, 10)
@@ -115,8 +118,8 @@ function buildBridge(rng: SeededRandom, pos: THREE.Vector3, length: number, axis
   const deckW   = 3.6
   const plankT  = 0.25
   const railH   = 1.1
-  const woodMat = matCache.getLambert(0x5a3210)
-  const stoneMat= matCache.getLambert(0x504538)
+  const woodMat = matCache.getLambert(0x5a3210, { map: texGen.getTexture('wood', 0x5a3210).map })
+  const stoneMat= matCache.getLambert(0x504538, { map: texGen.getTexture('stone', 0x504538).map })
 
   const pCount = Math.ceil(length / 0.85)
   for (let i = 0; i < pCount; i++) {
@@ -280,6 +283,12 @@ export class Chunk {
     if (TERRAIN_CONFIG.enableAshPyres)           this.buildAshPyres(rng, biomeMap)
     if (TERRAIN_CONFIG.enableMushroomAltars)     this.buildMushroomAltars(rng, biomeMap)
     if (TERRAIN_CONFIG.enableMushroomHollowLogs) this.buildMushroomHollowLogs(rng, biomeMap)
+    if (TERRAIN_CONFIG.enableHeavenPillars)      this.buildHeavenPillars(rng, biomeMap)
+    if (TERRAIN_CONFIG.enableHeavenArches)       this.buildHeavenArches(rng, biomeMap)
+    if (TERRAIN_CONFIG.enableHeavenWaterfalls)   this.buildHeavenWaterfalls(rng, biomeMap)
+    if (TERRAIN_CONFIG.enableHellLavaPools)      this.buildHellLavaPools(rng, biomeMap)
+    if (TERRAIN_CONFIG.enableHellSpires)         this.buildHellSpires(rng, biomeMap)
+    if (TERRAIN_CONFIG.enableHellLavaFalls)      this.buildHellLavaFalls(rng, biomeMap)
 
     this.mergeStructures()
     this.placeSprites(rng, biomeMap, atlas, lightPool)
@@ -487,7 +496,7 @@ export class Chunk {
 
       const deckY = peakAvg - 1
       const bridgeLen = CHUNK_SIZE - 4
-      const stoneMat = this.matCache.getLambert(0x5a4838)
+      const stoneMat = this.matCache.getLambert(0x5a4838, { map: texGen.getTexture('stone', 0x5a4838).map })
 
       // Build elevated bridge with tall pillars
       const g = new THREE.Group()
@@ -504,7 +513,7 @@ export class Chunk {
           plankT,
           axis === 'z' ? bridgeLen / pCount - 0.1 : deckW,
         )
-        const plank = new THREE.Mesh(pGeo, this.matCache.getLambert(0x6a4820))
+        const plank = new THREE.Mesh(pGeo, this.matCache.getLambert(0x6a4820, { map: texGen.getTexture('wood', 0x6a4820).map }))
         axis === 'x' ? plank.position.set(off, 0, 0) : plank.position.set(0, 0, off)
         g.add(plank)
       }
@@ -534,7 +543,7 @@ export class Chunk {
       }
 
       // Rope-style suspension cables
-      const cableMat = this.matCache.getLambert(0x3a2810)
+      const cableMat = this.matCache.getLambert(0x3a2810, { map: texGen.getTexture('wood', 0x3a2810).map })
       for (const side of [-deckW / 2, deckW / 2]) {
         const cGeo = new THREE.BoxGeometry(
           axis === 'x' ? bridgeLen : 0.12,
@@ -550,7 +559,7 @@ export class Chunk {
 
       // Railings
       const postCount = Math.floor(bridgeLen / 4) + 1
-      const railMat = this.matCache.getLambert(0x6a4820)
+      const railMat = this.matCache.getLambert(0x6a4820, { map: texGen.getTexture('wood', 0x6a4820).map })
       for (let i = 0; i <= postCount; i++) {
         const t = i / postCount
         const off = t * bridgeLen - bridgeLen / 2
@@ -585,7 +594,7 @@ export class Chunk {
   private buildRoads(rng: SeededRandom, _biomeMap: BiomeMap) {
     if (!this.heightGrid) return
 
-    const roadMat  = this.matCache.getLambert(0x5a5040)
+    const roadMat  = this.matCache.getLambert(0x5a5040, { map: texGen.getTexture('stone', 0x5a5040).map })
     const slabSize = 4.0
     const slabT    = 0.3
     const stepLen  = 3.5
@@ -690,7 +699,7 @@ export class Chunk {
     g.position.set(bestX, bestH, bestZ)
 
     // Trunk
-    const trunkMat = this.matCache.getLambert(trunkColor)
+    const trunkMat = this.matCache.getLambert(trunkColor, { map: texGen.getTexture('wood', trunkColor).map })
     const trunk = new THREE.Mesh(new THREE.CylinderGeometry(trunkR * 0.6, trunkR, treeH, 8), trunkMat)
     trunk.position.y = treeH / 2
     g.add(trunk)
@@ -714,7 +723,7 @@ export class Chunk {
     // Mid platform
     const midY = treeH * 0.5
     const midR = 5.5
-    const platMat = this.matCache.getLambert(trunkColor)
+    const platMat = this.matCache.getLambert(trunkColor, { map: texGen.getTexture('wood', trunkColor).map })
     const midPlat = new THREE.Mesh(new THREE.CylinderGeometry(midR, midR * 1.1, 0.6, 8), platMat)
     midPlat.position.y = midY
     g.add(midPlat)
@@ -759,7 +768,7 @@ export class Chunk {
 
     // For mushroom biome: glowing spots on canopy
     if (biome === BiomeType.Mushroom) {
-      const spotMat = this.matCache.getLambert(0xff80ff, { emissive: 0x440044 })
+      const spotMat = this.matCache.getLambert(0xff80ff, { emissive: 0x440044, map: texGen.getTexture('mushroomGlow', 0xff80ff).map })
       for (let i = 0; i < 6; i++) {
         const angle = rng.range(0, Math.PI * 2)
         const r = rng.range(0, canopyR * 0.8)
@@ -812,8 +821,8 @@ export class Chunk {
     const g = new THREE.Group()
     g.position.set(bestX, bestH, bestZ)
 
-    const stoneMat = this.matCache.getLambert(stoneColor)
-    const accentMat = this.matCache.getLambert(stoneColor + 0x101010)
+    const stoneMat = this.matCache.getLambert(stoneColor, { map: texGen.getTexture('stone', stoneColor).map })
+    const accentMat = this.matCache.getLambert(stoneColor + 0x101010, { map: texGen.getTexture('stone', stoneColor + 0x101010).map })
 
     // 4 stacked platforms (ziggurat)
     const tiers = [
@@ -848,7 +857,7 @@ export class Chunk {
     }
 
     // Steps on each face of bottom tier
-    const stepMat = this.matCache.getLambert(stoneColor)
+    const stepMat = this.matCache.getLambert(stoneColor, { map: texGen.getTexture('stone', stoneColor).map })
     for (let i = 0; i < 3; i++) {
       const sw = 16 - i * 1.5
       const sh = 0.5
@@ -860,8 +869,8 @@ export class Chunk {
 
     // Top altar/flame effect (emissive column)
     const altarColor = biome === BiomeType.Volcanic ? 0xff4400 : 0xffa020
-    const altarEmissive = new THREE.Color(altarColor).multiplyScalar(0.3).getHex()
-    const altarMat = this.matCache.getLambert(altarColor, { emissive: altarEmissive })
+    const altarEmissive = new THREE.Color(altarColor).multiplyScalar(0.6).getHex()
+    const altarMat = this.matCache.getLambert(altarColor, { emissive: altarEmissive, emissiveIntensity: 1.0, map: texGen.getTexture('emberGlow', altarColor).map })
     const altar = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.8, 2, 6), altarMat)
     altar.position.y = tiers[3].y + tiers[3].h + 1
     g.add(altar)
@@ -914,9 +923,9 @@ export class Chunk {
     const darkStone  = biome === BiomeType.Snow ? 0x505870 : biome === BiomeType.Tundra ? 0x484858 : 0x3a2e28
     const woodColor  = 0x5a3010
 
-    const stoneMat = this.matCache.getLambert(stoneColor)
-    const darkMat  = this.matCache.getLambert(darkStone)
-    const woodMat  = this.matCache.getLambert(woodColor)
+    const stoneMat = this.matCache.getLambert(stoneColor, { map: texGen.getTexture('stone', stoneColor).map })
+    const darkMat  = this.matCache.getLambert(darkStone, { map: texGen.getTexture('darkStone', darkStone).map })
+    const woodMat  = this.matCache.getLambert(woodColor, { map: texGen.getTexture('wood', woodColor).map })
 
     const g = new THREE.Group()
     g.position.set(bestX, bestH, bestZ)
@@ -961,9 +970,10 @@ export class Chunk {
     // Door arch (south face)
     box(1.8, 2.2, 0.3, darkMat, 0, 1.7, 5.15)
 
-    // Two windows (east/west)
-    box(0.2, 1.0, 0.8, darkMat, -4.05, 3.5, 0)
-    box(0.2, 1.0, 0.8, darkMat,  4.05, 3.5, 0)
+    // Two windows (east/west) — glowing warm light from inside
+    const windowGlow = this.matCache.getLambert(0xffaa44, { emissive: 0xff8822, emissiveIntensity: 0.7, map: texGen.getTexture('beaconGlow', 0xffaa44).map })
+    box(0.2, 1.0, 0.8, windowGlow, -4.05, 3.5, 0)
+    box(0.2, 1.0, 0.8, windowGlow,  4.05, 3.5, 0)
 
     this.group.add(g)
     this.extras.push(g)
@@ -999,8 +1009,8 @@ export class Chunk {
     const stoneColor = biome === BiomeType.Swamp ? 0x2a3820 : 0x363228
     const fenceColor = biome === BiomeType.Swamp ? 0x1e2814 : 0x282420
 
-    const stoneMat = this.matCache.getLambert(stoneColor)
-    const fenceMat = this.matCache.getLambert(fenceColor)
+    const stoneMat = this.matCache.getLambert(stoneColor, { map: texGen.getTexture('stone', stoneColor).map })
+    const fenceMat = this.matCache.getLambert(fenceColor, { map: texGen.getTexture('darkStone', fenceColor).map })
 
     const g = new THREE.Group()
     g.position.set(bestX, bestH, bestZ)
@@ -1013,7 +1023,8 @@ export class Chunk {
     }
 
     // Ground slab (barely raised)
-    box(14, 0.3, 12, this.matCache.getLambert(biome === BiomeType.Swamp ? 0x1e2814 : 0x252220), 0, 0.15, 0)
+    const groundSlabColor = biome === BiomeType.Swamp ? 0x1e2814 : 0x252220
+    box(14, 0.3, 12, this.matCache.getLambert(groundSlabColor, { map: texGen.getTexture('stone', groundSlabColor).map }), 0, 0.15, 0)
 
     // Fence N/S
     box(14, 1, 0.25, fenceMat, 0, 0.8, -6)
@@ -1045,7 +1056,7 @@ export class Chunk {
 
     // 1–2 iron crosses
     const crossCount = 1 + rng.int(0, 1)
-    const crossMat = this.matCache.getLambert(0x1a1a1a)
+    const crossMat = this.matCache.getLambert(0x1a1a1a, { map: texGen.getTexture('darkStone', 0x1a1a1a).map })
     for (let i = 0; i < crossCount; i++) {
       const cx2 = rng.range(-5, 5)
       const cz2 = rng.range(-4, 4)
@@ -1101,8 +1112,8 @@ export class Chunk {
 
     const worldH = sampleHeight(this.heightGrid!, edgeX, edgeZ)
     const deckY = WATER_LEVEL + 0.15
-    const woodMat  = this.matCache.getLambert(0x5a3210)
-    const darkWood = this.matCache.getLambert(0x3a2010)
+    const woodMat  = this.matCache.getLambert(0x5a3210, { map: texGen.getTexture('wood', 0x5a3210).map })
+    const darkWood = this.matCache.getLambert(0x3a2010, { map: texGen.getTexture('wood', 0x3a2010).map })
 
     const g = new THREE.Group()
     g.position.set(edgeX, 0, edgeZ)
@@ -1181,8 +1192,8 @@ export class Chunk {
       if (biome !== BiomeType.Forest) continue
 
       const g = new THREE.Group(); g.position.set(lx, h, lz)
-      const stone = this.matCache.getLambert(0x5a4838)
-      const dark = this.matCache.getLambert(0x3a2e28)
+      const stone = this.matCache.getLambert(0x5a4838, { map: texGen.getTexture('stone', 0x5a4838).map })
+      const dark = this.matCache.getLambert(0x3a2e28, { map: texGen.getTexture('darkStone', 0x3a2e28).map })
       // Foundation
       g.add(new THREE.Mesh(new THREE.BoxGeometry(12, 0.5, 10), stone))
       // Partial walls
@@ -1201,6 +1212,10 @@ export class Chunk {
         rb.position.set(rng.range(-5, 5), 0.5, rng.range(-4, 4))
         rb.rotation.y = rng.range(0, Math.PI); g.add(rb)
       }
+      // Glowing rune on ruins floor
+      const ruinsRune = new THREE.MeshBasicMaterial({ color: 0x22aa88, map: texGen.getTexture('runeGlow', 0x22aa88).map })
+      const runeM = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.06, 1.5), ruinsRune)
+      runeM.position.set(rng.range(-2, 2), 0.28, rng.range(-2, 2)); g.add(runeM)
       this.group.add(g); this.extras.push(g)
       this.addWalkable(lx, lz, 6, 5, h + 0.5)
     }
@@ -1221,8 +1236,8 @@ export class Chunk {
       if (biome !== BiomeType.Forest && biome !== BiomeType.Snow && biome !== BiomeType.Tundra) continue
 
       const g = new THREE.Group(); g.position.set(lx, h, lz)
-      const stone = this.matCache.getLambert(0x5a4838)
-      const wood = this.matCache.getLambert(0x5a3010)
+      const stone = this.matCache.getLambert(0x5a4838, { map: texGen.getTexture('stone', 0x5a4838).map })
+      const wood = this.matCache.getLambert(0x5a3010, { map: texGen.getTexture('wood', 0x5a3010).map })
       // Ring walls
       for (const [ox, oz, w, d] of [[-1.5, 0, 0.5, 3.5], [1.5, 0, 0.5, 3.5], [0, -1.5, 3.5, 0.5], [0, 1.5, 3.5, 0.5]] as [number, number, number, number][]) {
         const wall = new THREE.Mesh(new THREE.BoxGeometry(w, 1.2, d), stone)
@@ -1242,6 +1257,10 @@ export class Chunk {
       // Cap stones
       const cap = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.3, 3.8), stone)
       cap.position.set(0, 1.35, 0); g.add(cap)
+      // Glowing water inside well
+      const wellGlow = new THREE.MeshBasicMaterial({ color: 0x2288cc, map: texGen.getTexture('crystalGlow', 0x2288cc).map })
+      const wellWater = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.1, 2.2), wellGlow)
+      wellWater.position.set(0, 0.3, 0); g.add(wellWater)
       this.group.add(g); this.extras.push(g)
       this.addWalkable(lx, lz, 1.75, 1.75, h + 1.5)
     }
@@ -1262,8 +1281,8 @@ export class Chunk {
       if (biome !== BiomeType.Desert) continue
 
       const g = new THREE.Group(); g.position.set(lx, h, lz)
-      const sand = this.matCache.getLambert(0x8a6040)
-      const dark = this.matCache.getLambert(0x6a4820)
+      const sand = this.matCache.getLambert(0x8a6040, { map: texGen.getTexture('sand', 0x8a6040).map })
+      const dark = this.matCache.getLambert(0x6a4820, { map: texGen.getTexture('sand', 0x6a4820).map })
       const ry = rng.range(0, Math.PI)
       // Main wall
       const wall = new THREE.Mesh(new THREE.BoxGeometry(14, 3, 1.5), sand)
@@ -1301,9 +1320,9 @@ export class Chunk {
       if (biome !== BiomeType.Desert && biome !== BiomeType.Savanna) continue
 
       const g = new THREE.Group(); g.position.set(lx, h, lz)
-      const poles = this.matCache.getLambert(0x5a3210)
-      const fabric = this.matCache.getLambert(0x8a6840)
-      const rug = this.matCache.getLambert(0x6a4020)
+      const poles = this.matCache.getLambert(0x5a3210, { map: texGen.getTexture('wood', 0x5a3210).map })
+      const fabric = this.matCache.getLambert(0x8a6840, { map: texGen.getTexture('sand', 0x8a6840).map })
+      const rug = this.matCache.getLambert(0x6a4020, { map: texGen.getTexture('sand', 0x6a4020).map })
       // Poles
       for (const sx of [-1.5, 1.5]) {
         const pole = new THREE.Mesh(new THREE.BoxGeometry(0.2, 3.5, 0.2), poles)
@@ -1320,6 +1339,10 @@ export class Chunk {
       // Ground rug
       const rugMesh = new THREE.Mesh(new THREE.BoxGeometry(3.5, 0.1, 4.5), rug)
       rugMesh.position.y = 0.05; g.add(rugMesh)
+      // Campfire glow inside tent
+      const fireMat = new THREE.MeshBasicMaterial({ color: 0xff6622, map: texGen.getTexture('emberGlow', 0xff6622).map })
+      const campfire = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.3, 0.5), fireMat)
+      campfire.position.y = 0.2; g.add(campfire)
       this.group.add(g); this.extras.push(g)
       this.addWalkable(lx, lz, 1.75, 2.25, h + 0.1)
     }
@@ -1340,9 +1363,9 @@ export class Chunk {
       if (biome !== BiomeType.Volcanic) continue
 
       const g = new THREE.Group(); g.position.set(lx, h, lz)
-      const obsidian = this.matCache.getLambert(0x2a1008)
-      const pit = this.matCache.getLambert(0x0a0404)
-      const lava = new THREE.MeshBasicMaterial({ color: 0xff4400 })
+      const obsidian = this.matCache.getLambert(0x2a1008, { map: texGen.getTexture('obsidian', 0x2a1008).map })
+      const pit = this.matCache.getLambert(0x0a0404, { map: texGen.getTexture('obsidian', 0x0a0404).map })
+      const lava = new THREE.MeshBasicMaterial({ color: 0xff4400, map: texGen.getTexture('lava', 0xff4400).map })
       // Crater ring
       for (const [ox, oz] of [[2.5, 0], [-2.5, 0], [0, 2.5], [0, -2.5]] as [number, number][]) {
         const ring = new THREE.Mesh(new THREE.BoxGeometry(2, 1.5, 2), obsidian)
@@ -1383,9 +1406,9 @@ export class Chunk {
       if (biome !== BiomeType.Volcanic) continue
 
       const g = new THREE.Group(); g.position.set(lx, h, lz)
-      const stone = this.matCache.getLambert(0x3a1a08)
-      const darkStone = this.matCache.getLambert(0x1a0a04)
-      const ember = new THREE.MeshBasicMaterial({ color: 0xff4400 })
+      const stone = this.matCache.getLambert(0x3a1a08, { map: texGen.getTexture('obsidian', 0x3a1a08).map })
+      const darkStone = this.matCache.getLambert(0x1a0a04, { map: texGen.getTexture('darkStone', 0x1a0a04).map })
+      const ember = new THREE.MeshBasicMaterial({ color: 0xff4400, map: texGen.getTexture('emberGlow', 0xff4400).map })
       // Platform
       const plat = new THREE.Mesh(new THREE.BoxGeometry(6, 1, 6), stone)
       plat.position.y = 0.5; g.add(plat)
@@ -1423,8 +1446,8 @@ export class Chunk {
       if (biome !== BiomeType.Snow) continue
 
       const g = new THREE.Group(); g.position.set(lx, h, lz)
-      const ice = this.matCache.getLambert(0x9ca8c0)
-      const blueGray = this.matCache.getLambert(0x7888a0)
+      const ice = this.matCache.getLambert(0x9ca8c0, { map: texGen.getTexture('ice', 0x9ca8c0).map })
+      const blueGray = this.matCache.getLambert(0x7888a0, { map: texGen.getTexture('ice', 0x7888a0).map })
       // Stacked shrinking rings to approximate dome
       const rings = [
         { w: 6, d: 6, h: 1.2, y: 0 },
@@ -1439,8 +1462,9 @@ export class Chunk {
         const ringMesh = new THREE.Mesh(new THREE.BoxGeometry(ring.w, ring.h, ring.d), i % 2 === 0 ? ice : blueGray)
         ringMesh.position.y = ring.y + ring.h / 2; g.add(ringMesh)
       }
-      // Door gap (subtract by placing dark box)
-      const door = new THREE.Mesh(new THREE.BoxGeometry(1.5, 1.8, 1), this.matCache.getLambert(0x0a0a10))
+      // Door gap — warm interior glow
+      const iglooGlow = this.matCache.getLambert(0xffaa55, { emissive: 0xff7722, emissiveIntensity: 0.5, map: texGen.getTexture('beaconGlow', 0xffaa55).map })
+      const door = new THREE.Mesh(new THREE.BoxGeometry(1.5, 1.8, 1), iglooGlow)
       door.position.set(0, 0.9, 3.2); g.add(door)
       // Interior floor
       const floor = new THREE.Mesh(new THREE.BoxGeometry(4, 0.15, 4), blueGray)
@@ -1466,8 +1490,8 @@ export class Chunk {
       if (biome !== BiomeType.Snow) continue
 
       const g = new THREE.Group(); g.position.set(lx, h, lz)
-      const stone = this.matCache.getLambert(0x7888a0)
-      const dark = this.matCache.getLambert(0x5a6878)
+      const stone = this.matCache.getLambert(0x7888a0, { map: texGen.getTexture('ice', 0x7888a0).map })
+      const dark = this.matCache.getLambert(0x5a6878, { map: texGen.getTexture('ice', 0x5a6878).map })
       const ry = rng.range(0, Math.PI)
       // Wall
       const wall = new THREE.Mesh(new THREE.BoxGeometry(10, 2.5, 1.5), stone)
@@ -1503,7 +1527,7 @@ export class Chunk {
       if (biome !== BiomeType.Tundra) continue
 
       const g = new THREE.Group(); g.position.set(lx, h, lz)
-      const gray = this.matCache.getLambert(0x606070)
+      const gray = this.matCache.getLambert(0x606070, { map: texGen.getTexture('stone', 0x606070).map })
       const stoneCount = 5 + rng.int(0, 2)
       const radius = 5
       for (let i = 0; i < stoneCount; i++) {
@@ -1518,6 +1542,10 @@ export class Chunk {
       // Center altar slab
       const altar = new THREE.Mesh(new THREE.BoxGeometry(2, 0.5, 2), gray)
       altar.position.y = 0.25; g.add(altar)
+      // Glowing rune on altar
+      const runeGlow = new THREE.MeshBasicMaterial({ color: 0x44ccaa, map: texGen.getTexture('runeGlow', 0x44ccaa).map })
+      const rune = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.06, 1.2), runeGlow)
+      rune.position.y = 0.53; g.add(rune)
       this.group.add(g); this.extras.push(g)
       this.addWalkable(lx, lz, 1, 1, h + 0.5)
     }
@@ -1538,8 +1566,8 @@ export class Chunk {
       if (biome !== BiomeType.Tundra) continue
 
       const g = new THREE.Group(); g.position.set(lx, h, lz)
-      const wood = this.matCache.getLambert(0x4a3a28)
-      const dried = this.matCache.getLambert(0x6a4430)
+      const wood = this.matCache.getLambert(0x4a3a28, { map: texGen.getTexture('wood', 0x4a3a28).map })
+      const dried = this.matCache.getLambert(0x6a4430, { map: texGen.getTexture('wood', 0x6a4430).map })
       // X-frames
       for (const sx of [-1.5, 1.5]) {
         const legA = new THREE.Mesh(new THREE.BoxGeometry(0.2, 3.5, 0.2), wood)
@@ -1578,9 +1606,9 @@ export class Chunk {
       if (biome !== BiomeType.Swamp) continue
 
       const g = new THREE.Group(); g.position.set(lx, h, lz)
-      const darkWood = this.matCache.getLambert(0x3a2010)
-      const darker = this.matCache.getLambert(0x2a1a08)
-      const moss = this.matCache.getLambert(0x1a2a08)
+      const darkWood = this.matCache.getLambert(0x3a2010, { map: texGen.getTexture('wood', 0x3a2010).map })
+      const darker = this.matCache.getLambert(0x2a1a08, { map: texGen.getTexture('wood', 0x2a1a08).map })
+      const moss = this.matCache.getLambert(0x1a2a08, { map: texGen.getTexture('moss', 0x1a2a08).map })
       const stiltH = 3
       // Stilts
       for (const [sx, sz] of [[-2, -1.5], [2, -1.5], [-2, 1.5], [2, 1.5]] as [number, number][]) {
@@ -1599,6 +1627,10 @@ export class Chunk {
       // Sloped roof
       const roof = new THREE.Mesh(new THREE.BoxGeometry(5.5, 0.2, 4.5), moss)
       roof.position.set(0, stiltH + 2.8, 0.2); roof.rotation.x = 0.15; g.add(roof)
+      // Hanging lantern — green swamp glow
+      const lanternMat = new THREE.MeshBasicMaterial({ color: 0x44ff88, map: texGen.getTexture('beaconGlow', 0x44ff88).map })
+      const lantern = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.3), lanternMat)
+      lantern.position.set(1.5, stiltH + 2.2, 1.5); g.add(lantern)
       this.group.add(g); this.extras.push(g)
       this.addWalkable(lx, lz, 2.5, 2, h + stiltH + 0.15)
     }
@@ -1618,8 +1650,8 @@ export class Chunk {
       if (biome !== BiomeType.Swamp) continue
 
       const g = new THREE.Group(); g.position.set(lx, h, lz)
-      const planks = this.matCache.getLambert(0x5a3210)
-      const posts = this.matCache.getLambert(0x3a2010)
+      const planks = this.matCache.getLambert(0x5a3210, { map: texGen.getTexture('wood', 0x5a3210).map })
+      const posts = this.matCache.getLambert(0x3a2010, { map: texGen.getTexture('wood', 0x3a2010).map })
       const axis = rng.next() > 0.5 ? 'x' : 'z'
       const segCount = 6 + rng.int(0, 2)
       const segSpacing = 1.8
@@ -1668,8 +1700,8 @@ export class Chunk {
       if (biome !== BiomeType.Savanna) continue
 
       const g = new THREE.Group(); g.position.set(lx, h, lz)
-      const mud = this.matCache.getLambert(0x6a4820)
-      const thatch = this.matCache.getLambert(0x3a2808)
+      const mud = this.matCache.getLambert(0x6a4820, { map: texGen.getTexture('sand', 0x6a4820).map })
+      const thatch = this.matCache.getLambert(0x3a2808, { map: texGen.getTexture('wood', 0x3a2808).map })
       // 4 walls
       for (const [ox, oz, w, d] of [[-2, 0, 0.5, 4.5], [2, 0, 0.5, 4.5], [0, -2, 4.5, 0.5], [0, 2, 4.5, 0.5]] as [number, number, number, number][]) {
         const wall = new THREE.Mesh(new THREE.BoxGeometry(w, 2.5, d), mud)
@@ -1687,8 +1719,9 @@ export class Chunk {
         roofSlab.rotation.x = 0.4
         g.add(roofSlab)
       }
-      // Door gap
-      const doorGap = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.8, 0.6), this.matCache.getLambert(0x0a0804))
+      // Door gap — warm interior firelight
+      const doorGlow = this.matCache.getLambert(0xff8833, { emissive: 0xff6611, emissiveIntensity: 0.6, map: texGen.getTexture('emberGlow', 0xff8833).map })
+      const doorGap = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.8, 0.6), doorGlow)
       doorGap.position.set(0, 0.9, 2.2); g.add(doorGap)
       this.group.add(g); this.extras.push(g)
       this.addWalkable(lx, lz, 2, 2, h + 0.15)
@@ -1710,7 +1743,7 @@ export class Chunk {
       if (biome !== BiomeType.Savanna) continue
 
       const g = new THREE.Group(); g.position.set(lx, h, lz)
-      const wood = this.matCache.getLambert(0x5a3210)
+      const wood = this.matCache.getLambert(0x5a3210, { map: texGen.getTexture('wood', 0x5a3210).map })
       const axis = rng.next() > 0.5 ? 'x' : 'z'
       const postCount = 4 + rng.int(0, 2)
       const spacing = 2.5
@@ -1754,9 +1787,9 @@ export class Chunk {
       if (biome !== BiomeType.Crystal) continue
 
       const g = new THREE.Group(); g.position.set(lx, h, lz)
-      const base = this.matCache.getLambert(0x2860a0)
-      const light = this.matCache.getLambert(0x4080c0)
-      const dark = this.matCache.getLambert(0x104060)
+      const base = this.matCache.getLambert(0x2860a0, { map: texGen.getTexture('crystal', 0x2860a0).map })
+      const light = this.matCache.getLambert(0x4080c0, { map: texGen.getTexture('crystal', 0x4080c0).map })
+      const dark = this.matCache.getLambert(0x104060, { map: texGen.getTexture('crystal', 0x104060).map })
       // Pillars
       for (const sx of [-4, 4]) {
         const pillar = new THREE.Mesh(new THREE.BoxGeometry(1.5, 6, 1.5), base)
@@ -1768,9 +1801,10 @@ export class Chunk {
       // Bridge slab
       const bridge = new THREE.Mesh(new THREE.BoxGeometry(9.5, 0.8, 1.5), base)
       bridge.position.y = 6.4; g.add(bridge)
-      // Crystal growths at bases
+      // Crystal growths at bases — glowing
+      const crystGlow = new THREE.MeshBasicMaterial({ color: 0x66aaff, map: texGen.getTexture('crystalGlow', 0x66aaff).map })
       for (const sx of [-4.5, 4.5]) {
-        const shard = new THREE.Mesh(new THREE.BoxGeometry(0.6, 1.5, 0.6), dark)
+        const shard = new THREE.Mesh(new THREE.BoxGeometry(0.6, 1.5, 0.6), crystGlow)
         shard.position.set(sx, 0.75, 0.8); shard.rotation.z = rng.range(-0.3, 0.3)
         g.add(shard)
       }
@@ -1794,8 +1828,8 @@ export class Chunk {
       if (biome !== BiomeType.Crystal) continue
 
       const g = new THREE.Group(); g.position.set(lx, h, lz)
-      const base = this.matCache.getLambert(0x2860a0)
-      const highlight = this.matCache.getLambert(0x60b0e0)
+      const base = this.matCache.getLambert(0x2860a0, { map: texGen.getTexture('crystal', 0x2860a0).map })
+      const highlight = this.matCache.getLambert(0x60b0e0, { map: texGen.getTexture('crystal', 0x60b0e0).map })
       // 3 tiers
       const tierData = [
         { w: 4, h: 1.2, y: 0 },
@@ -1806,8 +1840,9 @@ export class Chunk {
         const tier = new THREE.Mesh(new THREE.BoxGeometry(t.w, t.h, t.w), base)
         tier.position.y = t.y + t.h / 2; g.add(tier)
       }
-      // Floating crystal (rotated 45 degrees)
-      const crystal = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.8, 1.2), highlight)
+      // Floating crystal (rotated 45 degrees) — glowing
+      const crystalGlowMat = new THREE.MeshBasicMaterial({ color: 0x88ccff, map: texGen.getTexture('crystalGlow', 0x88ccff).map })
+      const crystal = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.8, 1.2), crystalGlowMat)
       crystal.position.y = 4; crystal.rotation.y = Math.PI / 4; crystal.rotation.x = 0.2
       g.add(crystal)
       // Small base shards
@@ -1837,8 +1872,8 @@ export class Chunk {
       if (biome !== BiomeType.AshWastes) continue
 
       const g = new THREE.Group(); g.position.set(lx, h, lz)
-      const gray = this.matCache.getLambert(0x303030)
-      const darkGray = this.matCache.getLambert(0x1a1a1a)
+      const gray = this.matCache.getLambert(0x303030, { map: texGen.getTexture('ash', 0x303030).map })
+      const darkGray = this.matCache.getLambert(0x1a1a1a, { map: texGen.getTexture('ash', 0x1a1a1a).map })
       // Foundation
       const found = new THREE.Mesh(new THREE.BoxGeometry(8, 0.5, 6), gray)
       found.position.y = 0.25; g.add(found)
@@ -1880,9 +1915,9 @@ export class Chunk {
       if (biome !== BiomeType.AshWastes) continue
 
       const g = new THREE.Group(); g.position.set(lx, h, lz)
-      const stone = this.matCache.getLambert(0x303030)
-      const charred = this.matCache.getLambert(0x1a1a1a)
-      const embers = new THREE.MeshBasicMaterial({ color: 0xff2200 })
+      const stone = this.matCache.getLambert(0x303030, { map: texGen.getTexture('ash', 0x303030).map })
+      const charred = this.matCache.getLambert(0x1a1a1a, { map: texGen.getTexture('ash', 0x1a1a1a).map })
+      const embers = new THREE.MeshBasicMaterial({ color: 0xff2200, map: texGen.getTexture('emberGlow', 0xff2200).map })
       // Platform
       const plat = new THREE.Mesh(new THREE.BoxGeometry(4, 0.5, 4), stone)
       plat.position.y = 0.25; g.add(plat)
@@ -1920,9 +1955,9 @@ export class Chunk {
       if (biome !== BiomeType.Mushroom) continue
 
       const g = new THREE.Group(); g.position.set(lx, h, lz)
-      const stem = this.matCache.getLambert(0x6090b0)
-      const cap = this.matCache.getLambert(0x7030a0)
-      const glow = new THREE.MeshBasicMaterial({ color: 0xff80ff })
+      const stem = this.matCache.getLambert(0x6090b0, { map: texGen.getTexture('mushroom', 0x6090b0).map })
+      const cap = this.matCache.getLambert(0x7030a0, { map: texGen.getTexture('mushroom', 0x7030a0).map })
+      const glow = new THREE.MeshBasicMaterial({ color: 0xff80ff, map: texGen.getTexture('mushroomGlow', 0xff80ff).map })
       // Central stump
       const stump = new THREE.Mesh(new THREE.BoxGeometry(3, 2, 3), stem)
       stump.position.y = 1; g.add(stump)
@@ -1961,9 +1996,9 @@ export class Chunk {
       if (biome !== BiomeType.Mushroom) continue
 
       const g = new THREE.Group(); g.position.set(lx, h, lz)
-      const logColor = this.matCache.getLambert(0x6090b0)
-      const interior = this.matCache.getLambert(0x405870)
-      const capColor = this.matCache.getLambert(0x7030a0)
+      const logColor = this.matCache.getLambert(0x6090b0, { map: texGen.getTexture('mushroom', 0x6090b0).map })
+      const interior = this.matCache.getLambert(0x405870, { map: texGen.getTexture('mushroom', 0x405870).map })
+      const capColor = this.matCache.getLambert(0x7030a0, { map: texGen.getTexture('mushroom', 0x7030a0).map })
       const ry = rng.range(0, Math.PI)
       // Outer log
       const outer = new THREE.Mesh(new THREE.BoxGeometry(8, 3, 3), logColor)
@@ -1981,6 +2016,388 @@ export class Chunk {
       }
       this.group.add(g); this.extras.push(g)
       this.addWalkable(lx, lz, 4, 1.5, h + 3)
+    }
+  }
+
+  // ── Heaven floating cloud islands ─────────────────────────────────────────
+  // These are separate geometry floating at HEAVEN_ALTITUDE — ground below is normal terrain
+
+  private buildHeavenPillars(rng: SeededRandom, biomeMap: BiomeMap) {
+    if (!this.heightGrid) return
+    const hc = biomeMap.getHeavenCenter()
+    if (!hc) return
+
+    const chunkWorldX = this.cx * CHUNK_SIZE
+    const chunkWorldZ = this.cz * CHUNK_SIZE
+
+    // Check if this chunk is inside the Heaven circle
+    const chunkCenterX = chunkWorldX + CHUNK_SIZE / 2
+    const chunkCenterZ = chunkWorldZ + CHUNK_SIZE / 2
+    const dx = chunkCenterX - hc.x, dz = chunkCenterZ - hc.z
+    if (dx * dx + dz * dz > 320 * 320) return  // outside Heaven + margin
+
+    const FLOAT_Y = 100   // HEAVEN_ALTITUDE
+    const cloudMat = this.matCache.getLambert(0xf0f0ff, { transparent: true, opacity: 0.85, map: texGen.getTexture('marble', 0xf0f0ff).map })
+    const cloudTopMat = this.matCache.getLambert(0xfff8e8, { map: texGen.getTexture('marble', 0xfff8e8).map })
+    const goldAccent = this.matCache.getLambert(0xdaa520, { map: texGen.getTexture('gold', 0xdaa520).map })
+
+    const spacing = 16
+    for (let lz = spacing / 2; lz < CHUNK_SIZE; lz += spacing) {
+      for (let lx = spacing / 2; lx < CHUNK_SIZE; lx += spacing) {
+        const wx = chunkWorldX + lx
+        const wz = chunkWorldZ + lz
+        const biome = biomeMap.getBiomeAt(wx, wz)
+        if (biome !== BiomeType.Heaven) continue
+        if (rng.next() > 0.50) continue
+
+        // Distance from heaven center — islands sparser at edges
+        const hdx = wx - hc.x, hdz = wz - hc.z
+        const hDist = Math.sqrt(hdx * hdx + hdz * hdz)
+        if (hDist > 290 && rng.next() > 0.3) continue
+
+        const g = new THREE.Group()
+        // Float above the ground — offset from chunk group position
+        const groundH = sampleHeight(this.heightGrid, lx, lz)
+        g.position.set(lx, FLOAT_Y, lz)
+
+        // Cloud island platform — flat-ish top, rounded bottom
+        const islandW = rng.range(6, 14)
+        const islandD = rng.range(6, 14)
+        const islandH = rng.range(2, 5)
+
+        // Top slab (walkable)
+        const top = new THREE.Mesh(new THREE.BoxGeometry(islandW, 1.5, islandD), cloudTopMat)
+        top.position.set(0, 0, 0)
+        g.add(top)
+
+        // Underside — tapered cloud masses hanging below
+        const underCount = 1 + rng.int(0, 3)
+        for (let i = 0; i < underCount; i++) {
+          const uw = rng.range(islandW * 0.3, islandW * 0.8)
+          const uh = rng.range(2, islandH + 3)
+          const ud = rng.range(islandD * 0.3, islandD * 0.8)
+          const ox = rng.range(-islandW * 0.2, islandW * 0.2)
+          const oz = rng.range(-islandD * 0.2, islandD * 0.2)
+          const under = new THREE.Mesh(new THREE.BoxGeometry(uw, uh, ud), cloudMat)
+          under.position.set(ox, -uh / 2 - 0.75, oz)
+          g.add(under)
+        }
+
+        // Occasional pillar rising from island
+        if (rng.next() > 0.65) {
+          const pH = rng.range(4, 12)
+          const pw = rng.range(1.5, 3)
+          const pillar = new THREE.Mesh(new THREE.BoxGeometry(pw, pH, pw), cloudTopMat)
+          pillar.position.set(rng.range(-2, 2), pH / 2 + 0.75, rng.range(-2, 2))
+          g.add(pillar)
+        }
+
+        // Occasional golden accent
+        if (rng.next() > 0.8) {
+          const accent = new THREE.Mesh(new THREE.BoxGeometry(1.5, 2, 1.5), goldAccent)
+          accent.position.set(0, 1.75, 0)
+          g.add(accent)
+        }
+
+        this.group.add(g); this.extras.push(g)
+        this.addWalkable(lx, lz, islandW / 2, islandD / 2, FLOAT_Y + 0.75)
+      }
+    }
+  }
+
+  // ── Heaven golden arches (on floating islands) ──────────────────────────
+
+  private buildHeavenArches(rng: SeededRandom, biomeMap: BiomeMap) {
+    if (!this.heightGrid) return
+    const hc = biomeMap.getHeavenCenter()
+    if (!hc) return
+
+    const chunkWorldX = this.cx * CHUNK_SIZE
+    const chunkWorldZ = this.cz * CHUNK_SIZE
+    const ccx = chunkWorldX + CHUNK_SIZE / 2, ccz = chunkWorldZ + CHUNK_SIZE / 2
+    const ddx = ccx - hc.x, ddz = ccz - hc.z
+    if (ddx * ddx + ddz * ddz > 310 * 310) return
+
+    const FLOAT_Y = 100
+    const goldMat = this.matCache.getLambert(0xdaa520, { map: texGen.getTexture('gold', 0xdaa520).map })
+
+    for (let lz = 16; lz < CHUNK_SIZE - 16; lz += 28) {
+      for (let lx = 16; lx < CHUNK_SIZE - 16; lx += 28) {
+        if (rng.next() > 0.08) continue
+        const wx = chunkWorldX + lx, wz = chunkWorldZ + lz
+        if (biomeMap.getBiomeAt(wx, wz) !== BiomeType.Heaven) continue
+
+        const axis = rng.next() > 0.5 ? 'x' : 'z'
+        const span = rng.range(8, 14)
+        const archH = rng.range(6, 10)
+        const thick = rng.range(1.5, 2.5)
+
+        const g = new THREE.Group(); g.position.set(lx, FLOAT_Y + 1.5, lz)
+
+        for (const side of [-span / 2, span / 2]) {
+          const p = new THREE.Mesh(new THREE.BoxGeometry(thick, archH, thick), goldMat)
+          axis === 'x' ? p.position.set(side, archH / 2, 0) : p.position.set(0, archH / 2, side)
+          g.add(p)
+        }
+
+        const segs = 5
+        for (let i = 0; i < segs; i++) {
+          const t = (i + 0.5) / segs
+          const angle = Math.PI * t
+          const along = -span / 2 + span * t
+          const ay = archH + Math.sin(angle) * archH * 0.4
+          const segLen = span / segs + 0.2
+          const aGeo = new THREE.BoxGeometry(
+            axis === 'x' ? segLen : thick, thick, axis === 'z' ? segLen : thick
+          )
+          const block = new THREE.Mesh(aGeo, goldMat)
+          axis === 'x' ? block.position.set(along, ay, 0) : block.position.set(0, ay, along)
+          g.add(block)
+        }
+
+        this.group.add(g); this.extras.push(g)
+        for (const side of [-span / 2, span / 2]) {
+          const awx = axis === 'x' ? lx + side : lx
+          const awz = axis === 'z' ? lz + side : lz
+          this.addWalkable(awx, awz, thick / 2, thick / 2, FLOAT_Y + 1.5 + archH)
+        }
+      }
+    }
+  }
+
+  // ── Heaven waterfalls (hang from floating islands) ──────────────────────
+
+  private buildHeavenWaterfalls(rng: SeededRandom, biomeMap: BiomeMap) {
+    if (!this.heightGrid) return
+    const hc = biomeMap.getHeavenCenter()
+    if (!hc) return
+
+    const chunkWorldX = this.cx * CHUNK_SIZE
+    const chunkWorldZ = this.cz * CHUNK_SIZE
+    const ccx = chunkWorldX + CHUNK_SIZE / 2, ccz = chunkWorldZ + CHUNK_SIZE / 2
+    const ddx = ccx - hc.x, ddz = ccz - hc.z
+    if (ddx * ddx + ddz * ddz > 320 * 320) return
+
+    const FLOAT_Y = 100
+    let count = 0
+    const maxPerChunk = 3
+
+    for (let lz = 10; lz < CHUNK_SIZE - 10; lz += 16) {
+      for (let lx = 10; lx < CHUNK_SIZE - 10; lx += 16) {
+        if (count >= maxPerChunk) return
+        const wx = chunkWorldX + lx, wz = chunkWorldZ + lz
+        if (biomeMap.getBiomeAt(wx, wz) !== BiomeType.Heaven) continue
+        if (rng.next() > 0.12) continue
+
+        // Waterfall hangs from floating island level down to near ground
+        const groundH = sampleHeight(this.heightGrid, lx, lz)
+        const fallTop = FLOAT_Y - 2  // just below island underside
+        const fallBot = groundH + 3  // just above ground
+        const fallHeight = fallTop - fallBot
+        if (fallHeight < 30) continue  // not enough room
+
+        const fallWidth = rng.range(2, 4)
+        const geo = new THREE.PlaneGeometry(fallWidth, fallHeight, 1, 8)
+
+        // Subtle vertex displacement for flowing look
+        const posAttr = geo.attributes.position
+        for (let i = 0; i < posAttr.count; i++) {
+          const px = posAttr.getX(i)
+          const py = posAttr.getY(i)
+          posAttr.setX(i, px + Math.sin(py * 0.3 + i * 0.7) * 0.3)
+        }
+        posAttr.needsUpdate = true
+
+        const mat = new THREE.MeshBasicMaterial({
+          color: 0xaaddff,
+          transparent: true,
+          opacity: 0.5,
+          side: THREE.DoubleSide,
+          depthWrite: false,
+        })
+
+        const mesh = new THREE.Mesh(geo, mat)
+        mesh.position.set(lx, fallBot + fallHeight / 2, lz)
+        mesh.rotation.y = rng.next() > 0.5 ? 0 : Math.PI / 2
+        this.group.add(mesh)
+        this.extras.push(mesh)
+        count++
+      }
+    }
+  }
+
+  // ── Hell lava pools (obsidian platforms with lava surfaces) ─────────────
+
+  private buildHellLavaPools(rng: SeededRandom, biomeMap: BiomeMap) {
+    if (!this.heightGrid) return
+    const hc = biomeMap.getHellCenter()
+    if (!hc) return
+
+    const chunkWorldX = this.cx * CHUNK_SIZE
+    const chunkWorldZ = this.cz * CHUNK_SIZE
+    const ccx = chunkWorldX + CHUNK_SIZE / 2, ccz = chunkWorldZ + CHUNK_SIZE / 2
+    const ddx = ccx - hc.x, ddz = ccz - hc.z
+    if (ddx * ddx + ddz * ddz > 320 * 320) return
+
+    const obsidianMat = this.matCache.getLambert(0x1a1a22, { map: texGen.getTexture('obsidian', 0x1a1a22).map })
+    const lavaMat = new THREE.MeshBasicMaterial({ color: 0xff3300, map: texGen.getTexture('lava', 0xff3300).map })
+
+    const spacing = 16
+    for (let lz = spacing / 2; lz < CHUNK_SIZE; lz += spacing) {
+      for (let lx = spacing / 2; lx < CHUNK_SIZE; lx += spacing) {
+        const wx = chunkWorldX + lx
+        const wz = chunkWorldZ + lz
+        if (biomeMap.getBiomeAt(wx, wz) !== BiomeType.Hell) continue
+        if (rng.next() > 0.50) continue
+
+        // Sparser at edges
+        const hdx = wx - hc.x, hdz = wz - hc.z
+        const hDist = Math.sqrt(hdx * hdx + hdz * hdz)
+        if (hDist > 290 && rng.next() > 0.3) continue
+
+        const g = new THREE.Group()
+        g.position.set(lx, HELL_DEPTH, lz)
+
+        // Obsidian slab
+        const slabW = rng.range(6, 14)
+        const slabD = rng.range(6, 14)
+        const slab = new THREE.Mesh(new THREE.BoxGeometry(slabW, 1.5, slabD), obsidianMat)
+        slab.position.set(0, 0, 0)
+        g.add(slab)
+
+        // Lava surface on top
+        const lava = new THREE.Mesh(new THREE.BoxGeometry(slabW * 0.8, 0.3, slabD * 0.8), lavaMat)
+        lava.position.set(0, 0.9, 0)
+        g.add(lava)
+
+        // Occasional obsidian spire
+        if (rng.next() > 0.5) {
+          const spireH = rng.range(4, 10)
+          const spireW = rng.range(1.5, 3)
+          const spire = new THREE.Mesh(new THREE.BoxGeometry(spireW, spireH, spireW), obsidianMat)
+          spire.position.set(rng.range(-2, 2), spireH / 2 + 0.75, rng.range(-2, 2))
+          g.add(spire)
+        }
+
+        this.group.add(g); this.extras.push(g)
+        this.addWalkable(lx, lz, slabW / 2, slabD / 2, HELL_DEPTH + 0.75)
+      }
+    }
+  }
+
+  // ── Hell spires (bone-colored arch bridges) ───────────────────────────
+
+  private buildHellSpires(rng: SeededRandom, biomeMap: BiomeMap) {
+    if (!this.heightGrid) return
+    const hc = biomeMap.getHellCenter()
+    if (!hc) return
+
+    const chunkWorldX = this.cx * CHUNK_SIZE
+    const chunkWorldZ = this.cz * CHUNK_SIZE
+    const ccx = chunkWorldX + CHUNK_SIZE / 2, ccz = chunkWorldZ + CHUNK_SIZE / 2
+    const ddx = ccx - hc.x, ddz = ccz - hc.z
+    if (ddx * ddx + ddz * ddz > 310 * 310) return
+
+    const boneMat = this.matCache.getLambert(0xddccaa, { map: texGen.getTexture('darkStone', 0xddccaa).map })
+
+    for (let lz = 16; lz < CHUNK_SIZE - 16; lz += 28) {
+      for (let lx = 16; lx < CHUNK_SIZE - 16; lx += 28) {
+        if (rng.next() > 0.08) continue
+        const wx = chunkWorldX + lx, wz = chunkWorldZ + lz
+        if (biomeMap.getBiomeAt(wx, wz) !== BiomeType.Hell) continue
+
+        const axis = rng.next() > 0.5 ? 'x' : 'z'
+        const span = rng.range(8, 14)
+        const archH = rng.range(6, 10)
+        const thick = rng.range(1.5, 2.5)
+
+        const g = new THREE.Group(); g.position.set(lx, HELL_DEPTH + 1.5, lz)
+
+        for (const side of [-span / 2, span / 2]) {
+          const p = new THREE.Mesh(new THREE.BoxGeometry(thick, archH, thick), boneMat)
+          axis === 'x' ? p.position.set(side, archH / 2, 0) : p.position.set(0, archH / 2, side)
+          g.add(p)
+        }
+
+        const segs = 5
+        for (let i = 0; i < segs; i++) {
+          const t = (i + 0.5) / segs
+          const angle = Math.PI * t
+          const along = -span / 2 + span * t
+          const ay = archH + Math.sin(angle) * archH * 0.4
+          const segLen = span / segs + 0.2
+          const aGeo = new THREE.BoxGeometry(
+            axis === 'x' ? segLen : thick, thick, axis === 'z' ? segLen : thick
+          )
+          const block = new THREE.Mesh(aGeo, boneMat)
+          axis === 'x' ? block.position.set(along, ay, 0) : block.position.set(0, ay, along)
+          g.add(block)
+        }
+
+        this.group.add(g); this.extras.push(g)
+        for (const side of [-span / 2, span / 2]) {
+          const awx = axis === 'x' ? lx + side : lx
+          const awz = axis === 'z' ? lz + side : lz
+          this.addWalkable(awx, awz, thick / 2, thick / 2, HELL_DEPTH + 1.5 + archH)
+        }
+      }
+    }
+  }
+
+  // ── Hell lava falls (from ceiling down to hell floor) ──────────────────
+
+  private buildHellLavaFalls(rng: SeededRandom, biomeMap: BiomeMap) {
+    if (!this.heightGrid) return
+    const hc = biomeMap.getHellCenter()
+    if (!hc) return
+
+    const chunkWorldX = this.cx * CHUNK_SIZE
+    const chunkWorldZ = this.cz * CHUNK_SIZE
+    const ccx = chunkWorldX + CHUNK_SIZE / 2, ccz = chunkWorldZ + CHUNK_SIZE / 2
+    const ddx = ccx - hc.x, ddz = ccz - hc.z
+    if (ddx * ddx + ddz * ddz > 320 * 320) return
+
+    let count = 0
+    const maxPerChunk = 3
+
+    for (let lz = 10; lz < CHUNK_SIZE - 10; lz += 16) {
+      for (let lx = 10; lx < CHUNK_SIZE - 10; lx += 16) {
+        if (count >= maxPerChunk) return
+        const wx = chunkWorldX + lx, wz = chunkWorldZ + lz
+        if (biomeMap.getBiomeAt(wx, wz) !== BiomeType.Hell) continue
+        if (rng.next() > 0.12) continue
+
+        const fallTop = -10  // ceiling level
+        const fallBot = HELL_DEPTH + 2  // just above floor
+        const fallHeight = fallTop - fallBot
+        if (fallHeight < 20) continue
+
+        const fallWidth = rng.range(2, 4)
+        const geo = new THREE.PlaneGeometry(fallWidth, fallHeight, 1, 8)
+
+        const posAttr = geo.attributes.position
+        for (let i = 0; i < posAttr.count; i++) {
+          const px = posAttr.getX(i)
+          const py = posAttr.getY(i)
+          posAttr.setX(i, px + Math.sin(py * 0.3 + i * 0.7) * 0.3)
+        }
+        posAttr.needsUpdate = true
+
+        const mat = new THREE.MeshBasicMaterial({
+          color: 0xff3300,
+          transparent: true,
+          opacity: 0.7,
+          side: THREE.DoubleSide,
+          depthWrite: false,
+        })
+
+        const mesh = new THREE.Mesh(geo, mat)
+        mesh.position.set(lx, fallBot + fallHeight / 2, lz)
+        mesh.rotation.y = rng.next() > 0.5 ? 0 : Math.PI / 2
+        this.group.add(mesh)
+        this.extras.push(mesh)
+        count++
+      }
     }
   }
 

@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import type { CastleWalkable } from '../castle/Castle'
+import { texGen } from '../utils/PixelTextureGenerator'
 
 function box(
   w: number, h: number, d: number,
@@ -27,9 +28,9 @@ export class ObsidianCitadel {
     const py = this.position.y
     const pz = this.position.z
 
-    const obsidian  = new THREE.MeshLambertMaterial({ color: 0x0d0508 })
-    const darkRock  = new THREE.MeshLambertMaterial({ color: 0x1a0808 })
-    const lavaMat   = new THREE.MeshBasicMaterial({ color: 0xff2200 })
+    const obsidian  = new THREE.MeshLambertMaterial({ color: 0x0d0508, map: texGen.getTexture('obsidian', 0x0d0508).map })
+    const darkRock  = new THREE.MeshLambertMaterial({ color: 0x1a0808, map: texGen.getTexture('darkStone', 0x1a0808).map })
+    const lavaMat   = new THREE.MeshBasicMaterial({ color: 0xff2200, map: texGen.getTexture('lava', 0xff2200).map })
 
     // ── Base platform ─────────────────────────────────────────────────────
     const platform = box(240, 10, 240, obsidian)

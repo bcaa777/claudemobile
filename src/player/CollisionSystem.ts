@@ -20,9 +20,14 @@ export class CollisionSystem {
     // Only accept object floors that are at or below the player's eye level
     const objectY  = rawObj !== null && rawObj < playerY ? rawObj : null
 
+    // Only accept terrain that is reasonably close below the player (not far above).
+    // This prevents snapping up to the surface when the player is underground.
+    const MAX_SNAP_UP = 8  // max units terrain can be above player and still snap
+    const validTerrainY = terrainY !== null && terrainY < playerY + MAX_SNAP_UP ? terrainY : null
+
     return Math.max(
-      terrainY !== null ? terrainY : -Infinity,
-      objectY  !== null ? objectY  : -Infinity,
+      validTerrainY !== null ? validTerrainY : -Infinity,
+      objectY       !== null ? objectY       : -Infinity,
     )
   }
 

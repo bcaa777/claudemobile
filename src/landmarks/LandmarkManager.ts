@@ -2,7 +2,8 @@ import * as THREE from 'three'
 import { BiomeType } from '../biomes/types'
 import type { BiomeMap } from '../world/BiomeMap'
 import type { CastleWalkable } from '../castle/Castle'
-import { WATER_LEVEL } from '../world/TerrainGenerator'
+import { WATER_LEVEL, CHUNK_SIZE, sampleWorldHeight } from '../world/TerrainGenerator'
+import { WORLD_CONFIG } from '../config'
 import { mergeStaticMeshes } from '../utils/mergeStaticMeshes'
 import { DruidRingTemple } from './DruidRingTemple'
 import { GreatPyramid } from './GreatPyramid'
@@ -14,7 +15,10 @@ import { MyceliumCathedral } from './MyceliumCathedral'
 import { AshColosseum } from './AshColosseum'
 import { CrystalCathedral } from './CrystalCathedral'
 import { SavannaObelisk } from './SavannaObelisk'
+import { CloudTemple } from './CloudTemple'
+import { InfernalCitadel } from './InfernalCitadel'
 import { LandmarkCrystal } from './LandmarkCrystal'
+import { HEAVEN_ALTITUDE, HELL_DEPTH } from '../world/TerrainGenerator'
 
 interface Updatable {
   update(delta: number, time: number): void
@@ -32,6 +36,8 @@ const CRYSTAL_COLORS: Partial<Record<BiomeType, number>> = {
   [BiomeType.AshWastes]: 0xff6633,
   [BiomeType.Crystal]:   0x88aaff,
   [BiomeType.Savanna]:   0xffcc22,
+  [BiomeType.Heaven]:    0xffeedd,
+  [BiomeType.Hell]:      0xff4422,
 }
 
 // 3 crystal offsets per landmark (world-space offsets from landmark centre)
@@ -47,6 +53,8 @@ export class LandmarkManager {
   readonly allWalkables: CastleWalkable[] = []
   readonly positions = new Map<BiomeType, THREE.Vector3>()
   readonly allCrystals: LandmarkCrystal[] = []
+  // Scene objects per landmark for distance-based visibility culling
+  private landmarkSceneObjects: { pos: THREE.Vector3; objects: THREE.Object3D[] }[] = []
 
   constructor(biomeMap: BiomeMap, scene: THREE.Scene, seed: number) {
     const spawn = (
@@ -56,7 +64,8 @@ export class LandmarkManager {
       s: number
     ) => {
       const { x, z } = biomeMap.getClosestSeedOf(biomeType)
-      const pos = new THREE.Vector3(x, WATER_LEVEL + 15, z)
+      const terrainY = sampleWorldHeight(x, z, biomeMap)
+      const pos = new THREE.Vector3(x, terrainY, z)
       const childCount = scene.children.length
       const inst = new Cls(pos, scene, s)
 
@@ -81,6 +90,11 @@ export class LandmarkManager {
       this.positions.set(biomeType, inst.position)
       this.landmarks.push(inst)
 
+      // Track scene objects for visibility culling
+      const added: THREE.Object3D[] = []
+      for (let i = childCount; i < scene.children.length; i++) added.push(scene.children[i])
+      this.landmarkSceneObjects.push({ pos: inst.position, objects: added })
+
       // Spawn 3 crystals per landmark
       const color = CRYSTAL_COLORS[biomeType] ?? 0xaaffcc
       for (const offset of CRYSTAL_OFFSETS) {
@@ -99,10 +113,99 @@ export class LandmarkManager {
     spawn(BiomeType.AshWastes, AshColosseum,      seed + 1008)
     spawn(BiomeType.Crystal,   CrystalCathedral,  seed + 1009)
     spawn(BiomeType.Savanna,   SavannaObelisk,    seed + 1010)
+
+    // Heaven — special: spawn CloudTemple at heaven center, not Voronoi seed
+    const hc = biomeMap.getHeavenCenter()
+    if (hc) {
+      const heavenPos = new THREE.Vector3(hc.x, HEAVEN_ALTITUDE + 15, hc.z)
+      const childCount = scene.children.length
+      const inst = new CloudTemple(heavenPos, scene, seed + 1011)
+
+      for (let i = childCount; i < scene.children.length; i++) {
+        const child = scene.children[i]
+        if (child instanceof THREE.Group) mergeStaticMeshes(child)
+      }
+
+      const cx = inst.position.x, cy = inst.position.y, cz = inst.position.z
+      for (const w of inst.walkables as CastleWalkable[]) {
+        this.allWalkables.push({
+          minX: cx + (w.minX - cx) * 0.25,
+          maxX: cx + (w.maxX - cx) * 0.25,
+          minZ: cz + (w.minZ - cz) * 0.25,
+          maxZ: cz + (w.maxZ - cz) * 0.25,
+          y:    cy + (w.y    - cy) * 0.25,
+        })
+      }
+
+      this.positions.set(BiomeType.Heaven, inst.position)
+      this.landmarks.push(inst)
+
+      const heavenAdded: THREE.Object3D[] = []
+      for (let i = childCount; i < scene.children.length; i++) heavenAdded.push(scene.children[i])
+      this.landmarkSceneObjects.push({ pos: inst.position, objects: heavenAdded })
+
+      // 3 crystals
+      const color = CRYSTAL_COLORS[BiomeType.Heaven] ?? 0xffeedd
+      for (const offset of CRYSTAL_OFFSETS) {
+        const cpos = new THREE.Vector3(cx + offset.x, cy + offset.y, cz + offset.z)
+        this.allCrystals.push(new LandmarkCrystal(cpos, scene, color))
+      }
+    }
+
+    // Hell — special: spawn InfernalCitadel at hell center
+    const hellC = biomeMap.getHellCenter()
+    if (hellC) {
+      const hellPos = new THREE.Vector3(hellC.x, HELL_DEPTH + 15, hellC.z)
+      const childCount2 = scene.children.length
+      const hellInst = new InfernalCitadel(hellPos, scene, seed + 1012)
+
+      for (let i = childCount2; i < scene.children.length; i++) {
+        const child = scene.children[i]
+        if (child instanceof THREE.Group) mergeStaticMeshes(child)
+      }
+
+      const hcx = hellInst.position.x, hcy = hellInst.position.y, hcz = hellInst.position.z
+      for (const w of hellInst.walkables as CastleWalkable[]) {
+        this.allWalkables.push({
+          minX: hcx + (w.minX - hcx) * 0.25,
+          maxX: hcx + (w.maxX - hcx) * 0.25,
+          minZ: hcz + (w.minZ - hcz) * 0.25,
+          maxZ: hcz + (w.maxZ - hcz) * 0.25,
+          y:    hcy + (w.y    - hcy) * 0.25,
+        })
+      }
+
+      this.positions.set(BiomeType.Hell, hellInst.position)
+      this.landmarks.push(hellInst)
+
+      const hellAdded: THREE.Object3D[] = []
+      for (let i = childCount2; i < scene.children.length; i++) hellAdded.push(scene.children[i])
+      this.landmarkSceneObjects.push({ pos: hellInst.position, objects: hellAdded })
+
+      // 3 crystals
+      const hellColor = CRYSTAL_COLORS[BiomeType.Hell] ?? 0xff4422
+      for (const offset of CRYSTAL_OFFSETS) {
+        const cpos = new THREE.Vector3(hcx + offset.x, hcy + offset.y, hcz + offset.z)
+        this.allCrystals.push(new LandmarkCrystal(cpos, scene, hellColor))
+      }
+    }
   }
 
-  update(delta: number, time: number) {
+  update(delta: number, time: number, playerPos?: THREE.Vector3) {
     for (const lm of this.landmarks) lm.update(delta, time)
     for (const cr of this.allCrystals) cr.update(delta, time)
+
+    // Hide landmarks beyond terrain chunk loading distance to prevent floating buildings
+    if (playerPos) {
+      const cullDist = WORLD_CONFIG.viewRadius * CHUNK_SIZE
+      const cullDistSq = cullDist * cullDist
+      for (const entry of this.landmarkSceneObjects) {
+        const dx = entry.pos.x - playerPos.x
+        const dz = entry.pos.z - playerPos.z
+        const distSq = dx * dx + dz * dz
+        const vis = distSq < cullDistSq
+        for (const obj of entry.objects) obj.visible = vis
+      }
+    }
   }
 }

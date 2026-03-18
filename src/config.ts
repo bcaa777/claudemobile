@@ -105,6 +105,12 @@ export const TERRAIN_CONFIG = {
   enableAshPyres:       true,
   enableMushroomAltars: true,
   enableMushroomHollowLogs: true,
+  enableHeavenPillars: true,
+  enableHeavenArches: true,
+  enableHeavenWaterfalls: true,
+  enableHellLavaPools: true,
+  enableHellSpires: true,
+  enableHellLavaFalls: true,
 }
 
 // ─── CREATURES ───────────────────────────────────────────────────────────────

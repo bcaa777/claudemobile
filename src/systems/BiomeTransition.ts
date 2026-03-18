@@ -57,7 +57,16 @@ export class BiomeTransition {
   }
 
   update(playerPos: THREE.Vector3, delta: number) {
-    const biome = this.biomeMap.getBiomeAt(playerPos.x, playerPos.z)
+    let biome = this.biomeMap.getBiomeAt(playerPos.x, playerPos.z)
+
+    // Don't switch to Heaven atmosphere while still climbing stairs at low altitude
+    if (biome === BiomeType.Heaven && playerPos.y < 80) {
+      biome = this.currentBiome
+    }
+    // Don't switch to Hell atmosphere while still above ground
+    if (biome === BiomeType.Hell && playerPos.y > -10) {
+      biome = this.currentBiome
+    }
 
     if (biome !== this.targetBiome) {
       this.targetBiome = biome
@@ -80,11 +89,25 @@ export class BiomeTransition {
     const fogNear  = from.fogNear  + (to.fogNear  - from.fogNear)  * t
     const fogFar   = from.fogFar   + (to.fogFar   - from.fogFar)   * t
 
+    // Lighten fog during daytime — blend toward a bright desaturated version
+    const df = this.dayFactor
+    if (df > 0) {
+      // Create a lighter fog target based on the biome fog but much brighter
+      _tmpA.copy(fogColor)
+      const lum = _tmpA.r * 0.3 + _tmpA.g * 0.5 + _tmpA.b * 0.2
+      _tmpB.setRGB(
+        Math.min(1, _tmpA.r + 0.35 + lum * 0.3),
+        Math.min(1, _tmpA.g + 0.38 + lum * 0.3),
+        Math.min(1, _tmpA.b + 0.42 + lum * 0.3),
+      )
+      fogColor.lerp(_tmpB, df * 0.7)
+    }
+
     const fog = this.scene.fog as THREE.Fog
     if (fog) {
       fog.color.copy(fogColor)
-      fog.near = fogNear
-      fog.far  = fogFar
+      fog.near = fogNear + df * 10  // push fog further during day
+      fog.far  = fogFar + df * 30
     }
 
     // Update ColorGrade uniform with current biome tint

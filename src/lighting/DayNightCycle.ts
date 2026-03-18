@@ -5,12 +5,12 @@ import { TIME_CONFIG } from '../config'
 const AMBIENT_KEYS = [
   { t: 0.00, color: new THREE.Color(0x0a0a18) },  // midnight
   { t: 0.20, color: new THREE.Color(0x151025) },  // pre-dawn
-  { t: 0.25, color: new THREE.Color(0x5c2a18) },  // dawn
-  { t: 0.30, color: new THREE.Color(0x8a5530) },  // sunrise
-  { t: 0.40, color: new THREE.Color(0x203040) },  // morning
-  { t: 0.50, color: new THREE.Color(0x304050) },  // midday (overcast retro)
-  { t: 0.65, color: new THREE.Color(0x304050) },  // afternoon
-  { t: 0.70, color: new THREE.Color(0x7a3820) },  // sunset
+  { t: 0.25, color: new THREE.Color(0x7a4020) },  // dawn
+  { t: 0.30, color: new THREE.Color(0xb07848) },  // sunrise
+  { t: 0.40, color: new THREE.Color(0x506878) },  // morning
+  { t: 0.50, color: new THREE.Color(0x607888) },  // midday (bright retro)
+  { t: 0.65, color: new THREE.Color(0x607888) },  // afternoon
+  { t: 0.70, color: new THREE.Color(0x9a5030) },  // sunset
   { t: 0.75, color: new THREE.Color(0x502010) },  // dusk
   { t: 0.80, color: new THREE.Color(0x151025) },  // evening
   { t: 1.00, color: new THREE.Color(0x0a0a18) },  // back to midnight
@@ -57,18 +57,18 @@ export class DayNightCycle {
   public hemiMult = 1.0
 
   constructor(scene: THREE.Scene) {
-    this.sun = new THREE.DirectionalLight(0xffe8c0, 3.0)
+    this.sun = new THREE.DirectionalLight(0xffe8c0, 4.5)
     this.sun.position.set(100, 100, 0)
     scene.add(this.sun)
 
-    this.moon = new THREE.DirectionalLight(0x3050a0, 0.3)
+    this.moon = new THREE.DirectionalLight(0x4060b0, 0.4)
     this.moon.position.set(-100, 80, 0)
     scene.add(this.moon)
 
-    this.ambient = new THREE.AmbientLight(0x304050, 6.0)
+    this.ambient = new THREE.AmbientLight(0x607888, 8.0)
     scene.add(this.ambient)
 
-    this.hemi = new THREE.HemisphereLight(0x304050, 0x101010, 2.0)
+    this.hemi = new THREE.HemisphereLight(0x607888, 0x201810, 3.0)
     scene.add(this.hemi)
   }
 
@@ -93,10 +93,10 @@ export class DayNightCycle {
 
     // Night intensity for sun (below horizon)
     const sunY = Math.sin(sunAngle)
-    this.sun.intensity  = Math.max(0, sunY) * 3.0 * this.sunMult
-    this.moon.intensity = Math.max(0, -sunY) * 0.2 * this.sunMult
-    this.ambient.intensity = 6.0 * this.ambientMult
-    this.hemi.intensity    = 2.0 * this.hemiMult
+    this.sun.intensity  = Math.max(0, sunY) * 4.5 * this.sunMult
+    this.moon.intensity = Math.max(0, -sunY) * 0.4 * this.sunMult
+    this.ambient.intensity = 8.0 * this.ambientMult
+    this.hemi.intensity    = 3.0 * this.hemiMult
 
     sampleColorKeys(AMBIENT_KEYS, t, this.ambient.color)
     sampleColorKeys(SUN_KEYS, t, this.sun.color)

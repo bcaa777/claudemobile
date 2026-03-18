@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import type { CastleWalkable } from '../castle/Castle'
+import { texGen } from '../utils/PixelTextureGenerator'
 
 function box(
   w: number, h: number, d: number,
@@ -26,10 +27,10 @@ export class GreatPyramid {
     const py = this.position.y
     const pz = this.position.z
 
-    const sandMat  = new THREE.MeshLambertMaterial({ color: 0xd4952a })
-    const darkMat  = new THREE.MeshLambertMaterial({ color: 0xaa7020 })
-    const goldMat  = new THREE.MeshLambertMaterial({ color: 0xffcc44 })
-    const innerMat = new THREE.MeshLambertMaterial({ color: 0x8a5c18 })
+    const sandMat  = new THREE.MeshLambertMaterial({ color: 0xd4952a, map: texGen.getTexture('sand', 0xd4952a).map })
+    const darkMat  = new THREE.MeshLambertMaterial({ color: 0xaa7020, map: texGen.getTexture('sand', 0xaa7020).map })
+    const goldMat  = new THREE.MeshLambertMaterial({ color: 0xffcc44, map: texGen.getTexture('gold', 0xffcc44).map })
+    const innerMat = new THREE.MeshLambertMaterial({ color: 0x8a5c18, map: texGen.getTexture('darkStone', 0x8a5c18).map })
 
     // ── 5 pyramid tiers ──────────────────────────────────────────────────
     for (let i = 0; i < 5; i++) {

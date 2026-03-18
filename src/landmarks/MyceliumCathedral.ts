@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import type { CastleWalkable } from '../castle/Castle'
+import { texGen } from '../utils/PixelTextureGenerator'
 
 function box(
   w: number, h: number, d: number,
@@ -26,11 +27,11 @@ export class MyceliumCathedral {
     const py = this.position.y
     const pz = this.position.z
 
-    const capMat   = new THREE.MeshLambertMaterial({ color: 0x6622aa })
-    const stemMat  = new THREE.MeshLambertMaterial({ color: 0x3a1a60 })
-    const glowMat  = new THREE.MeshBasicMaterial({ color: 0xff88ff })
-    const groundMat = new THREE.MeshLambertMaterial({ color: 0x331a44 })
-    const dimGlow  = new THREE.MeshBasicMaterial({ color: 0xaa44bb })
+    const capMat   = new THREE.MeshLambertMaterial({ color: 0x6622aa, map: texGen.getTexture('mushroom', 0x6622aa).map })
+    const stemMat  = new THREE.MeshLambertMaterial({ color: 0x3a1a60, map: texGen.getTexture('mushroom', 0x3a1a60).map })
+    const glowMat  = new THREE.MeshBasicMaterial({ color: 0xff88ff, map: texGen.getTexture('mushroomGlow', 0xff88ff).map })
+    const groundMat = new THREE.MeshLambertMaterial({ color: 0x331a44, map: texGen.getTexture('mushroom', 0x331a44).map })
+    const dimGlow  = new THREE.MeshBasicMaterial({ color: 0xaa44bb, map: texGen.getTexture('mushroomGlow', 0xaa44bb).map })
 
     // ── Ground slab ───────────────────────────────────────────────────────
     const ground = box(240, 2, 240, groundMat)

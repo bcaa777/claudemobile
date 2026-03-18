@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import type { CastleWalkable } from '../castle/Castle'
+import { texGen } from '../utils/PixelTextureGenerator'
 
 function box(
   w: number, h: number, d: number,
@@ -26,11 +27,11 @@ export class DruidRingTemple {
     const py = this.position.y
     const pz = this.position.z
 
-    const foundMat  = new THREE.MeshLambertMaterial({ color: 0x2a3a1a })
-    const uprightMat = new THREE.MeshLambertMaterial({ color: 0x334433 })
-    const lintelMat  = new THREE.MeshLambertMaterial({ color: 0x2e3d2e })
-    const altarMat   = new THREE.MeshLambertMaterial({ color: 0x1e2e1e })
-    const runeMat    = new THREE.MeshBasicMaterial({ color: 0x225555 })
+    const foundMat  = new THREE.MeshLambertMaterial({ color: 0x2a3a1a, map: texGen.getTexture('moss', 0x2a3a1a).map })
+    const uprightMat = new THREE.MeshLambertMaterial({ color: 0x334433, map: texGen.getTexture('stone', 0x334433).map })
+    const lintelMat  = new THREE.MeshLambertMaterial({ color: 0x2e3d2e, map: texGen.getTexture('stone', 0x2e3d2e).map })
+    const altarMat   = new THREE.MeshLambertMaterial({ color: 0x1e2e1e, map: texGen.getTexture('darkStone', 0x1e2e1e).map })
+    const runeMat    = new THREE.MeshBasicMaterial({ color: 0x225555, map: texGen.getTexture('runeGlow', 0x225555).map })
 
     // ── Foundation ──────────────────────────────────────────────────────────
     const foundation = box(240, 4, 240, foundMat)

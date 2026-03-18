@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { texGen } from '../utils/PixelTextureGenerator'
 
 const COLLECT_RADIUS_SQ = 3 * 3   // 3 world units
 const SHRINK_SPEED = 4.0           // scale units/second after collection
@@ -22,7 +23,7 @@ export class LandmarkCrystal {
     // Glowing core (MeshBasicMaterial = self-lit, no PointLight needed)
     const core = new THREE.Mesh(
       new THREE.OctahedronGeometry(1.2),
-      new THREE.MeshBasicMaterial({ color })
+      new THREE.MeshBasicMaterial({ color, map: texGen.getTexture('crystalGlow', color).map })
     )
     this.group.add(core)
 

@@ -24,6 +24,8 @@ const LANDMARK_INFO: Partial<Record<BiomeType, { color: string; label: string }>
   [BiomeType.AshWastes]: { color: '#888877', label: 'AW' },
   [BiomeType.Crystal]:   { color: '#4466ee', label: 'CR' },
   [BiomeType.Savanna]:   { color: '#cc8833', label: 'SV' },
+  [BiomeType.Heaven]:    { color: '#ffdd44', label: 'HV' },
+  [BiomeType.Hell]:      { color: '#ff3300', label: 'HL' },
 }
 
 export class DebugMap {
@@ -31,11 +33,15 @@ export class DebugMap {
   private ctx: CanvasRenderingContext2D
   private castlePos: THREE.Vector3
   private landmarkPositions: Map<BiomeType, THREE.Vector3>
+  private staircasePos: THREE.Vector3 | null = null
+  private pitPos: THREE.Vector3 | null = null
   private visible = false
 
-  constructor(castlePos: THREE.Vector3, landmarkPositions: Map<BiomeType, THREE.Vector3> = new Map()) {
+  constructor(castlePos: THREE.Vector3, landmarkPositions: Map<BiomeType, THREE.Vector3> = new Map(), staircasePos?: THREE.Vector3, pitPos?: THREE.Vector3) {
     this.castlePos = castlePos.clone()
     this.landmarkPositions = landmarkPositions
+    if (staircasePos) this.staircasePos = staircasePos.clone()
+    if (pitPos) this.pitPos = pitPos.clone()
 
     this.canvas = document.createElement('canvas')
     this.canvas.width = MAP_SIZE
@@ -170,6 +176,79 @@ export class DebugMap {
         c.translate(ex, ey)
         c.rotate(lAngle + Math.PI / 2)
         c.fillStyle = info.color
+        c.beginPath()
+        c.moveTo(0, -7); c.lineTo(4, 5); c.lineTo(0, 2); c.lineTo(-4, 5)
+        c.closePath(); c.fill()
+        c.restore()
+      }
+    }
+
+    // Staircase marker (gold star)
+    if (this.staircasePos) {
+      const sdx = (this.staircasePos.x - playerPos.x) * SCALE
+      const sdz = (this.staircasePos.z - playerPos.z) * SCALE
+      const smx = cx + sdx
+      const smz = cy + sdz
+      const sInBounds = smx >= 8 && smx <= MAP_SIZE - 8 && smz >= 8 && smz <= MAP_SIZE - 8
+      if (sInBounds) {
+        c.save()
+        c.translate(smx, smz)
+        c.fillStyle = '#ffdd44'
+        c.beginPath()
+        // Small diamond
+        c.moveTo(0, -7); c.lineTo(5, 0); c.lineTo(0, 7); c.lineTo(-5, 0)
+        c.closePath(); c.fill()
+        c.strokeStyle = '#fff8'; c.lineWidth = 1; c.stroke()
+        c.fillStyle = '#ffdd44'
+        c.font = '8px "Courier New", monospace'
+        c.textAlign = 'center'
+        c.fillText('STAIR', 0, 16)
+        c.restore()
+      } else {
+        const sAngle = Math.atan2(sdz, sdx)
+        const edgeR = MAP_SIZE / 2 - 14
+        const ex = cx + Math.cos(sAngle) * edgeR
+        const ey = cy + Math.sin(sAngle) * edgeR
+        c.save()
+        c.translate(ex, ey)
+        c.rotate(sAngle + Math.PI / 2)
+        c.fillStyle = '#ffdd44'
+        c.beginPath()
+        c.moveTo(0, -7); c.lineTo(4, 5); c.lineTo(0, 2); c.lineTo(-4, 5)
+        c.closePath(); c.fill()
+        c.restore()
+      }
+    }
+
+    // Pit marker (red diamond)
+    if (this.pitPos) {
+      const pdx2 = (this.pitPos.x - playerPos.x) * SCALE
+      const pdz2 = (this.pitPos.z - playerPos.z) * SCALE
+      const pmx = cx + pdx2
+      const pmz = cy + pdz2
+      const pInBounds = pmx >= 8 && pmx <= MAP_SIZE - 8 && pmz >= 8 && pmz <= MAP_SIZE - 8
+      if (pInBounds) {
+        c.save()
+        c.translate(pmx, pmz)
+        c.fillStyle = '#ff3300'
+        c.beginPath()
+        c.moveTo(0, -7); c.lineTo(5, 0); c.lineTo(0, 7); c.lineTo(-5, 0)
+        c.closePath(); c.fill()
+        c.strokeStyle = '#fff8'; c.lineWidth = 1; c.stroke()
+        c.fillStyle = '#ff3300'
+        c.font = '8px "Courier New", monospace'
+        c.textAlign = 'center'
+        c.fillText('PIT', 0, 16)
+        c.restore()
+      } else {
+        const pAngle = Math.atan2(pdz2, pdx2)
+        const edgeR = MAP_SIZE / 2 - 14
+        const ex = cx + Math.cos(pAngle) * edgeR
+        const ey = cy + Math.sin(pAngle) * edgeR
+        c.save()
+        c.translate(ex, ey)
+        c.rotate(pAngle + Math.PI / 2)
+        c.fillStyle = '#ff3300'
         c.beginPath()
         c.moveTo(0, -7); c.lineTo(4, 5); c.lineTo(0, 2); c.lineTo(-4, 5)
         c.closePath(); c.fill()
