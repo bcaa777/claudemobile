@@ -1,13 +1,7 @@
 import * as THREE from 'three'
 import type { CastleWalkable } from '../castle/Castle'
 import { texGen } from '../utils/PixelTextureGenerator'
-
-function box(
-  w: number, h: number, d: number,
-  mat: THREE.Material | THREE.Material[]
-): THREE.Mesh {
-  return new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat)
-}
+import { box, updateTorches } from './landmarkUtils'
 
 export class GreatPyramid {
   readonly position: THREE.Vector3
@@ -176,10 +170,7 @@ export class GreatPyramid {
   }
 
   update(delta: number, time: number) {
-    for (let i = 0; i < this.torchLights.length; i++) {
-      const base = this.torchIntensities[i]
-      this.torchLights[i].intensity = base * (0.8 + 0.35 * Math.sin(time * 7 + i * 1.3))
-    }
+    updateTorches(this.torchLights, this.torchIntensities, time)
     if (this.heatShimmer) {
       const pos = this.heatShimmer.geometry.attributes.position as THREE.BufferAttribute
       for (let i = 0; i < pos.count; i++) {

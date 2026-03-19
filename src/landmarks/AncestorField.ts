@@ -1,13 +1,7 @@
 import * as THREE from 'three'
 import type { CastleWalkable } from '../castle/Castle'
 import { texGen } from '../utils/PixelTextureGenerator'
-
-function box(
-  w: number, h: number, d: number,
-  mat: THREE.Material | THREE.Material[]
-): THREE.Mesh {
-  return new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat)
-}
+import { box } from './landmarkUtils'
 
 export class AncestorField {
   readonly position: THREE.Vector3

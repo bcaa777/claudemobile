@@ -1,13 +1,7 @@
 import * as THREE from 'three'
 import type { CastleWalkable } from '../castle/Castle'
 import { texGen } from '../utils/PixelTextureGenerator'
-
-function box(
-  w: number, h: number, d: number,
-  mat: THREE.Material | THREE.Material[]
-): THREE.Mesh {
-  return new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat)
-}
+import { box, updateParticles, updateTorches } from './landmarkUtils'
 
 export class CoralPalace {
   readonly position: THREE.Vector3
@@ -160,21 +154,7 @@ export class CoralPalace {
   }
 
   update(delta: number, time: number) {
-    for (let i = 0; i < this.torchLights.length; i++) {
-      const base = this.torchIntensities[i]
-      this.torchLights[i].intensity = base * (0.8 + 0.35 * Math.sin(time * 7 + i * 1.3))
-    }
-    if (this.particles) {
-      const pos = this.particles.geometry.attributes.position as THREE.BufferAttribute
-      for (let i = 0; i < pos.count; i++) {
-        pos.setX(i, pos.getX(i) + Math.sin(time * 0.5 + i * 2.1) * delta * 0.5)
-        pos.setY(i, pos.getY(i) + Math.cos(time * 0.4 + i * 1.7) * delta * 0.25)
-        pos.setZ(i, pos.getZ(i) + Math.sin(time * 0.6 + i * 1.3) * delta * 0.5)
-        if (pos.getY(i) < 0 || pos.getY(i) > 50) pos.setY(i, Math.random() * 50)
-        if (Math.abs(pos.getX(i)) > 80) pos.setX(i, (Math.random() - 0.5) * 160)
-        if (Math.abs(pos.getZ(i)) > 80) pos.setZ(i, (Math.random() - 0.5) * 160)
-      }
-      pos.needsUpdate = true
-    }
+    updateTorches(this.torchLights, this.torchIntensities, time)
+    updateParticles(this.particles, delta, time)
   }
 }

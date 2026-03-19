@@ -1528,7 +1528,7 @@ export class Chunk {
         but.position.set(Math.cos(ry) * side, 1.4, Math.sin(ry) * side); g.add(but)
       }
       this.group.add(g); this.extras.push(g)
-      this.addWalkable(lx, lz, 5, 0.75, h + 2.5)
+      this.addWalkable(lx, lz, 6, 6, h + 2.5)
     }
   }
 
@@ -2867,9 +2867,11 @@ export class Chunk {
           const mat = this.matCache.getLambert(col, { map: texGen.getTexture('coral', col).map })
           const cw = rng.range(1, 3), ch = rng.range(2, 6)
           const coral = new THREE.Mesh(new THREE.BoxGeometry(cw, ch, cw), mat)
-          coral.position.set(rng.range(-3, 3), ch / 2, rng.range(-3, 3)); g.add(coral)
+          const cx2 = rng.range(-3, 3), cz2 = rng.range(-3, 3)
+          coral.position.set(cx2, ch / 2, cz2); g.add(coral)
         }
         this.group.add(g); this.extras.push(g)
+        this.addWalkable(lx, lz, 3.5, 3.5, h + 3)
       }
     }
   }
@@ -2957,6 +2959,7 @@ export class Chunk {
         const cap = new THREE.Mesh(new THREE.BoxGeometry(pw * 2, 2, pw * 2), sandMat)
         cap.position.set(0, ph + 1, 0); g.add(cap)
         this.group.add(g); this.extras.push(g)
+        this.addWalkable(lx, lz, pw, pw, h + ph + 2)
       }
     }
   }
