@@ -29,6 +29,7 @@ export class Creature {
   targetPos: THREE.Vector3 | null
   hasMesh: boolean
   deathTimer: number
+  isCompanion: boolean
 
   constructor(species: SpeciesId, position: THREE.Vector3, startScale: number) {
     this.id = `c${_nextId++}`
@@ -49,5 +50,6 @@ export class Creature {
     this.targetPos = null
     this.hasMesh = false
     this.deathTimer = 0
+    this.isCompanion = false
   }
 }

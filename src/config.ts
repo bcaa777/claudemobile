@@ -20,6 +20,7 @@ export function loadSavedConfig(): void {
     if (saved.time)     applyTo(TIME_CONFIG     as unknown as Record<string, unknown>, saved.time)
     if (saved.biome)    applyTo(BIOME_CONFIG    as unknown as Record<string, unknown>, saved.biome)
     if (saved.creature) applyTo(CREATURE_CONFIG as unknown as Record<string, unknown>, saved.creature)
+    if (saved.render)   applyTo(RENDER_CONFIG   as unknown as Record<string, unknown>, saved.render)
   } catch { /* ignore */ }
 }
 
@@ -37,6 +38,14 @@ export const WORLD_CONFIG = {
   seed:          42,      // changes the entire biome layout
   viewRadius:    2,       // chunks loaded in each direction (2 = 5×5 grid)
                           // higher = more terrain visible, heavier CPU
+}
+
+// ─── RENDER DISTANCE ────────────────────────────────────────────────────────
+// Unified render distance multiplier — all object types scale with this.
+// 1.0 = default distances. Up to 10.0 = 10× farther draw distance.
+// viewRadius is scaled separately (requires reload), other distances are live.
+export const RENDER_CONFIG = {
+  renderScale:      1.0,  // multiplier on all draw distances (live, no reload)
 }
 
 // ─── TERRAIN ─────────────────────────────────────────────────────────────────
@@ -131,6 +140,8 @@ export const TERRAIN_CONFIG = {
   enableTaigaCamps: true,
   enableOasisPalms: true,
   enableOasisWells: true,
+  enableInterBiomeRoads: true,
+  enableBiomeTraversal: true,
 }
 
 // ─── CREATURES ───────────────────────────────────────────────────────────────

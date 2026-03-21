@@ -7,11 +7,11 @@ import { SeededRandom, chunkSeed } from '../utils/SeededRandom'
 import { World } from '../world/World'
 import { CHUNK_SIZE, WATER_LEVEL } from '../world/TerrainGenerator'
 import { BiomeType } from '../biomes/types'
-import { WORLD_CONFIG, CREATURE_CONFIG } from '../config'
+import { WORLD_CONFIG, CREATURE_CONFIG, RENDER_CONFIG } from '../config'
 
 const VIEW_RADIUS = WORLD_CONFIG.viewRadius
 const MAX_POPULATION = 500
-const MESH_VIEW_DIST = 60  // only create meshes for nearby creatures
+const BASE_MESH_VIEW_DIST = 60  // base distance, scaled by RENDER_CONFIG.renderScale
 const MAX_VISIBLE_MESHES = 150  // hard cap on total creature meshes
 const BATCH_SIZE = 30     // max state-machine ticks per frame
 const PLAYER_ID = '__player__'
@@ -46,7 +46,8 @@ const BIOME_SPAWN_TABLE: Partial<Record<BiomeType, SpeciesId[]>> = {
 }
 
 export class CreatureManager {
-  private creatures: Map<string, Creature> = new Map()
+  readonly creatures: Map<string, Creature> = new Map()
+  campfirePositions: THREE.Vector3[] = []
   private meshes: Map<string, CreatureMesh> = new Map()
   private initializedChunks: Set<string> = new Set()
   private grid: SpatialGrid<Creature> = new SpatialGrid(32)
@@ -125,9 +126,11 @@ export class CreatureManager {
     const start = this.batchOffset % Math.max(1, total)
     const end = Math.min(start + BATCH_SIZE, total)
 
-    // Pre-compute squared distance threshold (Phase 5c)
-    const farThreshSq = ((VIEW_RADIUS + 3) * CHUNK_SIZE) ** 2
-    const meshViewDistSq = MESH_VIEW_DIST * MESH_VIEW_DIST
+    // Pre-compute squared distance threshold (Phase 5c) — scaled by render distance
+    const rs = RENDER_CONFIG.renderScale
+    const farThreshSq = ((VIEW_RADIUS + 3) * CHUNK_SIZE * rs) ** 2
+    const meshViewDist = BASE_MESH_VIEW_DIST * rs
+    const meshViewDistSq = meshViewDist * meshViewDist
     let meshesCreated = 0
 
     for (let i = 0; i < total; i++) {
@@ -141,6 +144,9 @@ export class CreatureManager {
       if (!farAway || i % 4 === 0) {
         this.tickStats(c, delta)
       }
+
+      // Skip AI for companion creatures
+      if (c.isCompanion) continue
 
       // State machine — batched
       if (i >= start && i < end) {
@@ -192,7 +198,7 @@ export class CreatureManager {
     // Clear initializedChunks for far-away chunks so they can respawn when revisited
     const playerCX = Math.floor(playerPos.x / CHUNK_SIZE)
     const playerCZ = Math.floor(playerPos.z / CHUNK_SIZE)
-    const cullChunkRadius = VIEW_RADIUS + 4
+    const cullChunkRadius = Math.ceil((VIEW_RADIUS + 4) * rs)
     for (const key of this.initializedChunks) {
       const [kcx, kcz] = key.split(',').map(Number)
       if (Math.abs(kcx - playerCX) > cullChunkRadius || Math.abs(kcz - playerCZ) > cullChunkRadius) {
@@ -201,7 +207,7 @@ export class CreatureManager {
     }
 
     // Cull creatures far from the player to free population slots for nearby chunks
-    const cullDistSq = ((VIEW_RADIUS + 4) * CHUNK_SIZE) ** 2
+    const cullDistSq = ((VIEW_RADIUS + 4) * CHUNK_SIZE * rs) ** 2
     for (let i = all.length - 1; i >= 0; i--) {
       const c2 = all[i]
       if (c2.state === 'dead') continue
@@ -297,6 +303,28 @@ export class CreatureManager {
     }
     if (c.state === 'sleep' && (!isNight || c.energy > 90)) {
       c.state = 'idle'; c.stateTimer = 0
+    }
+
+    // Campfire awareness — predators flee, herbivores attracted
+    if (this.campfirePositions.length > 0) {
+      for (const cfPos of this.campfirePositions) {
+        const cdx = c.position.x - cfPos.x
+        const cdz = c.position.z - cfPos.z
+        const cfDistSq = cdx * cdx + cdz * cdz
+        if (sp.role === 'predator' && cfDistSq < 225) { // 15^2
+          this.startFlee(c, cfPos)
+          return
+        }
+        if (sp.role === 'herbivore' && cfDistSq < 400 && cfDistSq > 9) { // 20^2, > 3^2
+          if (c.state === 'idle' || c.state === 'wander') {
+            if (!c.targetPos) c.targetPos = new THREE.Vector3()
+            c.targetPos.copy(cfPos)
+            c.state = 'wander'
+            this.steerToTarget(c, sp.maxSpeed * 0.3)
+            return
+          }
+        }
+      }
     }
 
     const threat = sp.role === 'herbivore' ? this.findThreat(c, playerPos) : null

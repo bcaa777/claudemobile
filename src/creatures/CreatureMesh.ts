@@ -593,10 +593,24 @@ export class CreatureMesh {
     }
   }
 
+  private collar: THREE.Mesh | null = null
+  private hasCollar = false
+
   update(creature: Creature, delta: number) {
     this.group.position.copy(creature.position)
     this.group.scale.setScalar(creature.scale)
     this.group.rotation.y = creature.heading
+
+    // Add golden collar for companions
+    if (creature.isCompanion && !this.hasCollar && this.lod === 'full') {
+      const sp = SPECIES[creature.species]
+      const collarGeo = getCachedBox(sp.bodyW * 0.8, sp.bodyH * 0.15, sp.bodyW * 0.8)
+      const collarMat = new THREE.MeshBasicMaterial({ color: 0xffcc00 })
+      this.collar = new THREE.Mesh(collarGeo, collarMat)
+      this.collar.position.set(0, sp.bodyH * 0.35, sp.bodyD * 0.4)
+      this.group.add(this.collar)
+      this.hasCollar = true
+    }
 
     // Simple LOD — no animation needed
     if (this.lod === 'simple') {

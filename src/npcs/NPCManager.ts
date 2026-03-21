@@ -1,0 +1,247 @@
+import * as THREE from 'three'
+import { BiomeType } from '../biomes/types'
+import { NPC_DEFINITIONS, ALL_NPC_IDS, type NPCId, type NPCDef } from './NPCData'
+import { loadNPCStates, saveNPCStates, type NPCStateData } from './NPCState'
+import { NPCMesh } from './NPCMesh'
+import { NPCBeacon } from './NPCBeacon'
+import { DialogueSystem } from './DialogueSystem'
+import { Artefact } from './Artefact'
+import { sampleWorldHeight } from '../world/TerrainGenerator'
+import type { BiomeMap } from '../world/BiomeMap'
+import type { InputManager } from '../engine/InputManager'
+import { RENDER_CONFIG } from '../config'
+
+const INTERACT_DIST_SQ = 5 * 5
+const RELOCATE_DIST_SQ = 60 * 60
+const BASE_CULL_DIST = 100
+const BASE_BEACON_CULL_DIST = 200
+
+interface ActiveNPC {
+  def: NPCDef
+  state: NPCStateData
+  mesh: NPCMesh
+  beacon: NPCBeacon
+  worldPos: THREE.Vector3
+  awaitingRelocate: boolean
+}
+
+export class NPCManager {
+  private npcs: Map<NPCId, ActiveNPC> = new Map()
+  private states: Map<NPCId, NPCStateData>
+  private dialogue: DialogueSystem
+  private artefacts: Artefact[] = []
+  private scene: THREE.Scene
+  private biomeMap: BiomeMap
+  private landmarkPositions: Map<BiomeType, THREE.Vector3>
+  private artefactHud: HTMLElement | null
+  artefactsCollected = 0
+
+  constructor(
+    biomeMap: BiomeMap,
+    scene: THREE.Scene,
+    landmarkPositions: Map<BiomeType, THREE.Vector3>,
+  ) {
+    this.scene = scene
+    this.biomeMap = biomeMap
+    this.landmarkPositions = landmarkPositions
+    this.dialogue = new DialogueSystem()
+    this.states = loadNPCStates()
+    this.artefactHud = document.getElementById('artefact-hud')
+
+    // Create all NPCs
+    for (const id of ALL_NPC_IDS) {
+      const def = NPC_DEFINITIONS[id]
+      const state = this.states.get(id)!
+      const mesh = new NPCMesh(def.visual)
+      const beacon = new NPCBeacon(id)
+      const worldPos = this.computePosition(def, state.currentLocationIndex)
+
+      mesh.group.position.copy(worldPos)
+      scene.add(mesh.group)
+      mesh.group.visible = false // start hidden, update will cull
+
+      // Place beacon offset ~4 units beside the NPC
+      beacon.group.position.set(worldPos.x + 3, worldPos.y, worldPos.z + 2)
+      scene.add(beacon.group)
+      beacon.group.visible = false
+
+      this.npcs.set(id, { def, state, mesh, beacon, worldPos, awaitingRelocate: false })
+    }
+
+    // Create artefacts
+    for (const id of ALL_NPC_IDS) {
+      const def = NPC_DEFINITIONS[id]
+      const state = this.states.get(id)!
+      const lmPos = landmarkPositions.get(def.artefact.nearBiome)
+      if (lmPos) {
+        // Place 15-20 units from landmark
+        const offset = new THREE.Vector3(17, 2, 15)
+        const artPos = lmPos.clone().add(offset)
+        artPos.y = sampleWorldHeight(artPos.x, artPos.z, biomeMap) + 1.5
+        const artefact = new Artefact(artPos, scene, def.artefact.color, def.artefact.name)
+        if (state.artefactCollected) {
+          artefact.setPreCollected()
+        } else {
+          // Don't show artefact until NPC has been spoken to at first location
+          // Actually, artefacts are always available near the first location
+        }
+        this.artefacts.push(artefact)
+      }
+    }
+
+    // Count pre-collected
+    this.artefactsCollected = this.artefacts.filter(a => a.collected).length
+    this.updateArtefactHud()
+  }
+
+  private computePosition(def: NPCDef, locationIndex: number): THREE.Vector3 {
+    const loc = def.locations[Math.min(locationIndex, def.locations.length - 1)]
+    const lmPos = this.landmarkPositions.get(loc.biome)
+    if (!lmPos) {
+      // Fallback: use biome seed position
+      const seed = this.biomeMap.getClosestSeedOf(loc.biome)
+      const y = sampleWorldHeight(seed.x + loc.offset.x, seed.z + loc.offset.z, this.biomeMap)
+      return new THREE.Vector3(seed.x + loc.offset.x, y, seed.z + loc.offset.z)
+    }
+    const x = lmPos.x + loc.offset.x
+    const z = lmPos.z + loc.offset.z
+    const y = sampleWorldHeight(x, z, this.biomeMap)
+    return new THREE.Vector3(x, y, z)
+  }
+
+  update(delta: number, playerPos: THREE.Vector3, time: number, input: InputManager) {
+    let nearestNPC: ActiveNPC | null = null
+    let nearestDistSq = Infinity
+
+    for (const [, npc] of this.npcs) {
+      const dx = playerPos.x - npc.worldPos.x
+      const dy = playerPos.y - npc.worldPos.y
+      const dz = playerPos.z - npc.worldPos.z
+      const distSq = dx * dx + dy * dy + dz * dz
+
+      // Distance cull — NPC mesh (scaled by render distance)
+      const cullDistSq = (BASE_CULL_DIST * RENDER_CONFIG.renderScale) ** 2
+      npc.mesh.group.visible = distSq < cullDistSq
+      if (npc.mesh.group.visible) {
+        npc.mesh.setLOD(distSq)
+        npc.mesh.update(delta, time)
+
+        // Face player when close
+        if (distSq < INTERACT_DIST_SQ * 4) {
+          const angle = Math.atan2(dx, dz)
+          npc.mesh.group.rotation.y = angle
+        }
+      }
+
+      // Beacon — visible from further away
+      const beaconCullDistSq = (BASE_BEACON_CULL_DIST * RENDER_CONFIG.renderScale) ** 2
+      npc.beacon.group.visible = distSq < beaconCullDistSq
+      if (npc.beacon.group.visible) {
+        npc.beacon.update(time)
+      }
+
+      // Track nearest for interaction
+      if (distSq < INTERACT_DIST_SQ && distSq < nearestDistSq) {
+        nearestNPC = npc
+        nearestDistSq = distSq
+      }
+
+      // Relocate check: all lines delivered at current stage, player moved away
+      if (npc.awaitingRelocate && distSq > RELOCATE_DIST_SQ) {
+        this.relocateNPC(npc)
+      }
+    }
+
+    // Interaction prompt
+    if (nearestNPC && !this.dialogue.isActive()) {
+      this.dialogue.showInteractPrompt()
+      if (input.consumeInteract()) {
+        this.startNPCDialogue(nearestNPC)
+      }
+    } else if (!this.dialogue.isActive()) {
+      this.dialogue.hideInteractPrompt()
+    }
+
+    // Handle dialogue E press
+    if (this.dialogue.isActive() && input.consumeInteract()) {
+      this.dialogue.handleInteract()
+    }
+
+    // Dialogue typewriter
+    this.dialogue.update(delta)
+
+    // Artefact updates + pickup
+    for (let i = 0; i < this.artefacts.length; i++) {
+      const art = this.artefacts[i]
+      art.update(delta, time)
+      if (art.tryCollect(playerPos)) {
+        this.artefactsCollected++
+        // Mark corresponding NPC state
+        const npcId = ALL_NPC_IDS[i]
+        if (npcId) {
+          const state = this.states.get(npcId)
+          if (state) {
+            state.artefactCollected = true
+            saveNPCStates(this.states)
+          }
+        }
+        this.updateArtefactHud()
+      }
+    }
+  }
+
+  private startNPCDialogue(npc: ActiveNPC) {
+    const stageIndex = npc.state.currentLocationIndex
+    const stages = npc.def.dialogue
+    if (stageIndex >= stages.length) return
+
+    const lines = stages[stageIndex]
+    this.dialogue.startDialogue(npc.def.name, npc.def.title, lines)
+
+    // Mark all lines as delivered for this stage
+    npc.state.allLinesDelivered = true
+    npc.awaitingRelocate = true
+    saveNPCStates(this.states)
+  }
+
+  private relocateNPC(npc: ActiveNPC) {
+    npc.awaitingRelocate = false
+    const maxIndex = npc.def.locations.length - 1
+    if (npc.state.currentLocationIndex < maxIndex) {
+      npc.state.currentLocationIndex++
+      npc.state.allLinesDelivered = false
+      const newPos = this.computePosition(npc.def, npc.state.currentLocationIndex)
+      npc.worldPos.copy(newPos)
+      npc.mesh.group.position.copy(newPos)
+      npc.beacon.group.position.set(newPos.x + 3, newPos.y, newPos.z + 2)
+      saveNPCStates(this.states)
+    }
+    // If at last location, stay there
+  }
+
+  private updateArtefactHud() {
+    if (this.artefactHud) {
+      this.artefactHud.textContent = `\u2726 ${this.artefactsCollected} / 7`
+      if (this.artefactsCollected > 0) {
+        this.artefactHud.style.display = 'block'
+      }
+    }
+  }
+
+  isDialogueActive(): boolean {
+    return this.dialogue.isActive()
+  }
+
+  getMapMarkers(): { id: string; pos: THREE.Vector3; color: string; label: string }[] {
+    const markers: { id: string; pos: THREE.Vector3; color: string; label: string }[] = []
+    for (const [id, npc] of this.npcs) {
+      markers.push({
+        id,
+        pos: npc.worldPos,
+        color: npc.def.mapColor,
+        label: npc.def.mapLabel,
+      })
+    }
+    return markers
+  }
+}

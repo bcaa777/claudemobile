@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { BiomeType } from '../biomes/types'
+import type { RoadEdge } from '../traversal/traversalTypes'
 
 const MAP_SIZE = 300          // canvas pixels
 const WORLD_RADIUS = 220      // world units visible from center to edge
@@ -45,6 +46,10 @@ export class DebugMap {
   private landmarkPositions: Map<BiomeType, THREE.Vector3>
   private staircasePos: THREE.Vector3 | null = null
   private pitPos: THREE.Vector3 | null = null
+  private npcMarkers: { pos: THREE.Vector3; color: string; label: string }[] = []
+  private campfireMarkers: { pos: THREE.Vector3; color: string; label: string }[] = []
+  private runeMarkers: { pos: THREE.Vector3; color: string; label: string; bright: boolean }[] = []
+  private roadEdges: RoadEdge[] = []
   private visible = false
 
   constructor(castlePos: THREE.Vector3, landmarkPositions: Map<BiomeType, THREE.Vector3> = new Map(), staircasePos?: THREE.Vector3, pitPos?: THREE.Vector3) {
@@ -73,6 +78,22 @@ export class DebugMap {
     document.addEventListener('keydown', (e) => {
       if (e.code === 'KeyM') this.toggle()
     })
+  }
+
+  setNPCMarkers(markers: { pos: THREE.Vector3; color: string; label: string }[]) {
+    this.npcMarkers = markers
+  }
+
+  setCampfireMarkers(markers: { pos: THREE.Vector3; color: string; label: string }[]) {
+    this.campfireMarkers = markers
+  }
+
+  setRuneMarkers(markers: { pos: THREE.Vector3; color: string; label: string; bright: boolean }[]) {
+    this.runeMarkers = markers
+  }
+
+  setRoadEdges(edges: RoadEdge[]) {
+    this.roadEdges = edges
   }
 
   private toggle() {
@@ -114,6 +135,26 @@ export class DebugMap {
     }
     for (let y = cy + originOffZ % gridSpacing - gridSpacing * 2; y < MAP_SIZE + gridSpacing; y += gridSpacing) {
       c.beginPath(); c.moveTo(-MAP_SIZE, y); c.lineTo(MAP_SIZE * 2, y); c.stroke()
+    }
+
+    // Road network lines
+    if (this.roadEdges.length > 0) {
+      c.strokeStyle = 'rgba(180,150,100,0.35)'
+      c.lineWidth = 1
+      for (const edge of this.roadEdges) {
+        if (edge.waypoints.length < 2) continue
+        c.beginPath()
+        const firstWP = edge.waypoints[0]
+        c.moveTo(cx + (firstWP.x - playerPos.x) * SCALE, cy + (firstWP.z - playerPos.z) * SCALE)
+        // Sample every 5th waypoint for performance
+        for (let i = 5; i < edge.waypoints.length; i += 5) {
+          const wp = edge.waypoints[i]
+          c.lineTo(cx + (wp.x - playerPos.x) * SCALE, cy + (wp.z - playerPos.z) * SCALE)
+        }
+        const lastWP = edge.waypoints[edge.waypoints.length - 1]
+        c.lineTo(cx + (lastWP.x - playerPos.x) * SCALE, cy + (lastWP.z - playerPos.z) * SCALE)
+        c.stroke()
+      }
     }
 
     // Castle
@@ -263,6 +304,72 @@ export class DebugMap {
         c.moveTo(0, -7); c.lineTo(4, 5); c.lineTo(0, 2); c.lineTo(-4, 5)
         c.closePath(); c.fill()
         c.restore()
+      }
+    }
+
+    // NPC markers (pulsing diamonds)
+    const npcAlpha = 0.7 + Math.sin(Date.now() * 0.003) * 0.3
+    for (const npc of this.npcMarkers) {
+      const ndx = (npc.pos.x - playerPos.x) * SCALE
+      const ndz = (npc.pos.z - playerPos.z) * SCALE
+      const nmx = cx + ndx
+      const nmz = cy + ndz
+      const inBounds = nmx >= 8 && nmx <= MAP_SIZE - 8 && nmz >= 8 && nmz <= MAP_SIZE - 8
+      if (inBounds) {
+        c.save()
+        c.globalAlpha = npcAlpha
+        c.translate(nmx, nmz)
+        c.fillStyle = npc.color
+        c.beginPath()
+        c.moveTo(0, -5); c.lineTo(4, 0); c.lineTo(0, 5); c.lineTo(-4, 0)
+        c.closePath(); c.fill()
+        c.strokeStyle = '#fff8'; c.lineWidth = 1; c.stroke()
+        c.globalAlpha = 1
+        c.fillStyle = npc.color
+        c.font = '7px "Courier New", monospace'
+        c.textAlign = 'center'
+        c.fillText(npc.label, 0, 14)
+        c.restore()
+      } else {
+        const nAngle = Math.atan2(ndz, ndx)
+        const edgeR = MAP_SIZE / 2 - 14
+        const ex = cx + Math.cos(nAngle) * edgeR
+        const ey = cy + Math.sin(nAngle) * edgeR
+        c.save()
+        c.globalAlpha = npcAlpha
+        c.translate(ex, ey)
+        c.rotate(nAngle + Math.PI / 2)
+        c.fillStyle = npc.color
+        c.beginPath()
+        c.moveTo(0, -6); c.lineTo(3, 4); c.lineTo(0, 1); c.lineTo(-3, 4)
+        c.closePath(); c.fill()
+        c.restore()
+      }
+    }
+
+    // Campfire markers
+    for (const cf of this.campfireMarkers) {
+      const cfdx = (cf.pos.x - playerPos.x) * SCALE
+      const cfdz = (cf.pos.z - playerPos.z) * SCALE
+      const cfmx = cx + cfdx
+      const cfmz = cy + cfdz
+      if (cfmx >= 4 && cfmx <= MAP_SIZE - 4 && cfmz >= 4 && cfmz <= MAP_SIZE - 4) {
+        c.fillStyle = cf.color
+        c.fillRect(cfmx - 3, cfmz - 3, 6, 6)
+      }
+    }
+
+    // Rune markers
+    for (const rm of this.runeMarkers) {
+      const rdx = (rm.pos.x - playerPos.x) * SCALE
+      const rdz = (rm.pos.z - playerPos.z) * SCALE
+      const rmx = cx + rdx
+      const rmz = cy + rdz
+      if (rmx >= 4 && rmx <= MAP_SIZE - 4 && rmz >= 4 && rmz <= MAP_SIZE - 4) {
+        c.globalAlpha = rm.bright ? 1 : 0.4
+        c.fillStyle = rm.color
+        c.fillRect(rmx - 2, rmz - 2, 4, 4)
+        c.globalAlpha = 1
       }
     }
 

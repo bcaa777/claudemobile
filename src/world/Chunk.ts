@@ -13,6 +13,12 @@ import { SeededRandom, chunkSeed } from '../utils/SeededRandom'
 import { texGen } from '../utils/PixelTextureGenerator'
 import { SPRITE_CONFIG, TERRAIN_CONFIG } from '../config'
 import { ExplodableStructure } from './ExplodableStructure'
+import { createWaterMaterial } from '../shaders/WaterMaterial'
+import type { RoadNetwork } from '../traversal/RoadNetwork'
+import { buildRoadSegments } from '../traversal/RoadRenderer'
+import { buildBiomeFeatures } from '../traversal/BiomeTraversal'
+import { updateLavaRocks } from '../traversal/LavaRocks'
+import type { TraversalAnchor, LavaRockState } from '../traversal/traversalTypes'
 
 const VERTICES = CHUNK_SEGMENTS + 1
 
@@ -194,6 +200,8 @@ export class Chunk {
   public heightGrid: Float32Array | null = null
   public walkableSurfaces: WalkableBox[] = []
   public explodables: ExplodableStructure[] = []
+  public traversalAnchors: TraversalAnchor[] = []
+  private lavaRocks: LavaRockState[] = []
 
   private terrainMesh: THREE.Mesh | null = null
   private extras: THREE.Object3D[] = []
@@ -213,6 +221,7 @@ export class Chunk {
     atlas: SpriteAtlas,
     lightPool: PointLightPool,
     matCache: MaterialCache,
+    roadNetwork?: RoadNetwork | null,
   ) {
     this.cx    = cx
     this.cz    = cz
@@ -221,7 +230,7 @@ export class Chunk {
     this.rngForExplode = new SeededRandom(chunkSeed(cx, cz, 99))
     this.matCache = matCache
     scene.add(this.group)
-    this.build(biomeMap, atlas, lightPool)
+    this.build(biomeMap, atlas, lightPool, scene, roadNetwork)
   }
 
   // ── Register a walkable surface (local coords) ────────────────────────────
@@ -236,7 +245,7 @@ export class Chunk {
 
   // ── Terrain mesh ──────────────────────────────────────────────────────────
 
-  private build(biomeMap: BiomeMap, atlas: SpriteAtlas, lightPool: PointLightPool) {
+  private build(biomeMap: BiomeMap, atlas: SpriteAtlas, lightPool: PointLightPool, scene?: THREE.Scene, roadNetwork?: RoadNetwork | null) {
     const { positions, normals, colors, indices, heightGrid, hasWater } =
       generateHeightmap(this.cx, this.cz, biomeMap)
     this.heightGrid = heightGrid
@@ -310,6 +319,31 @@ export class Chunk {
     if (TERRAIN_CONFIG.enableOasisPalms)         this.buildOasisPalms(rng, biomeMap)
     if (TERRAIN_CONFIG.enableOasisWells)         this.buildOasisWells(rng, biomeMap)
 
+    // ── Inter-biome roads ──────────────────────────────────────────────────
+    if (TERRAIN_CONFIG.enableInterBiomeRoads && roadNetwork && this.heightGrid) {
+      const waypoints = roadNetwork.getWaypointsForChunk(this.cx, this.cz)
+      if (waypoints.length > 0) {
+        const result = buildRoadSegments(this.cx, this.cz, waypoints, biomeMap, this.matCache, this.group)
+        for (const m of result.meshes) this.extras.push(m)
+        for (const w of result.walkables) this.walkableSurfaces.push(w)
+        console.log(`[Traversal] Chunk(${this.cx},${this.cz}) road: ${waypoints.length} waypoints, ${result.meshes.length} meshes`)
+      }
+    } else if (!roadNetwork) {
+      console.warn(`[Traversal] Chunk(${this.cx},${this.cz}) NO roadNetwork passed!`)
+    }
+
+    // ── Biome-specific traversal features (ziplines, vines, ice, lava) ──
+    if (TERRAIN_CONFIG.enableBiomeTraversal && this.heightGrid && scene) {
+      const result = buildBiomeFeatures(this.cx, this.cz, biomeMap, this.heightGrid, this.group, this.matCache, scene)
+      for (const m of result.meshes) this.extras.push(m)
+      for (const w of result.walkables) this.walkableSurfaces.push(w)
+      this.traversalAnchors.push(...result.anchors)
+      this.lavaRocks.push(...result.lavaRocks)
+      if (result.meshes.length > 0) {
+        console.log(`[Traversal] Chunk(${this.cx},${this.cz}) biome features: ${result.meshes.length} meshes, ${result.anchors.length} anchors, ${result.lavaRocks.length} lavaRocks`)
+      }
+    }
+
     this.mergeStructures()
     this.placeSprites(rng, biomeMap, atlas, lightPool)
     this.buildParticles(biomeMap)
@@ -317,16 +351,19 @@ export class Chunk {
 
   // ── Water surface ─────────────────────────────────────────────────────────
 
+  public waterMaterial: THREE.ShaderMaterial | null = null
+
   private buildWater(biomeMap: BiomeMap) {
     const centerBiome = biomeMap.getBiomeAt(
       this.cx * CHUNK_SIZE + CHUNK_SIZE / 2,
       this.cz * CHUNK_SIZE + CHUNK_SIZE / 2,
     )
     const waterColor = getBiome(centerBiome).waterColor
+    const color = waterColor instanceof THREE.Color ? waterColor : new THREE.Color(waterColor)
 
-    const geo = new THREE.PlaneGeometry(CHUNK_SIZE, CHUNK_SIZE)
-    const waterHex = typeof waterColor === 'number' ? waterColor : new THREE.Color(waterColor).getHex()
-    const mat = this.matCache.getLambert(waterHex, { transparent: true, opacity: 0.80, depthWrite: false })
+    const geo = new THREE.PlaneGeometry(CHUNK_SIZE, CHUNK_SIZE, 16, 16)
+    const mat = createWaterMaterial(color)
+    this.waterMaterial = mat
     const mesh = new THREE.Mesh(geo, mat)
     mesh.rotation.x = -Math.PI / 2
     mesh.position.set(CHUNK_SIZE / 2, WATER_LEVEL, CHUNK_SIZE / 2)
@@ -2592,8 +2629,19 @@ export class Chunk {
 
   update(delta: number, cameraX?: number, cameraZ?: number) {
     this.time += delta
+    // Update animated water shader
+    if (this.waterMaterial) {
+      this.waterMaterial.uniforms.time.value = this.time
+    }
     for (const ps of this.particleSystems) ps.update(delta, this.time)
     for (const ex of this.explodables) ex.update(delta, this.rngForExplode)
+
+    // Tick lava rock sinking animation
+    if (this.lavaRocks.length > 0 && cameraX !== undefined && cameraZ !== undefined) {
+      const playerLX = cameraX - this.cx * CHUNK_SIZE
+      const playerLZ = cameraZ - this.cz * CHUNK_SIZE
+      updateLavaRocks(this.lavaRocks, delta, playerLX, playerLZ)
+    }
 
     // Billboard batches face camera (Phase 2)
     if (cameraX !== undefined && cameraZ !== undefined && this.billboardBatches.length > 0) {

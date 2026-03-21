@@ -14,6 +14,8 @@ export class FirstPersonController {
   public isFlying = false
   public prevPos = new THREE.Vector3()
   public targetY = 0
+  public frictionMultiplier = 1.0
+  public speedMultiplier = 1.0
   public get heading(): number { return this.yaw }
 
   constructor(camera: THREE.Camera, input: InputManager) {
@@ -100,9 +102,12 @@ export class FirstPersonController {
       if (move.lengthSq() > 0) move.normalize()
 
       const isSprinting = this.input.isDown('ShiftLeft') || this.input.isDown('ShiftRight') || this.input.gamepadSprint
-      const speed = isSprinting ? PLAYER_CONFIG.sprintSpeed : PLAYER_CONFIG.moveSpeed
+      const baseSpeed = isSprinting ? PLAYER_CONFIG.sprintSpeed : PLAYER_CONFIG.moveSpeed
+      const speed = baseSpeed * this.speedMultiplier
 
-      this.velocity.lerp(move.multiplyScalar(speed), delta * 10)
+      // Apply friction multiplier to lerp rate (ice = less damping = more slide)
+      const lerpRate = delta * 10 * this.frictionMultiplier
+      this.velocity.lerp(move.multiplyScalar(speed), Math.min(1, lerpRate))
       this.camera.position.addScaledVector(this.velocity, delta)
 
       // Jump (keyboard Space or gamepad Cross/A)
@@ -118,5 +123,8 @@ export class FirstPersonController {
 
       this.camera.position.y += this.verticalVelocity * delta
     }
+
+    // Reset friction each frame (hazard system re-applies)
+    this.frictionMultiplier = 1.0
   }
 }

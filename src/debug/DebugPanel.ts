@@ -7,7 +7,7 @@ import { PerfOverlay } from './PerfOverlay'
 import {
   PLAYER_CONFIG, POST_CONFIG, SPRITE_CONFIG,
   WORLD_CONFIG, TIME_CONFIG, BIOME_CONFIG, CREATURE_CONFIG,
-  LS_CONFIG_KEY,
+  RENDER_CONFIG, LS_CONFIG_KEY,
 } from '../config'
 
 interface SavedLS {
@@ -18,6 +18,7 @@ interface SavedLS {
   time?: Record<string, unknown>
   biome?: Record<string, unknown>
   creature?: Record<string, unknown>
+  render?: Record<string, unknown>
   debug?: Record<string, unknown>
 }
 
@@ -93,6 +94,7 @@ export class DebugPanel {
       time:    { ...TIME_CONFIG },
       biome:   { ...BIOME_CONFIG },
       creature: { ...CREATURE_CONFIG },
+      render:   { ...RENDER_CONFIG },
       debug: {
         ambientMult:          this.dayNight.ambientMult,
         sunMult:              this.dayNight.sunMult,
@@ -284,7 +286,9 @@ export class DebugPanel {
 
     // ── WORLD ────────────────────────────────────────────────────────────────
     panel.appendChild(section('WORLD'))
-    panel.appendChild(slider('View radius', 1, 6,   1,   WORLD_CONFIG.viewRadius,
+    panel.appendChild(slider('Draw dist ×', 1, 10,  0.5, RENDER_CONFIG.renderScale,
+      v => { RENDER_CONFIG.renderScale = v }))
+    panel.appendChild(slider('View radius', 1, 20,  1,   WORLD_CONFIG.viewRadius,
       v => { WORLD_CONFIG.viewRadius = Math.round(v) }, true))
     panel.appendChild(slider('Seed',        0, 999, 1,   WORLD_CONFIG.seed,
       v => { WORLD_CONFIG.seed = Math.round(v) }, true))

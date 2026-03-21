@@ -11,6 +11,8 @@ import { WORLD_CONFIG } from '../config'
 import { BiomeType } from '../biomes/types'
 import type { CreatureManager } from '../creatures/CreatureManager'
 import type { CastleWalkable } from '../castle/Castle'
+import type { RoadNetwork } from '../traversal/RoadNetwork'
+import type { TraversalAnchor, LavaRockState } from '../traversal/traversalTypes'
 
 const VIEW_RADIUS = WORLD_CONFIG.viewRadius
 
@@ -29,6 +31,10 @@ export class World {
   private creatureManager: CreatureManager | null = null
   private pendingKnockback = 0
   private castleWalkables: CastleWalkable[] = []
+  private roadNetwork: RoadNetwork | null = null
+
+  /** All traversal anchors (ziplines/vines) from loaded chunks */
+  readonly traversalAnchors: TraversalAnchor[] = []
 
   private lastPlayerCX = Infinity
   private lastPlayerCZ = Infinity
@@ -39,6 +45,10 @@ export class World {
     this.atlas = new SpriteAtlas()
     this.lightPool = new PointLightPool(scene, 4)
     this.matCache = new MaterialCache()
+  }
+
+  setRoadNetwork(rn: RoadNetwork) {
+    this.roadNetwork = rn
   }
 
   private chunkKey(cx: number, cz: number): string {
@@ -81,6 +91,15 @@ export class World {
         // Remove this chunk's explodables from world list (Phase 5d: Set lookup)
         const chunkExplodables = new Set(chunk.explodables)
         this.explodables = this.explodables.filter(e => !chunkExplodables.has(e))
+        // Remove traversal anchors from this chunk
+        if (chunk.traversalAnchors.length > 0) {
+          const anchorSet = new Set(chunk.traversalAnchors)
+          for (let i = this.traversalAnchors.length - 1; i >= 0; i--) {
+            if (anchorSet.has(this.traversalAnchors[i])) {
+              this.traversalAnchors.splice(i, 1)
+            }
+          }
+        }
         chunk.dispose(this.scene, this.lightPool)
         this.chunks.delete(key)
         this.pendingGeneration.delete(key)
@@ -120,11 +139,15 @@ export class World {
 
   private generateChunk(cx: number, cz: number, key: string) {
     if (!this.pendingGeneration.has(key)) return
-    const chunk = new Chunk(cx, cz, this.scene, this.biomeMap, this.atlas, this.lightPool, this.matCache)
+    const chunk = new Chunk(cx, cz, this.scene, this.biomeMap, this.atlas, this.lightPool, this.matCache, this.roadNetwork)
     this.chunks.set(key, chunk)
     this.pendingGeneration.delete(key)
     for (const ex of chunk.explodables) {
       this.explodables.push(ex)
+    }
+    // Track traversal anchors from this chunk
+    for (const anchor of chunk.traversalAnchors) {
+      this.traversalAnchors.push(anchor)
     }
     this.creatureManager?.spawnForChunk(cx, cz, this)
   }

@@ -109,6 +109,121 @@
         pointer-events: none;
         text-shadow: 0 0 10px rgba(255,200,50,0.5);
       }
+      #crosshair {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 4px;
+        height: 4px;
+        background: rgba(255,255,255,0.4);
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 10;
+      }
+      #health-bar-container {
+        position: absolute;
+        bottom: 60px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 160px;
+        height: 4px;
+        background: rgba(0,0,0,0.4);
+        border-radius: 2px;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.5s;
+      }
+      #health-bar-container.visible {
+        opacity: 1;
+      }
+      #health-bar {
+        height: 100%;
+        width: 100%;
+        background: rgba(80,220,80,0.8);
+        border-radius: 2px;
+        transition: width 0.2s, background-color 0.3s;
+      }
+      #health-bar.low {
+        background: rgba(220,50,50,0.9);
+        animation: pulse-health 0.6s infinite;
+      }
+      @keyframes pulse-health {
+        0%, 100% { opacity: 0.9; }
+        50% { opacity: 0.5; }
+      }
+      #weather-hud {
+        position: absolute;
+        bottom: 8px;
+        left: 50%;
+        transform: translateX(-50%);
+        color: rgba(255,255,255,0.35);
+        font-size: 0.55rem;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        pointer-events: none;
+      }
+      #dialogue-box {
+        position: absolute;
+        bottom: 80px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 600px;
+        max-width: 90%;
+        background: rgba(10, 8, 5, 0.92);
+        border: 1px solid #a08040;
+        border-radius: 4px;
+        padding: 16px 20px;
+        display: none;
+        z-index: 50;
+        pointer-events: none;
+      }
+      #dialogue-name {
+        color: #e8c060;
+        font-size: 0.7rem;
+        letter-spacing: 0.15em;
+        margin-bottom: 8px;
+        text-transform: uppercase;
+      }
+      #dialogue-text {
+        color: rgba(255,255,255,0.85);
+        font-size: 0.75rem;
+        line-height: 1.5;
+        min-height: 2.5em;
+        letter-spacing: 0.02em;
+      }
+      #dialogue-prompt {
+        color: rgba(255,255,255,0.4);
+        font-size: 0.6rem;
+        text-align: right;
+        margin-top: 8px;
+        letter-spacing: 0.1em;
+      }
+      #interact-prompt {
+        position: absolute;
+        bottom: 130px;
+        left: 50%;
+        transform: translateX(-50%);
+        color: rgba(232, 192, 96, 0.8);
+        font-size: 0.7rem;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        pointer-events: none;
+        display: none;
+        text-shadow: 0 0 10px rgba(232, 192, 96, 0.4);
+        z-index: 40;
+      }
+      #artefact-hud {
+        position: absolute;
+        top: 54px;
+        right: 20px;
+        color: rgba(220, 200, 120, 0.6);
+        font-size: 0.65rem;
+        letter-spacing: 0.15em;
+        pointer-events: none;
+        text-shadow: 0 0 8px rgba(220, 200, 120, 0.4);
+        display: none;
+      }
       #fly-btn {
         position: absolute;
         bottom: 70px;
@@ -124,6 +239,131 @@
         cursor: pointer;
         display: none;
       }
+      #journal-hud {
+        position: absolute;
+        top: 15px;
+        left: 20px;
+        color: rgba(200,180,120,0.6);
+        font-size: 0.6rem;
+        letter-spacing: 0.12em;
+        pointer-events: none;
+        text-shadow: 0 0 6px rgba(200,180,120,0.3);
+      }
+      #discovery-popup {
+        position: absolute;
+        top: 80px;
+        left: 50%;
+        transform: translateX(-50%);
+        color: rgba(232,192,96,0.95);
+        font-size: 0.75rem;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        pointer-events: none;
+        text-shadow: 0 0 12px rgba(232,192,96,0.5);
+        opacity: 0;
+        transition: opacity 0.3s;
+        z-index: 30;
+      }
+      #campfire-hud {
+        position: absolute;
+        top: 36px;
+        left: 20px;
+        color: rgba(255,120,50,0.6);
+        font-size: 0.6rem;
+        letter-spacing: 0.12em;
+        pointer-events: none;
+        display: none;
+      }
+      #companion-hud {
+        position: absolute;
+        top: 54px;
+        left: 20px;
+        color: rgba(232,192,96,0.8);
+        font-size: 0.6rem;
+        letter-spacing: 0.1em;
+        pointer-events: none;
+        display: none;
+      }
+      #bond-progress {
+        position: absolute;
+        bottom: 150px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 120px;
+        height: 6px;
+        background: rgba(0,0,0,0.5);
+        border-radius: 3px;
+        pointer-events: none;
+        display: none;
+        overflow: hidden;
+        z-index: 30;
+      }
+      #predator-warning {
+        position: absolute;
+        top: 50%;
+        right: 30px;
+        transform: translateY(-50%);
+        color: rgba(255,60,60,0.85);
+        font-size: 0.8rem;
+        letter-spacing: 0.1em;
+        pointer-events: none;
+        display: none;
+        animation: pulse-warning 0.8s infinite;
+        z-index: 30;
+      }
+      @keyframes pulse-warning {
+        0%, 100% { opacity: 0.85; }
+        50% { opacity: 0.3; }
+      }
+      #rune-hud {
+        position: absolute;
+        top: 72px;
+        right: 20px;
+        color: rgba(200,180,120,0.5);
+        font-size: 0.6rem;
+        letter-spacing: 0.12em;
+        pointer-events: none;
+        display: none;
+      }
+      #challenge-description {
+        position: absolute;
+        bottom: 170px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(10,8,5,0.9);
+        border: 1px solid #665533;
+        border-radius: 4px;
+        padding: 12px 16px;
+        text-align: center;
+        pointer-events: none;
+        display: none;
+        z-index: 40;
+      }
+      #mute-hud {
+        position: absolute;
+        bottom: 8px;
+        right: 20px;
+        color: rgba(255,255,255,0.4);
+        font-size: 0.55rem;
+        letter-spacing: 0.1em;
+        pointer-events: none;
+        display: none;
+      }
+      #fast-travel-overlay {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(10,8,5,0.95);
+        border: 1px solid #a08040;
+        border-radius: 4px;
+        padding: 16px 20px;
+        min-width: 200px;
+        text-align: center;
+        z-index: 60;
+        display: none;
+        font-family: 'Courier New', monospace;
+      }
     </style>
   </head>
   <body>
@@ -133,12 +373,33 @@
           <h1>Retro World</h1>
           <p>Click to explore</p>
           <p style="margin-top:0.5rem; font-size:0.7rem;">WASD — move &nbsp;|&nbsp; Mouse — look &nbsp;|&nbsp; F — fly</p>
+          <p style="margin-top:0.3rem; font-size:0.6rem; color:#888;">J — journal &nbsp;|&nbsp; C — campfire &nbsp;|&nbsp; T — fast travel &nbsp;|&nbsp; V — mute</p>
         </div>
       </div>
+      <div id="crosshair"></div>
+      <div id="health-bar-container"><div id="health-bar"></div></div>
       <div id="biome-hud"></div>
+      <div id="weather-hud"></div>
       <div id="time-hud"></div>
       <div id="crystal-hud">◆ 0 / 30</div>
       <div id="mode-hud"></div>
+      <div id="dialogue-box">
+        <div id="dialogue-name"></div>
+        <div id="dialogue-text"></div>
+        <div id="dialogue-prompt"></div>
+      </div>
+      <div id="interact-prompt">[ E ] Talk</div>
+      <div id="artefact-hud"></div>
+      <div id="journal-hud"></div>
+      <div id="discovery-popup"></div>
+      <div id="campfire-hud"></div>
+      <div id="companion-hud"></div>
+      <div id="bond-progress"></div>
+      <div id="predator-warning">⚠ DANGER</div>
+      <div id="rune-hud"></div>
+      <div id="challenge-description"></div>
+      <div id="mute-hud"></div>
+      <div id="fast-travel-overlay"></div>
     </div>
     <script type="module" src="/src/main.ts"></script>
   </body>

@@ -5,8 +5,10 @@ import { PixelatePass } from '../postprocessing/PixelatePass'
 import { ColorGradePass } from '../postprocessing/ColorGradePass'
 import { CRTPass } from '../postprocessing/CRTPass'
 import { UnderwaterPass } from '../postprocessing/UnderwaterPass'
+import { DamagePass } from '../postprocessing/DamagePass'
 import { RetroPass } from '../postprocessing/RetroPass'
-import { POST_CONFIG } from '../config'
+import { POST_CONFIG, RENDER_CONFIG, WORLD_CONFIG } from '../config'
+import { CHUNK_SIZE } from '../world/TerrainGenerator'
 
 export class Renderer {
   public renderer: THREE.WebGLRenderer
@@ -17,6 +19,7 @@ export class Renderer {
   public colorGradePass!: ColorGradePass
   public crtPass!: CRTPass
   public underwaterPass!: UnderwaterPass
+  public damagePass!: DamagePass
   public retroPass!: RetroPass
 
   private renderTarget: THREE.WebGLRenderTarget
@@ -69,6 +72,9 @@ export class Renderer {
     this.underwaterPass = new UnderwaterPass()
     this.composer.addPass(this.underwaterPass)
 
+    this.damagePass = new DamagePass()
+    this.composer.addPass(this.damagePass)
+
     this.retroPass = new RetroPass()
     this.composer.addPass(this.retroPass)
   }
@@ -83,6 +89,14 @@ export class Renderer {
   }
 
   render(deltaTime: number) {
+    // Update camera far plane to match current render distance
+    const maxDist = (WORLD_CONFIG.viewRadius + 2) * CHUNK_SIZE * RENDER_CONFIG.renderScale
+    const targetFar = Math.max(500, maxDist * 1.5)
+    if (Math.abs(this.camera.far - targetFar) > 10) {
+      this.camera.far = targetFar
+      this.camera.updateProjectionMatrix()
+    }
+
     this.retroPass.update(deltaTime)
     this.composer.render()
   }

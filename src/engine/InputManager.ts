@@ -14,6 +14,14 @@ export class InputManager {
   private locked = false
   private jumpQueued = false
   private flyToggleQueued = false
+  private gliderToggleQueued = false
+  private grappleQueued = false
+  private interactQueued = false
+  private journalToggleQueued = false
+  private campfireQueued = false
+  private fastTravelQueued = false
+  private muteToggleQueued = false
+  crouchHeld = false
 
   // Gamepad state
   gamepadLeftX = 0
@@ -33,8 +41,17 @@ export class InputManager {
       this.keys.add(e.code)
       if (e.code === 'Space') this.jumpQueued = true
       if (e.code === 'KeyF') this.flyToggleQueued = true
+      if (e.code === 'KeyG') this.gliderToggleQueued = true
+      if (e.code === 'KeyQ') this.grappleQueued = true
+      if (e.code === 'KeyE') this.interactQueued = true
+      if (e.code === 'KeyJ') this.journalToggleQueued = true
+      if (e.code === 'KeyC') this.campfireQueued = true
+      if (e.code === 'KeyT') this.fastTravelQueued = true
+      if (e.code === 'KeyV') this.muteToggleQueued = true
     })
     document.addEventListener('keyup', (e) => this.keys.delete(e.code))
+    document.addEventListener('keydown', (e) => { if (e.code === 'ControlLeft' || e.code === 'ControlRight') this.crouchHeld = true })
+    document.addEventListener('keyup', (e) => { if (e.code === 'ControlLeft' || e.code === 'ControlRight') this.crouchHeld = false })
     document.addEventListener('mousemove', (e) => {
       if (this.locked) {
         this.mouseDeltaX += e.movementX
@@ -123,6 +140,48 @@ export class InputManager {
   consumeFlyToggle(): boolean {
     const v = this.flyToggleQueued
     this.flyToggleQueued = false
+    return v
+  }
+
+  consumeGliderToggle(): boolean {
+    const v = this.gliderToggleQueued
+    this.gliderToggleQueued = false
+    return v
+  }
+
+  consumeGrapple(): boolean {
+    const v = this.grappleQueued
+    this.grappleQueued = false
+    return v
+  }
+
+  consumeInteract(): boolean {
+    const v = this.interactQueued
+    this.interactQueued = false
+    return v
+  }
+
+  consumeJournalToggle(): boolean {
+    const v = this.journalToggleQueued
+    this.journalToggleQueued = false
+    return v
+  }
+
+  consumeCampfire(): boolean {
+    const v = this.campfireQueued
+    this.campfireQueued = false
+    return v
+  }
+
+  consumeFastTravel(): boolean {
+    const v = this.fastTravelQueued
+    this.fastTravelQueued = false
+    return v
+  }
+
+  consumeMuteToggle(): boolean {
+    const v = this.muteToggleQueued
+    this.muteToggleQueued = false
     return v
   }
 }

@@ -4,8 +4,11 @@ import { InputManager } from './InputManager'
 import { World } from '../world/World'
 import { FirstPersonController } from '../player/FirstPersonController'
 import { CollisionSystem } from '../player/CollisionSystem'
+import { PlayerState } from '../player/PlayerState'
 import { DayNightCycle } from '../lighting/DayNightCycle'
 import { BiomeTransition } from '../systems/BiomeTransition'
+import { WeatherSystem } from '../systems/WeatherSystem'
+import { HazardSystem } from '../systems/HazardSystem'
 import { SkyDome } from '../sky/SkyDome'
 import { BiomeMap } from '../world/BiomeMap'
 import { CreatureManager } from '../creatures/CreatureManager'
@@ -16,10 +19,23 @@ import { DebugMap } from '../debug/DebugMap'
 import { DebugPanel } from '../debug/DebugPanel'
 import { PerfOverlay } from '../debug/PerfOverlay'
 import { WORLD_CONFIG } from '../config'
-import { WATER_LEVEL, CHUNK_SIZE, sampleWorldHeight } from '../world/TerrainGenerator'
+import { WATER_LEVEL, CHUNK_SIZE, sampleWorldHeight, riverMask } from '../world/TerrainGenerator'
 import { GrandStaircase } from '../landmarks/GrandStaircase'
 import { InfernalStaircase } from '../landmarks/InfernalStaircase'
 import { BiomeType } from '../biomes/types'
+import { NPCManager } from '../npcs/NPCManager'
+import { JournalSystem } from '../journal/JournalSystem'
+import { JournalOverlay } from '../journal/JournalOverlay'
+import { LoreStoneManager } from '../journal/LoreStone'
+import { AudioSystem } from '../audio/AudioSystem'
+import { CampfireSystem } from '../systems/CampfireSystem'
+import { CompanionSystem } from '../player/CompanionSystem'
+import { RuneSystem } from '../challenges/RuneSystem'
+import { WeatherType } from '../systems/WeatherSystem'
+import { GrappleSystem } from '../player/GrappleSystem'
+import { RoadNetwork } from '../traversal/RoadNetwork'
+import { ZiplineRide } from '../traversal/ZiplineRide'
+import { VineSwing } from '../traversal/VineSwing'
 
 export class Engine {
   private renderer: Renderer
@@ -27,8 +43,11 @@ export class Engine {
   private world: World
   private controller: FirstPersonController
   private collision: CollisionSystem
+  private playerState: PlayerState
   private dayNight: DayNightCycle
   private biomeTransition: BiomeTransition
+  private weatherSystem: WeatherSystem
+  private hazardSystem: HazardSystem
   private skyDome: SkyDome
   private biomeMap: BiomeMap
   private creatureManager: CreatureManager
@@ -37,17 +56,33 @@ export class Engine {
   private landmarkManager: LandmarkManager
   private grandStaircase: GrandStaircase
   private infernalStaircase: InfernalStaircase
+  private npcManager: NPCManager
   private debugMap: DebugMap
   private debugPanel: DebugPanel
   private perfOverlay: PerfOverlay
   private flashlight: THREE.SpotLight
   private monumentObjects: { pos: THREE.Vector3; objects: THREE.Object3D[] }[] = []
 
+  // New engagement systems
+  private journalSystem: JournalSystem
+  private journalOverlay: JournalOverlay
+  private loreStones: LoreStoneManager
+  private audioSystem: AudioSystem
+  private campfireSystem: CampfireSystem
+  private companionSystem: CompanionSystem
+  private runeSystem: RuneSystem
+  private grapple: GrappleSystem
+  private grappleCountThisFrame = 0
+  private roadNetwork: RoadNetwork
+  private ziplineRide: ZiplineRide
+  private vineSwing: VineSwing
+
   private lastTime = 0
   private running = false
   private underwaterStrength = 0
+  private elapsedTime = 0
 
-  // Reusable Vector3s to avoid per-frame allocations (Phase 5a)
+  // Reusable Vector3s to avoid per-frame allocations
   private _fwd = new THREE.Vector3()
   private _lookDir = new THREE.Vector3()
   private _sunDir = new THREE.Vector3()
@@ -57,7 +92,14 @@ export class Engine {
   private timeHud: HTMLElement | null
   private crystalHud: HTMLElement | null
   private modeHud: HTMLElement | null
+  private weatherHud: HTMLElement | null
+  private healthBar: HTMLElement | null
+  private healthBarContainer: HTMLElement | null
+  private artefactHud: HTMLElement | null
   private crystalsCollected = 0
+
+  // Castle position for respawn
+  private castlePos = new THREE.Vector3()
 
   constructor(container: HTMLElement) {
     this.renderer = new Renderer(container)
@@ -69,6 +111,7 @@ export class Engine {
     this.world.setCreatureManager(this.creatureManager)
     this.controller = new FirstPersonController(this.renderer.camera, this.input)
     this.collision = new CollisionSystem(this.world)
+    this.playerState = new PlayerState()
     this.dayNight = new DayNightCycle(this.renderer.scene)
     this.skyDome = new SkyDome(this.renderer.scene)
     this.biomeTransition = new BiomeTransition(
@@ -77,16 +120,26 @@ export class Engine {
       this.renderer.colorGradePass,
       this.skyDome
     )
+    this.weatherSystem = new WeatherSystem(this.renderer.scene)
+    this.hazardSystem = new HazardSystem()
 
     let cc0 = this.renderer.scene.children.length
     this.castle = new Castle(WORLD_CONFIG.seed, this.renderer.scene)
     this.world.setCastleWalkables(this.castle.walkables)
     this.castleBreeze = new CastleBreeze(this.castle.position, this.renderer.scene)
+    this.castlePos.copy(this.castle.position)
     {
       const added: THREE.Object3D[] = []
       for (let i = cc0; i < this.renderer.scene.children.length; i++) added.push(this.renderer.scene.children[i])
       this.monumentObjects.push({ pos: this.castle.position, objects: added })
     }
+
+    // Player respawn at castle on death
+    this.playerState.onDeath(() => {
+      this.renderer.camera.position.set(this.castlePos.x, this.castlePos.y + 5, this.castlePos.z)
+      this.controller.verticalVelocity = 0
+      this.controller.isGrounded = false
+    })
 
     // Grand Staircase — base at closest Forest seed
     const stairSeed = this.biomeMap.getClosestSeedOf(BiomeType.Forest, 700)
@@ -122,7 +175,35 @@ export class Engine {
     this.landmarkManager = new LandmarkManager(this.biomeMap, this.renderer.scene, WORLD_CONFIG.seed)
     this.world.addMonumentWalkables(this.landmarkManager.allWalkables)
 
+    // Road network — landmark-to-landmark paths, indexed by chunk
+    this.roadNetwork = new RoadNetwork(this.landmarkManager.positions, this.biomeMap, WORLD_CONFIG.seed)
+    this.world.setRoadNetwork(this.roadNetwork)
+    console.log(`[Traversal] RoadNetwork: ${this.roadNetwork.edges.length} edges, ${this.roadNetwork.edges.reduce((s, e) => s + e.waypoints.length, 0)} total waypoints`)
+    console.log(`[Traversal] Indexed chunks: ${this.roadNetwork.getIndexedChunks().slice(0, 20).join(' | ')}`)
+    for (const edge of this.roadNetwork.edges) {
+      const wp0 = edge.waypoints[0], wpN = edge.waypoints[edge.waypoints.length - 1]
+      console.log(`[Traversal]   Edge ${BiomeType[edge.from]}→${BiomeType[edge.to]}: ${edge.waypoints.length} wp, (${wp0.x.toFixed(0)},${wp0.z.toFixed(0)})→(${wpN.x.toFixed(0)},${wpN.z.toFixed(0)})`)
+    }
+
+    this.npcManager = new NPCManager(this.biomeMap, this.renderer.scene, this.landmarkManager.positions)
+
+    // --- Engagement systems ---
+    this.journalSystem = new JournalSystem()
+    this.journalOverlay = new JournalOverlay(this.journalSystem.state)
+    this.loreStones = new LoreStoneManager(this.renderer.scene, this.biomeMap)
+    this.audioSystem = new AudioSystem()
+    this.campfireSystem = new CampfireSystem(this.renderer.scene, (pos) => {
+      this.renderer.camera.position.copy(pos)
+      this.controller.verticalVelocity = 0
+    })
+    this.companionSystem = new CompanionSystem()
+    this.grapple = new GrappleSystem(this.renderer.scene)
+    this.ziplineRide = new ZiplineRide(this.renderer.scene)
+    this.vineSwing = new VineSwing(this.renderer.scene)
+    this.runeSystem = new RuneSystem(this.renderer.scene, this.biomeMap, this.landmarkManager.positions)
+
     this.debugMap = new DebugMap(this.castle.position, this.landmarkManager.positions, stairPos, hellStairPos)
+    this.debugMap.setRoadEdges(this.roadNetwork.edges)
 
     // Flashlight — SpotLight attached to camera, auto-enables at night
     this.flashlight = new THREE.SpotLight(0xffe8cc, 0, 40, Math.PI / 5, 0.3, 1.5)
@@ -144,6 +225,10 @@ export class Engine {
     this.timeHud = document.getElementById('time-hud')
     this.crystalHud = document.getElementById('crystal-hud')
     this.modeHud = document.getElementById('mode-hud')
+    this.weatherHud = document.getElementById('weather-hud')
+    this.healthBar = document.getElementById('health-bar')
+    this.healthBarContainer = document.getElementById('health-bar-container')
+    this.artefactHud = document.getElementById('artefact-hud')
 
     this.setupStartScreen()
   }
@@ -156,6 +241,7 @@ export class Engine {
       this.renderer.renderer.domElement.requestPointerLock()
       overlay.classList.add('hidden')
       setTimeout(() => overlay.remove(), 600)
+      this.audioSystem.init()
       if (!this.running) this.start()
     })
 
@@ -177,6 +263,7 @@ export class Engine {
     if (!this.running) return
     const delta = Math.min((time - this.lastTime) / 1000, 0.05)
     this.lastTime = time
+    this.elapsedTime += delta
 
     this.controller.update(delta)
     this.collision.update(this.renderer.camera, this.controller, delta)
@@ -192,29 +279,279 @@ export class Engine {
     this.skyDome.update(this.renderer.camera, t, this._sunDir, this._sunCol, delta)
     this.biomeTransition.setDayFactor(dayFactor)
     this.biomeTransition.update(this.renderer.camera.position, delta)
-    this.creatureManager.update(delta, this.renderer.camera.position, this.world, this.dayNight.getTime())
 
-    // Knockback from predator attacks
+    const camPos = this.renderer.camera.position
+    const currentBiome = this.biomeTransition.getCurrentBiome()
+
+    // Weather system — particles + weather state
+    this.weatherSystem.update(delta, currentBiome, camPos)
+
+    // Apply weather fog override: lerp fog.far down, never slam it
+    const fog = this.renderer.scene.fog as THREE.Fog | null
+    if (fog && this.weatherSystem.fogFarOverride > 0) {
+      const target = this.weatherSystem.fogFarOverride
+      // Only reduce fog distance, and do it smoothly
+      if (target < fog.far) {
+        fog.far += (target - fog.far) * Math.min(1, delta * 0.5)
+      }
+    }
+
+    // Weather speed effects (blizzard slows movement)
+    this.controller.speedMultiplier = this.weatherSystem.getSpeedMultiplier()
+
+    // Sandstorm push — gentle
+    const sandPush = this.weatherSystem.getSandstormPush()
+    if (sandPush > 0) {
+      camPos.x += sandPush * delta * 0.3
+    }
+
+    // Hazard system
+    const terrainH = this.world.getHeightAt(camPos.x, camPos.z)
+    this.hazardSystem.update(
+      delta, camPos.x, camPos.y, camPos.z,
+      currentBiome, dayFactor, this.playerState, this.elapsedTime,
+      terrainH
+    )
+
+    // Apply ice friction
+    const iceFriction = this.hazardSystem.getIceFriction(currentBiome)
+    if (iceFriction < 1) {
+      this.controller.frictionMultiplier = iceFriction
+    }
+
+    // Apply hazard speed multiplier
+    this.controller.speedMultiplier *= this.playerState.speedMultiplier
+
+    // Water current push — if in water near a river
+    if (camPos.y < WATER_LEVEL + 0.5) {
+      const rm = riverMask(camPos.x, camPos.z)
+      if (rm < 0.5) {
+        const rmX = riverMask(camPos.x + 1, camPos.z)
+        const rmZ = riverMask(camPos.x, camPos.z + 1)
+        const gx = rmX - rm
+        const gz = rmZ - rm
+        const len = Math.sqrt(gx * gx + gz * gz) + 0.001
+        const pushStr = 2.0 * (1 - rm * 2)
+        camPos.x += (-gz / len) * pushStr * delta
+        camPos.z += (gx / len) * pushStr * delta
+      }
+      // Slow player in water
+      this.controller.speedMultiplier *= 0.6
+    }
+
+    // Player state update (regen, death, etc.)
+    this.playerState.update(delta, this.elapsedTime)
+
+    // NPC system — update before creatures, lock movement during dialogue
+    this.npcManager.update(delta, camPos, this.elapsedTime, this.input)
+    if (this.npcManager.isDialogueActive()) {
+      this.controller.speedMultiplier = 0
+    }
+    this.debugMap.setNPCMarkers(this.npcManager.getMapMarkers())
+
+    // Update campfire positions for creature awareness
+    this.creatureManager.campfirePositions = this.campfireSystem.positions
+
+    this.creatureManager.update(delta, camPos, this.world, this.dayNight.getTime())
+
+    // --- Engagement system updates ---
+
+    // Input consumption for new systems
+    if (this.input.consumeMuteToggle()) {
+      this.audioSystem.toggleMute()
+    }
+
+    // Campfire placement
+    if (this.input.consumeCampfire()) {
+      const biomeName = this.biomeTransition.getCurrentBiomeName()
+      if (this.campfireSystem.placeCampfire(camPos, biomeName, this.controller.isGrounded)) {
+        this.audioSystem.chime?.playCampfire()
+      }
+    }
+
+    // Fast travel
+    if (this.input.consumeFastTravel()) {
+      if (this.campfireSystem.isFastTravelActive()) {
+        this.campfireSystem.closeFastTravel()
+      } else {
+        this.campfireSystem.openFastTravel(camPos)
+      }
+    }
+
+    // Campfire healing
+    const campfireHeal = this.campfireSystem.update(delta, camPos)
+    if (campfireHeal > 0) this.playerState.heal(campfireHeal)
+
+    // Lock movement during fast travel / journal
+    if (this.campfireSystem.isFastTravelActive() || this.journalOverlay.isOpen()) {
+      this.controller.speedMultiplier = 0
+    }
+
+    // Zipline/Vine ride updates
+    if (this.ziplineRide.isRiding) {
+      const newPos = this.ziplineRide.update(delta, camPos, this.input.consumeGrapple())
+      if (newPos) {
+        camPos.copy(newPos)
+        this.controller.verticalVelocity = 0
+      }
+    } else if (this.vineSwing.isSwinging) {
+      const lateral = (this.input.isDown('KeyA') ? -1 : 0) + (this.input.isDown('KeyD') ? 1 : 0)
+      const result = this.vineSwing.update(delta, camPos, lateral, this.input.consumeGrapple())
+      if (result) {
+        camPos.copy(result.pos)
+        this.controller.verticalVelocity = 0
+        if (result.velocity.lengthSq() > 0) {
+          // Launched from vine — apply momentum
+          this.controller.verticalVelocity = result.velocity.y
+        }
+      }
+    } else {
+      // Grapple system — check for zipline/vine anchors first
+      if (this.input.consumeGrapple()) {
+        if (this.grapple.isGrappling) {
+          this.grapple.release()
+        } else {
+          // Try to find a nearby traversal anchor (zipline or vine)
+          let anchorFound = false
+          const raycaster = new THREE.Raycaster()
+          raycaster.far = 8
+          raycaster.setFromCamera(new THREE.Vector2(0, 0), this.renderer.camera)
+
+          for (const anchor of this.world.traversalAnchors) {
+            const anchorWorldPos = anchor.startPos
+            const dist = camPos.distanceTo(anchorWorldPos)
+            if (dist > 10) continue
+
+            if (anchor.type === 'zipline' && anchor.cablePoints) {
+              this.ziplineRide.start(anchor.cablePoints)
+              anchorFound = true
+              break
+            } else if (anchor.type === 'vine' && anchor.vineTop && anchor.ropeLength) {
+              this.vineSwing.start(anchor.vineTop, anchor.ropeLength)
+              anchorFound = true
+              break
+            }
+          }
+
+          if (!anchorFound) {
+            if (this.grapple.tryFire(this.renderer.camera, this.renderer.scene)) {
+              this.grappleCountThisFrame++
+            }
+          }
+        }
+      }
+      const grappleVel = this.grapple.update(delta, camPos, this.controller['velocity'] as THREE.Vector3 || new THREE.Vector3())
+      if (grappleVel) {
+        // Grapple overrides gravity
+        this.controller.verticalVelocity = 0
+      }
+    }
+
+    // Companion system
+    this._fwd.set(0, 0, -1).applyQuaternion(this.renderer.camera.quaternion)
+    const playerSpeed = this.controller['velocity']
+      ? (this.controller['velocity'] as THREE.Vector3).length()
+      : 0
+    this.companionSystem.update(
+      delta, camPos, playerSpeed,
+      this.input.crouchHeld,
+      this.creatureManager.creatures,
+      this._fwd,
+    )
+
+    // Apply companion bonuses
+    this.controller.speedMultiplier *= this.companionSystem.getSpeedMultiplier()
+    if (this.companionSystem.getRegenBonus() > 0) {
+      this.playerState.heal(this.companionSystem.getRegenBonus() * delta)
+    }
+
+    // Lore stones — manage chunks
+    const playerCX = Math.floor(camPos.x / CHUNK_SIZE)
+    const playerCZ = Math.floor(camPos.z / CHUNK_SIZE)
+    for (let dz = -2; dz <= 2; dz++) {
+      for (let dx = -2; dx <= 2; dx++) {
+        this.loreStones.ensureChunk(playerCX + dx, playerCZ + dz)
+      }
+    }
+    this.loreStones.foxBonusActive = this.companionSystem.hasLoreGlow()
+    const lorePickup = this.loreStones.update(camPos)
+    if (lorePickup) {
+      this.journalSystem.discoverLore(lorePickup.loreIndex)
+      this.audioSystem.chime?.playPickup()
+    }
+
+    // Journal system
+    const weatherType = this.weatherSystem.currentWeather as WeatherType
+    this.journalSystem.update(
+      delta, camPos, currentBiome, weatherType,
+      this.creatureManager.creatures,
+      this.landmarkManager.positions,
+    )
+
+    // Rune system
+    const runeCtx = {
+      playerPos: camPos,
+      biome: currentBiome,
+      weather: weatherType,
+      dayTime: t,
+      isFlying: this.controller.isFlying,
+      isGrounded: this.controller.isGrounded,
+      creatures: this.creatureManager.creatures,
+      landmarkPositions: this.landmarkManager.positions,
+      grappleCount: this.grappleCountThisFrame,
+      isCrouching: this.input.crouchHeld,
+    }
+    this.grappleCountThisFrame = 0
+    // Only pass interact to rune system if NPC dialogue isn't active
+    const runeInteract = !this.npcManager.isDialogueActive() && this.input.consumeInteract()
+    const runeComplete = this.runeSystem.update(delta, runeCtx, runeInteract)
+    if (runeComplete) {
+      this.audioSystem.chime?.playRuneComplete()
+      this.journalSystem.discoverRune(currentBiome)
+    }
+
+    // Audio system
+    this.audioSystem.update(
+      delta, currentBiome, weatherType,
+      camPos.y, playerSpeed,
+      this.controller.isGrounded,
+      camPos, this.creatureManager.creatures,
+      this.renderer.camera,
+      this.controller.verticalVelocity,
+      this.landmarkManager.positions,
+      this.runeSystem.getMapMarkers().map(m => m.pos),
+    )
+
+    // Debug map markers
+    this.debugMap.setCampfireMarkers(this.campfireSystem.getMapMarkers())
+    this.debugMap.setRuneMarkers(this.runeSystem.getMapMarkers())
+
+    // Knockback from predator attacks — also damage player
     const knockback = this.creatureManager.pendingKnockback
     if (knockback > 0) {
       this.creatureManager.pendingKnockback = 0
       this.renderer.camera.getWorldDirection(this._fwd)
-      this.renderer.camera.position.x -= this._fwd.x * 2 * knockback
-      this.renderer.camera.position.z -= this._fwd.z * 2 * knockback
+      camPos.x -= this._fwd.x * 2 * knockback
+      camPos.z -= this._fwd.z * 2 * knockback
+      this.playerState.takeDamage(5 * knockback, this.elapsedTime)
     }
 
     // Explodable structures + camera shake
-    this.world.tickExplodables(this.renderer.camera.position, delta)
-    const rumble = this.world.getRumbleStrength(this.renderer.camera.position)
+    this.world.tickExplodables(camPos, delta)
+    const rumble = this.world.getRumbleStrength(camPos)
     if (rumble > 0) {
-      this.renderer.camera.position.x += (Math.random() - 0.5) * rumble * 0.06
-      this.renderer.camera.position.z += (Math.random() - 0.5) * rumble * 0.06
+      camPos.x += (Math.random() - 0.5) * rumble * 0.06
+      camPos.z += (Math.random() - 0.5) * rumble * 0.06
     }
 
     // Underwater effect
-    const targetStrength = this.renderer.camera.position.y < WATER_LEVEL ? 1.0 : 0.0
+    const targetStrength = camPos.y < WATER_LEVEL ? 1.0 : 0.0
     this.underwaterStrength += (targetStrength - this.underwaterStrength) * Math.min(1, delta * 8)
     this.renderer.underwaterPass.update(delta, this.underwaterStrength)
+
+    // Damage pass
+    const deathFade = this.playerState.isDead ? 1.0 : 0
+    this.renderer.damagePass.setStrength(this.playerState.damageFlashStrength, deathFade)
 
     // Update HUD
     if (this.biomeHud) {
@@ -226,20 +563,39 @@ export class Engine {
     if (this.modeHud) {
       this.modeHud.textContent = this.controller.isFlying ? '~ FLYING ~' : ''
     }
+    if (this.weatherHud) {
+      this.weatherHud.textContent = this.weatherSystem.getCurrentWeatherName()
+    }
+
+    // Health bar
+    if (this.healthBar && this.healthBarContainer) {
+      const hp = this.playerState.health
+      this.healthBar.style.width = `${hp}%`
+      if (hp < 100) {
+        this.healthBarContainer.classList.add('visible')
+      } else {
+        this.healthBarContainer.classList.remove('visible')
+      }
+      if (hp < 30) {
+        this.healthBar.classList.add('low')
+      } else {
+        this.healthBar.classList.remove('low')
+      }
+    }
 
     // Flashlight — auto-enables at night (18:00–07:00), points where camera looks
     const isNight = t > 18 / 24 || t < 7 / 24
     const targetIntensity = isNight ? 4.0 : 0.0
     this.flashlight.intensity += (targetIntensity - this.flashlight.intensity) * Math.min(1, delta * 2)
-    this.flashlight.position.copy(this.renderer.camera.position)
+    this.flashlight.position.copy(camPos)
     this._lookDir.set(0, 0, -1).applyQuaternion(this.renderer.camera.quaternion)
-    this.flashlight.target.position.copy(this.renderer.camera.position).addScaledVector(this._lookDir, 20)
+    this.flashlight.target.position.copy(camPos).addScaledVector(this._lookDir, 20)
     this.flashlight.target.updateMatrixWorld()
 
     // Crystal pickup detection
     const totalCrystals = this.landmarkManager.allCrystals.length
     for (const crystal of this.landmarkManager.allCrystals) {
-      if (crystal.tryCollect(this.renderer.camera.position)) {
+      if (crystal.tryCollect(camPos)) {
         this.crystalsCollected++
         if (this.crystalHud) {
           this.crystalHud.textContent = `◆ ${this.crystalsCollected} / ${totalCrystals}`
@@ -257,14 +613,14 @@ export class Engine {
     const mCullDist = WORLD_CONFIG.viewRadius * CHUNK_SIZE
     const mCullDistSq = mCullDist * mCullDist
     for (const entry of this.monumentObjects) {
-      const dx = entry.pos.x - this.renderer.camera.position.x
-      const dz = entry.pos.z - this.renderer.camera.position.z
+      const dx = entry.pos.x - camPos.x
+      const dz = entry.pos.z - camPos.z
       const vis = dx * dx + dz * dz < mCullDistSq
       for (const obj of entry.objects) obj.visible = vis
     }
-    this.landmarkManager.update(delta, this.lastTime / 1000, this.renderer.camera.position)
-    this.castleBreeze.update(delta, this.renderer.camera.position)
-    this.debugMap.update(this.renderer.camera.position, this.controller.heading)
+    this.landmarkManager.update(delta, this.lastTime / 1000, camPos)
+    this.castleBreeze.update(delta, camPos)
+    this.debugMap.update(camPos, this.controller.heading)
 
     this.renderer.render(delta)
     this.perfOverlay.update(this.renderer.renderer)

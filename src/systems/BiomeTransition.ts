@@ -4,6 +4,7 @@ import { getBiome } from '../biomes/BiomeRegistry'
 import { BiomeType, SkyConfig } from '../biomes/types'
 import { ColorGradePass } from '../postprocessing/ColorGradePass'
 import { SkyDome } from '../sky/SkyDome'
+import { RENDER_CONFIG } from '../config'
 
 const TRANSITION_SPEED = 1.5  // blend units per second
 
@@ -106,8 +107,9 @@ export class BiomeTransition {
     const fog = this.scene.fog as THREE.Fog
     if (fog) {
       fog.color.copy(fogColor)
-      fog.near = fogNear + df * 10  // push fog further during day
-      fog.far  = fogFar + df * 30
+      const rs = RENDER_CONFIG.renderScale
+      fog.near = (fogNear + df * 10) * rs  // scale fog with render distance
+      fog.far  = (fogFar + df * 30) * rs
     }
 
     // Update ColorGrade uniform with current biome tint
@@ -143,7 +145,15 @@ export class BiomeTransition {
     this.skyDome.setColors(_zenith, _horizon, _cloud, cloudDensity, haze)
   }
 
+  getCurrentBiome(): BiomeType {
+    return this.currentBiome
+  }
+
   getCurrentBiomeName(): string {
     return getBiome(this.currentBiome).name
+  }
+
+  getCurrentFogFar(): number {
+    return this.currentFogFar
   }
 }
