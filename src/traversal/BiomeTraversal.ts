@@ -48,11 +48,6 @@ export function buildBiomeFeatures(
 
   const rng = new SeededRandom(chunkSeed(cx, cz, 7777))
 
-  const hasFeature = ZIPLINE_BIOMES.has(centerBiome) || VINE_BIOMES.has(centerBiome) || ICE_BIOMES.has(centerBiome) || LAVA_BIOMES.has(centerBiome)
-  if (hasFeature) {
-    console.log(`[BiomeTraversal] Chunk(${cx},${cz}) biome=${BiomeType[centerBiome]} — building features`)
-  }
-
   // Ziplines
   if (ZIPLINE_BIOMES.has(centerBiome)) {
     const result = buildZiplines(cx, cz, rng, heightGrid, group, matCache, scene)

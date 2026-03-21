@@ -326,10 +326,7 @@ export class Chunk {
         const result = buildRoadSegments(this.cx, this.cz, waypoints, biomeMap, this.matCache, this.group)
         for (const m of result.meshes) this.extras.push(m)
         for (const w of result.walkables) this.walkableSurfaces.push(w)
-        console.log(`[Traversal] Chunk(${this.cx},${this.cz}) road: ${waypoints.length} waypoints, ${result.meshes.length} meshes`)
       }
-    } else if (!roadNetwork) {
-      console.warn(`[Traversal] Chunk(${this.cx},${this.cz}) NO roadNetwork passed!`)
     }
 
     // ── Biome-specific traversal features (ziplines, vines, ice, lava) ──
@@ -339,9 +336,6 @@ export class Chunk {
       for (const w of result.walkables) this.walkableSurfaces.push(w)
       this.traversalAnchors.push(...result.anchors)
       this.lavaRocks.push(...result.lavaRocks)
-      if (result.meshes.length > 0) {
-        console.log(`[Traversal] Chunk(${this.cx},${this.cz}) biome features: ${result.meshes.length} meshes, ${result.anchors.length} anchors, ${result.lavaRocks.length} lavaRocks`)
-      }
     }
 
     this.mergeStructures()

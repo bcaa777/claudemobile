@@ -8,7 +8,7 @@ import type { RoadWaypoint, RoadEdge } from './traversalTypes'
 const MAX_CONNECTIONS = 3
 const MAX_EDGE_LENGTH = 800
 const WAYPOINT_SPACING = 8
-const SMOOTHING_WINDOW = 5
+const SMOOTHING_WINDOW = 9
 
 export class RoadNetwork {
   readonly edges: RoadEdge[] = []
@@ -54,8 +54,6 @@ export class RoadNetwork {
       connectionCount.set(pair.j, cj + 1)
     }
 
-    console.log(`[RoadNetwork] Selected ${selectedEdges.length} edges from ${nodes.length} landmarks`)
-
     // Step 2: Compute terrain-following waypoints per edge
     for (const { i, j } of selectedEdges) {
       const [biomeA, posA] = nodes[i]
@@ -76,24 +74,29 @@ export class RoadNetwork {
         rawWaypoints.push({ x: wx, y: wy, z: wz, biome })
       }
 
-      // 5-point moving average smoothing on Y
+      // Two-pass moving average smoothing on Y for very gentle slopes
+      let yValues = rawWaypoints.map(w => w.y)
+      for (let pass = 0; pass < 2; pass++) {
+        const next = new Array(yValues.length)
+        const half = Math.floor(SMOOTHING_WINDOW / 2)
+        for (let k = 0; k < yValues.length; k++) {
+          let sumY = 0, count = 0
+          for (let m = k - half; m <= k + half; m++) {
+            if (m >= 0 && m < yValues.length) { sumY += yValues[m]; count++ }
+          }
+          next[k] = sumY / count
+        }
+        yValues = next
+      }
+
       const smoothed: RoadWaypoint[] = []
       for (let k = 0; k < rawWaypoints.length; k++) {
-        let sumY = 0
-        let count = 0
-        const half = Math.floor(SMOOTHING_WINDOW / 2)
-        for (let m = k - half; m <= k + half; m++) {
-          if (m >= 0 && m < rawWaypoints.length) {
-            sumY += rawWaypoints[m].y
-            count++
-          }
-        }
         const wp = rawWaypoints[k]
         const cx = Math.floor(wp.x / CHUNK_SIZE)
         const cz = Math.floor(wp.z / CHUNK_SIZE)
         smoothed.push({
           x: wp.x,
-          y: sumY / count,
+          y: yValues[k],
           z: wp.z,
           biome: wp.biome,
           cx,

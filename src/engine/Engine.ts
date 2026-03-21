@@ -178,12 +178,7 @@ export class Engine {
     // Road network — landmark-to-landmark paths, indexed by chunk
     this.roadNetwork = new RoadNetwork(this.landmarkManager.positions, this.biomeMap, WORLD_CONFIG.seed)
     this.world.setRoadNetwork(this.roadNetwork)
-    console.log(`[Traversal] RoadNetwork: ${this.roadNetwork.edges.length} edges, ${this.roadNetwork.edges.reduce((s, e) => s + e.waypoints.length, 0)} total waypoints`)
-    console.log(`[Traversal] Indexed chunks: ${this.roadNetwork.getIndexedChunks().slice(0, 20).join(' | ')}`)
-    for (const edge of this.roadNetwork.edges) {
-      const wp0 = edge.waypoints[0], wpN = edge.waypoints[edge.waypoints.length - 1]
-      console.log(`[Traversal]   Edge ${BiomeType[edge.from]}→${BiomeType[edge.to]}: ${edge.waypoints.length} wp, (${wp0.x.toFixed(0)},${wp0.z.toFixed(0)})→(${wpN.x.toFixed(0)},${wpN.z.toFixed(0)})`)
-    }
+    console.log(`[Traversal] RoadNetwork: ${this.roadNetwork.edges.length} edges, ${this.roadNetwork.edges.reduce((s, e) => s + e.waypoints.length, 0)} waypoints`)
 
     this.npcManager = new NPCManager(this.biomeMap, this.renderer.scene, this.landmarkManager.positions)
 
