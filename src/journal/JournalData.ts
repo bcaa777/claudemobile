@@ -50,51 +50,29 @@ const CREATURE_DESCS: Record<string, string> = {
 const BIOME_NAMES: Record<number, string> = {
   [BiomeType.Forest]: 'Verdant Forest',
   [BiomeType.Desert]: 'Scorching Desert',
-  [BiomeType.Volcanic]: 'Volcanic Wastes',
-  [BiomeType.Snow]: 'Frozen Tundra',
   [BiomeType.Swamp]: 'Murky Swamp',
-  [BiomeType.Tundra]: 'Windswept Tundra',
-  [BiomeType.Mushroom]: 'Mushroom Groves',
-  [BiomeType.AshWastes]: 'Ash Wastes',
+  [BiomeType.Snow]: 'Frozen Highlands',
+  [BiomeType.Volcanic]: 'Volcanic Wastes',
   [BiomeType.Crystal]: 'Crystal Fields',
-  [BiomeType.Savanna]: 'Golden Savanna',
-  [BiomeType.Heaven]: 'Celestial Realm',
-  [BiomeType.Hell]: 'The Inferno',
-  [BiomeType.Alpine]: 'Alpine Heights',
-  [BiomeType.Cliffs]: 'Sea Cliffs',
-  [BiomeType.FloatingIslands]: 'Floating Islands',
   [BiomeType.Jungle]: 'Dense Jungle',
   [BiomeType.Mesa]: 'Red Mesa',
   [BiomeType.CoralReef]: 'Coral Reef',
-  [BiomeType.Bog]: 'Poisonous Bog',
-  [BiomeType.Badlands]: 'Desolate Badlands',
-  [BiomeType.Taiga]: 'Northern Taiga',
-  [BiomeType.Oasis]: 'Hidden Oasis',
+  [BiomeType.Heaven]: 'Celestial Realm',
+  [BiomeType.Hell]: 'The Inferno',
 }
 
 const LANDMARK_NAMES: Record<number, string> = {
   [BiomeType.Forest]: 'Druid Ring Temple',
   [BiomeType.Desert]: 'Great Pyramid',
-  [BiomeType.Volcanic]: 'Obsidian Citadel',
-  [BiomeType.Snow]: 'Ice Palace',
   [BiomeType.Swamp]: 'Swamp Ziggurat',
-  [BiomeType.Tundra]: 'Ancestor Field',
-  [BiomeType.Mushroom]: 'Mycelium Cathedral',
-  [BiomeType.AshWastes]: 'Ash Colosseum',
+  [BiomeType.Snow]: 'Ice Palace',
+  [BiomeType.Volcanic]: 'Obsidian Citadel',
   [BiomeType.Crystal]: 'Crystal Cathedral',
-  [BiomeType.Savanna]: 'Savanna Obelisk',
-  [BiomeType.Heaven]: 'Cloud Temple',
-  [BiomeType.Hell]: 'Infernal Citadel',
-  [BiomeType.Alpine]: 'Alpine Monastery',
-  [BiomeType.Cliffs]: 'Cliff Fortress',
-  [BiomeType.FloatingIslands]: 'Sky Temple',
   [BiomeType.Jungle]: 'Jungle Pyramid',
   [BiomeType.Mesa]: 'Mesa Citadel',
   [BiomeType.CoralReef]: 'Coral Palace',
-  [BiomeType.Bog]: 'Bog Shrine',
-  [BiomeType.Badlands]: 'Badlands Monolith',
-  [BiomeType.Taiga]: 'Taiga Longhouse',
-  [BiomeType.Oasis]: 'Oasis Minaret',
+  [BiomeType.Heaven]: 'Cloud Temple',
+  [BiomeType.Hell]: 'Infernal Citadel',
 }
 
 const WEATHER_NAMES_JOURNAL: Record<number, string> = {
@@ -205,8 +183,8 @@ export function buildJournalEntries(): JournalEntry[] {
     })
   }
 
-  // Biomes (22)
-  for (let i = 0; i <= 21; i++) {
+  // Biomes (11)
+  for (let i = 0; i <= 10; i++) {
     const biome = i as BiomeType
     entries.push({
       key: `biome_${biome}`,
@@ -216,8 +194,8 @@ export function buildJournalEntries(): JournalEntry[] {
     })
   }
 
-  // Landmarks (22)
-  for (let i = 0; i <= 21; i++) {
+  // Landmarks (11)
+  for (let i = 0; i <= 10; i++) {
     const biome = i as BiomeType
     entries.push({
       key: `landmark_${biome}`,
@@ -250,4 +228,4 @@ export function buildJournalEntries(): JournalEntry[] {
   return entries
 }
 
-export const TOTAL_ENTRIES = 21 + 22 + 22 + 8 + LORE_TEXTS.length // ~153
+export const TOTAL_ENTRIES = 21 + 11 + 11 + 8 + LORE_TEXTS.length // ~131

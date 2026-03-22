@@ -355,20 +355,14 @@ export class FootstepSound {
   private getSurface(biome: BiomeType): { buffers: AudioBuffer[]; volume: number } {
     switch (biome) {
       case BiomeType.Swamp:
-      case BiomeType.Bog:
       case BiomeType.CoralReef:
         return { buffers: this.wetBuffers, volume: 0.09 }
       case BiomeType.Snow:
-      case BiomeType.Tundra:
-      case BiomeType.Alpine:
         return { buffers: this.snowBuffers, volume: 0.06 }
       case BiomeType.Desert:
-      case BiomeType.Badlands:
-      case BiomeType.Oasis:
         return { buffers: this.sandBuffers, volume: 0.05 }
       case BiomeType.Volcanic:
       case BiomeType.Mesa:
-      case BiomeType.Cliffs:
       case BiomeType.Crystal:
         return { buffers: this.stoneBuffers, volume: 0.06 }
       default:
@@ -379,20 +373,14 @@ export class FootstepSound {
   private getLandingSurface(biome: BiomeType): { landBuffers: AudioBuffer[]; volume: number } {
     switch (biome) {
       case BiomeType.Swamp:
-      case BiomeType.Bog:
       case BiomeType.CoralReef:
         return { landBuffers: this.wetLandBuffers, volume: 0.09 }
       case BiomeType.Snow:
-      case BiomeType.Tundra:
-      case BiomeType.Alpine:
         return { landBuffers: this.snowLandBuffers, volume: 0.06 }
       case BiomeType.Desert:
-      case BiomeType.Badlands:
-      case BiomeType.Oasis:
         return { landBuffers: this.sandLandBuffers, volume: 0.05 }
       case BiomeType.Volcanic:
       case BiomeType.Mesa:
-      case BiomeType.Cliffs:
       case BiomeType.Crystal:
         return { landBuffers: this.stoneLandBuffers, volume: 0.06 }
       default:

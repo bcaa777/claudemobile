@@ -20,29 +20,21 @@ const PLAYER_ID = '__player__'
 const ACTIVE_STATES = new Set(['flee', 'chase', 'hunt', 'wander', 'seek_food', 'seek_water', 'seek_mate', 'courtship', 'attack'])
 
 // Species that can spawn per biome
+// Merged spawn tables: absorbed biomes folded into parents
+// Alpine, Cliffs, Tundra, Taiga → Snow | Savanna, Oasis → Desert
+// Mushroom, Bog → Swamp | AshWastes → Volcanic | Badlands → Mesa | FloatingIslands → Heaven
 const BIOME_SPAWN_TABLE: Partial<Record<BiomeType, SpeciesId[]>> = {
   [BiomeType.Forest]:    ['rabbit', 'rabbit', 'deer', 'deer', 'bird', 'wolf', 'bear', 'fox', 'fish', 'croc', 'toad', 'titan'],
-  [BiomeType.Desert]:    ['camel', 'camel', 'rabbit', 'bird', 'scorpion', 'wurm'],
-  [BiomeType.Volcanic]:  ['dragon', 'bat', 'wolf', 'wurm'],
-  [BiomeType.Snow]:      ['rabbit', 'deer', 'bird', 'fish', 'wolf', 'mammoth', 'bear', 'titan'],
-  [BiomeType.Swamp]:     ['rabbit', 'deer', 'bird', 'fish', 'fish', 'croc', 'toad', 'toad', 'titan'],
-  [BiomeType.Tundra]:    ['rabbit', 'rabbit', 'deer', 'bird', 'wolf', 'fox', 'mammoth', 'titan'],
-  [BiomeType.Mushroom]:  ['rabbit', 'rabbit', 'deer', 'bird', 'toad', 'toad', 'bat', 'wurm'],
-  [BiomeType.AshWastes]: ['dragon', 'dragon', 'bat', 'wolf', 'wurm'],
+  [BiomeType.Desert]:    ['camel', 'camel', 'rabbit', 'bird', 'scorpion', 'wurm', 'deer', 'lion', 'fox', 'titan', 'parrot', 'toad'],
+  [BiomeType.Swamp]:     ['rabbit', 'deer', 'bird', 'fish', 'fish', 'croc', 'toad', 'toad', 'titan', 'bat', 'wurm', 'crab', 'fox'],
+  [BiomeType.Snow]:      ['rabbit', 'deer', 'bird', 'fish', 'wolf', 'mammoth', 'bear', 'titan', 'fox', 'goat', 'eagle', 'bat'],
+  [BiomeType.Volcanic]:  ['dragon', 'dragon', 'bat', 'wolf', 'wurm'],
   [BiomeType.Crystal]:   ['dragon', 'bird', 'deer', 'skywhale'],
-  [BiomeType.Savanna]:   ['rabbit', 'rabbit', 'deer', 'deer', 'bird', 'lion', 'camel', 'fox', 'titan'],
-  [BiomeType.Heaven]:          ['bird', 'bird', 'bird', 'deer', 'skywhale'],
-  [BiomeType.Hell]:            ['imp', 'imp', 'imp', 'hellhound', 'hellhound', 'bat', 'infernal'],
-  [BiomeType.Alpine]:          ['goat', 'goat', 'eagle', 'rabbit', 'deer'],
-  [BiomeType.Cliffs]:          ['eagle', 'eagle', 'goat', 'bat'],
-  [BiomeType.FloatingIslands]: ['eagle', 'bird', 'bird', 'bat'],
-  [BiomeType.Jungle]:          ['parrot', 'parrot', 'toad', 'toad', 'fox'],
-  [BiomeType.Mesa]:            ['goat', 'scorpion', 'eagle'],
-  [BiomeType.CoralReef]:       ['crab', 'crab', 'fish', 'fish', 'toad'],
-  [BiomeType.Bog]:             ['crab', 'toad', 'toad', 'fox'],
-  [BiomeType.Badlands]:        ['goat', 'scorpion', 'scorpion', 'eagle'],
-  [BiomeType.Taiga]:           ['goat', 'deer', 'wolf', 'rabbit', 'bear'],
-  [BiomeType.Oasis]:           ['parrot', 'deer', 'rabbit', 'toad'],
+  [BiomeType.Jungle]:    ['parrot', 'parrot', 'toad', 'toad', 'fox'],
+  [BiomeType.Mesa]:      ['goat', 'scorpion', 'eagle', 'scorpion'],
+  [BiomeType.CoralReef]: ['crab', 'crab', 'fish', 'fish', 'toad'],
+  [BiomeType.Heaven]:    ['bird', 'bird', 'bird', 'deer', 'skywhale', 'eagle', 'bat'],
+  [BiomeType.Hell]:      ['imp', 'imp', 'imp', 'hellhound', 'hellhound', 'bat', 'infernal'],
 }
 
 export class CreatureManager {

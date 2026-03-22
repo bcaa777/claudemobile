@@ -26,19 +26,19 @@ export class HazardSystem {
       }
     }
 
-    // Quicksand — Desert/Bog, low altitude near terrain
-    if ((biome === BiomeType.Desert || biome === BiomeType.Bog) && terrainHeight !== null) {
+    // Quicksand — Desert, low altitude near terrain (absorbed: Bog → Swamp handled via toxic gas)
+    if (biome === BiomeType.Desert && terrainHeight !== null) {
       const aboveTerrain = playerY - 1.8 - terrainHeight // approximate feet position
       if (aboveTerrain < 1.0 && terrainHeight < WATER_LEVEL + 2) {
         playerState.speedMultiplier *= 0.3
       }
     }
 
-    // Ice patches — Snow/Alpine/Tundra (friction handled in controller via return value)
+    // Ice patches — Snow (absorbed: Alpine, Tundra → Snow)
     // (Friction is handled by checking getIceFriction() in the controller)
 
-    // Toxic gas — Swamp/Bog, low areas
-    if ((biome === BiomeType.Swamp || biome === BiomeType.Bog) && playerY < WATER_LEVEL + 3.5) {
+    // Toxic gas — Swamp, low areas (absorbed: Bog → Swamp)
+    if (biome === BiomeType.Swamp && playerY < WATER_LEVEL + 3.5) {
       if (canDamage) {
         playerState.takeDamage(3 * delta * 2, time)
         this.damageCooldown = 0.1
@@ -57,8 +57,8 @@ export class HazardSystem {
       }
     }
 
-    // Scorching heat — Badlands/Mesa, daytime only
-    if ((biome === BiomeType.Badlands || biome === BiomeType.Mesa) && dayFactor > 0.5) {
+    // Scorching heat — Mesa, daytime only (absorbed: Badlands → Mesa)
+    if (biome === BiomeType.Mesa && dayFactor > 0.5) {
       if (canDamage) {
         playerState.takeDamage(1 * delta * 2, time)
         this.damageCooldown = 0.1
@@ -78,7 +78,7 @@ export class HazardSystem {
   }
 
   getIceFriction(biome: BiomeType): number {
-    if (biome === BiomeType.Snow || biome === BiomeType.Alpine || biome === BiomeType.Tundra) {
+    if (biome === BiomeType.Snow) {
       return 0.15
     }
     return 1.0

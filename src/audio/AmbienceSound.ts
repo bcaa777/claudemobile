@@ -182,28 +182,11 @@ function buildDefs(): Record<BiomeType, AmbienceDef> {
         }},
       ],
     },
-    [BiomeType.Bog]: {
-      continuous: [
-        { noiseColor: 'brown', filterType: 'lowpass', filterFreq: 600, filterQ: 1.5, volume: 0.018 },
-      ],
-      intermittent: [
-        { minInterval: 2, maxInterval: 5, generate: (ctx, out) => bubble(ctx, out, 0.03) },
-        { minInterval: 5, maxInterval: 12, generate: (ctx, out) => noiseImpulse(ctx, out, 300, 2, 0.1, 0.015) },
-        { minInterval: 6, maxInterval: 15, generate: (ctx, out) => fmChirp(ctx, out, 100, 50, 40, 0.25, 0.015) },
-      ],
-    },
     [BiomeType.Desert]: {
       continuous: [],
       intermittent: [
         { minInterval: 8, maxInterval: 25, generate: (ctx, out) => noiseImpulse(ctx, out, 1500, 0.5, 0.6, 0.012) },
         { minInterval: 12, maxInterval: 30, generate: (ctx, out) => noiseImpulse(ctx, out, 600, 0.3, 0.3, 0.008) },
-      ],
-    },
-    [BiomeType.Badlands]: {
-      continuous: [],
-      intermittent: [
-        { minInterval: 10, maxInterval: 30, generate: (ctx, out) => noiseImpulse(ctx, out, 1200, 0.4, 0.5, 0.01) },
-        { minInterval: 15, maxInterval: 35, generate: (ctx, out) => creak(ctx, out, 80, 0.4, 0.008) },
       ],
     },
     [BiomeType.Snow]: {
@@ -213,23 +196,6 @@ function buildDefs(): Record<BiomeType, AmbienceDef> {
       intermittent: [
         { minInterval: 8, maxInterval: 22, generate: (ctx, out) => creak(ctx, out, 400 + Math.random() * 200, 0.15, 0.012) },
         { minInterval: 12, maxInterval: 30, generate: (ctx, out) => tonePing(ctx, out, 2000 + Math.random() * 1000, 0.3, 0.006) },
-      ],
-    },
-    [BiomeType.Tundra]: {
-      continuous: [
-        { noiseColor: 'white', filterType: 'highpass', filterFreq: 2000, filterQ: 0.2, volume: 0.008 },
-      ],
-      intermittent: [
-        { minInterval: 10, maxInterval: 28, generate: (ctx, out) => noiseImpulse(ctx, out, 1800, 0.5, 0.4, 0.008) },
-      ],
-    },
-    [BiomeType.Alpine]: {
-      continuous: [
-        { noiseColor: 'white', filterType: 'bandpass', filterFreq: 1800, filterQ: 0.4, volume: 0.012 },
-      ],
-      intermittent: [
-        { minInterval: 6, maxInterval: 18, generate: (ctx, out) => tonePing(ctx, out, 2500 + Math.random() * 500, 0.5, 0.005) },
-        { minInterval: 10, maxInterval: 25, generate: (ctx, out) => creak(ctx, out, 300, 0.2, 0.008) },
       ],
     },
     [BiomeType.Volcanic]: {
@@ -270,15 +236,6 @@ function buildDefs(): Record<BiomeType, AmbienceDef> {
         { minInterval: 4, maxInterval: 10, generate: (ctx, out) => creak(ctx, out, 50, 0.6, 0.015) },
       ],
     },
-    [BiomeType.AshWastes]: {
-      continuous: [
-        { noiseColor: 'brown', filterType: 'lowpass', filterFreq: 250, filterQ: 0.5, volume: 0.02 },
-      ],
-      intermittent: [
-        { minInterval: 6, maxInterval: 18, generate: (ctx, out) => noiseImpulse(ctx, out, 2000, 1, 0.15, 0.012) },
-        { minInterval: 10, maxInterval: 25, generate: (ctx, out) => noiseImpulse(ctx, out, 500, 0.5, 0.3, 0.01) },
-      ],
-    },
     [BiomeType.Crystal]: {
       continuous: [
         { noiseColor: 'white', filterType: 'bandpass', filterFreq: 6000, filterQ: 4, volume: 0.006 },
@@ -299,45 +256,6 @@ function buildDefs(): Record<BiomeType, AmbienceDef> {
         }},
       ],
     },
-    [BiomeType.Mushroom]: {
-      continuous: [
-        { noiseColor: 'pink', filterType: 'highpass', filterFreq: 4000, filterQ: 0.5, volume: 0.008 },
-      ],
-      intermittent: [
-        { minInterval: 3, maxInterval: 10, generate: (ctx, out) => {
-          // Organic squelch
-          const t0 = ctx.currentTime
-          const osc = ctx.createOscillator()
-          osc.type = 'sine'
-          osc.frequency.setValueAtTime(200, t0)
-          osc.frequency.exponentialRampToValueAtTime(80, t0 + 0.12)
-          const flt = ctx.createBiquadFilter()
-          flt.type = 'lowpass'
-          flt.frequency.value = 500
-          flt.Q.value = 5
-          const env = ctx.createGain()
-          env.gain.setValueAtTime(0.015, t0)
-          env.gain.exponentialRampToValueAtTime(0.001, t0 + 0.12)
-          osc.connect(flt).connect(env).connect(out)
-          osc.start(t0)
-          osc.stop(t0 + 0.12)
-          osc.onended = () => { osc.disconnect(); flt.disconnect(); env.disconnect() }
-        }},
-        { minInterval: 5, maxInterval: 14, generate: (ctx, out) => bubble(ctx, out, 0.012) },
-      ],
-    },
-    [BiomeType.Savanna]: {
-      continuous: [
-        { noiseColor: 'pink', filterType: 'bandpass', filterFreq: 2500, filterQ: 0.5, volume: 0.012, lfoRate: 0.15, lfoDepth: 0.3 },
-      ],
-      intermittent: [
-        { minInterval: 4, maxInterval: 12, generate: (ctx, out) => fmChirp(ctx, out, 400 + Math.random() * 200, 8, 30, 0.3, 0.01) },
-        { minInterval: 6, maxInterval: 16, generate: (ctx, out) => {
-          // Cicada-like buzz
-          fmChirp(ctx, out, 4000 + Math.random() * 1000, 200, 500, 0.4 + Math.random() * 0.3, 0.008)
-        }},
-      ],
-    },
     [BiomeType.Heaven]: {
       continuous: [
         { noiseColor: 'white', filterType: 'bandpass', filterFreq: 3000, filterQ: 0.3, volume: 0.008 },
@@ -349,37 +267,6 @@ function buildDefs(): Record<BiomeType, AmbienceDef> {
           tonePing(ctx, out, baseF, 1.5, 0.005, 'sine')
           tonePing(ctx, out, baseF * 1.5, 1.8, 0.003, 'sine')
           tonePing(ctx, out, baseF * 2, 1.2, 0.002, 'sine')
-        }},
-      ],
-    },
-    [BiomeType.Cliffs]: {
-      continuous: [
-        { noiseColor: 'pink', filterType: 'bandpass', filterFreq: 1200, filterQ: 0.8, volume: 0.01 },
-      ],
-      intermittent: [
-        { minInterval: 4, maxInterval: 12, generate: (ctx, out) => {
-          // Water drip
-          const f = 2000 + Math.random() * 1500
-          tonePing(ctx, out, f, 0.08, 0.012)
-        }},
-        { minInterval: 8, maxInterval: 22, generate: (ctx, out) => {
-          // Pebble fall — rapid descending clicks
-          const n = 3 + Math.floor(Math.random() * 4)
-          for (let i = 0; i < n; i++) {
-            setTimeout(() => noiseImpulse(ctx, out, 3000 - i * 200, 3, 0.015, 0.008), i * 40 + Math.random() * 20)
-          }
-        }},
-      ],
-    },
-    [BiomeType.FloatingIslands]: {
-      continuous: [
-        { noiseColor: 'white', filterType: 'bandpass', filterFreq: 2000, filterQ: 0.4, volume: 0.01, lfoRate: 0.05, lfoDepth: 0.5 },
-      ],
-      intermittent: [
-        { minInterval: 5, maxInterval: 15, generate: (ctx, out) => {
-          const f = 1500 + Math.random() * 1500
-          tonePing(ctx, out, f, 1.0, 0.004)
-          tonePing(ctx, out, f * 1.002, 1.1, 0.003)
         }},
       ],
     },
@@ -401,24 +288,6 @@ function buildDefs(): Record<BiomeType, AmbienceDef> {
           // Underwater click
           tonePing(ctx, out, 4000 + Math.random() * 2000, 0.02, 0.008)
         }},
-      ],
-    },
-    [BiomeType.Oasis]: {
-      continuous: [
-        { noiseColor: 'pink', filterType: 'bandpass', filterFreq: 3000, filterQ: 0.6, volume: 0.01 },
-      ],
-      intermittent: [
-        { minInterval: 3, maxInterval: 8, generate: (ctx, out) => fmChirp(ctx, out, 2000 + Math.random() * 500, 30, 200, 0.1, 0.012) },
-        { minInterval: 5, maxInterval: 14, generate: (ctx, out) => bubble(ctx, out, 0.01) },
-      ],
-    },
-    [BiomeType.Taiga]: {
-      continuous: [
-        { noiseColor: 'pink', filterType: 'bandpass', filterFreq: 1800, filterQ: 0.6, volume: 0.012 },
-      ],
-      intermittent: [
-        { minInterval: 6, maxInterval: 18, generate: (ctx, out) => creak(ctx, out, 200 + Math.random() * 100, 0.25, 0.01) },
-        { minInterval: 8, maxInterval: 22, generate: (ctx, out) => fmChirp(ctx, out, 1600 + Math.random() * 400, 20, 150, 0.08, 0.01) },
       ],
     },
   }

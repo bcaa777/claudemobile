@@ -55,8 +55,8 @@ export const NPC_DEFINITIONS: Record<NPCId, NPCDef> = {
     },
     locations: [
       { biome: BiomeType.Forest, offset: { x: 20, z: 18 } },
-      { biome: BiomeType.Savanna, offset: { x: -15, z: 22 } },
-      { biome: BiomeType.Oasis, offset: { x: 18, z: -16 } },
+      { biome: BiomeType.Desert, offset: { x: -15, z: 22 } },
+      { biome: BiomeType.Desert, offset: { x: 18, z: -16 } },
       { biome: BiomeType.Desert, offset: { x: -20, z: -18 } },
     ],
     dialogue: [
@@ -115,7 +115,7 @@ export const NPC_DEFINITIONS: Record<NPCId, NPCDef> = {
       { biome: BiomeType.Snow, offset: { x: -18, z: 20 } },
       { biome: BiomeType.Crystal, offset: { x: 22, z: -14 } },
       { biome: BiomeType.Heaven, offset: { x: -16, z: 18 } },
-      { biome: BiomeType.Alpine, offset: { x: 20, z: 16 } },
+      { biome: BiomeType.Snow, offset: { x: 20, z: 16 } },
     ],
     dialogue: [
       // Stage 1 — Snow (melancholic, poetic, introduces cosmic lore)
@@ -170,8 +170,8 @@ export const NPC_DEFINITIONS: Record<NPCId, NPCDef> = {
     },
     locations: [
       { biome: BiomeType.Swamp, offset: { x: 22, z: -20 } },
-      { biome: BiomeType.Bog, offset: { x: -18, z: -22 } },
-      { biome: BiomeType.Taiga, offset: { x: 16, z: 20 } },
+      { biome: BiomeType.Swamp, offset: { x: -18, z: -22 } },
+      { biome: BiomeType.Snow, offset: { x: 16, z: 20 } },
       { biome: BiomeType.Volcanic, offset: { x: -22, z: 16 } },
     ],
     dialogue: [
@@ -228,10 +228,10 @@ export const NPC_DEFINITIONS: Record<NPCId, NPCDef> = {
       bodyScale: 0.9,
     },
     locations: [
-      { biome: BiomeType.Mushroom, offset: { x: -20, z: 16 } },
+      { biome: BiomeType.Swamp, offset: { x: -20, z: 16 } },
       { biome: BiomeType.Jungle, offset: { x: 18, z: -20 } },
       { biome: BiomeType.Mesa, offset: { x: -16, z: -18 } },
-      { biome: BiomeType.Badlands, offset: { x: 22, z: 14 } },
+      { biome: BiomeType.Mesa, offset: { x: 22, z: 14 } },
     ],
     dialogue: [
       // Stage 1 — Mushroom (theatrical, sing-song, half-truths)
@@ -264,7 +264,7 @@ export const NPC_DEFINITIONS: Record<NPCId, NPCDef> = {
     artefact: {
       name: 'The Whispering Coin',
       color: 0xcc66ff,
-      nearBiome: BiomeType.Mushroom,
+      nearBiome: BiomeType.Swamp,
     },
     mapColor: '#cc44ee',
     mapLabel: 'PL',
@@ -287,9 +287,9 @@ export const NPC_DEFINITIONS: Record<NPCId, NPCDef> = {
     },
     locations: [
       { biome: BiomeType.Volcanic, offset: { x: 18, z: 22 } },
-      { biome: BiomeType.AshWastes, offset: { x: -22, z: -16 } },
+      { biome: BiomeType.Volcanic, offset: { x: -22, z: -16 } },
       { biome: BiomeType.Hell, offset: { x: 16, z: -20 } },
-      { biome: BiomeType.Cliffs, offset: { x: -18, z: 18 } },
+      { biome: BiomeType.Snow, offset: { x: -18, z: 18 } },
     ],
     dialogue: [
       // Stage 1 — Volcanic (intense, obsessive about craft)
@@ -344,8 +344,8 @@ export const NPC_DEFINITIONS: Record<NPCId, NPCDef> = {
     },
     locations: [
       { biome: BiomeType.CoralReef, offset: { x: 16, z: -18 } },
-      { biome: BiomeType.Oasis, offset: { x: -20, z: 14 } },
-      { biome: BiomeType.FloatingIslands, offset: { x: 18, z: 20 } },
+      { biome: BiomeType.Desert, offset: { x: -20, z: 14 } },
+      { biome: BiomeType.Heaven, offset: { x: 18, z: 20 } },
       { biome: BiomeType.Heaven, offset: { x: -14, z: -22 } },
     ],
     dialogue: [
@@ -401,9 +401,9 @@ export const NPC_DEFINITIONS: Record<NPCId, NPCDef> = {
       bodyScale: 1.0,
     },
     locations: [
-      { biome: BiomeType.Tundra, offset: { x: -16, z: -20 } },
-      { biome: BiomeType.AshWastes, offset: { x: 20, z: 16 } },
-      { biome: BiomeType.Mushroom, offset: { x: -22, z: -14 } },
+      { biome: BiomeType.Snow, offset: { x: -16, z: -20 } },
+      { biome: BiomeType.Volcanic, offset: { x: 20, z: 16 } },
+      { biome: BiomeType.Swamp, offset: { x: -22, z: -14 } },
       { biome: BiomeType.Forest, offset: { x: 16, z: -22 } },
     ],
     dialogue: [
@@ -438,7 +438,7 @@ export const NPC_DEFINITIONS: Record<NPCId, NPCDef> = {
     artefact: {
       name: 'The Nameless Tome',
       color: 0xaacc66,
-      nearBiome: BiomeType.Tundra,
+      nearBiome: BiomeType.Snow,
     },
     mapColor: '#88aa44',
     mapLabel: 'TW',

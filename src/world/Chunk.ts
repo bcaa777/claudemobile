@@ -717,7 +717,7 @@ export class Chunk {
       this.cz * CHUNK_SIZE + CHUNK_SIZE / 2,
     )
     // Only in forest-type biomes
-    if (biome !== BiomeType.Forest && biome !== BiomeType.Swamp && biome !== BiomeType.Mushroom) return
+    if (biome !== BiomeType.Forest && biome !== BiomeType.Swamp) return
 
     // Find a suitable spot: high ground, not too steep
     let bestH = -Infinity, bestX = CHUNK_SIZE / 2, bestZ = CHUNK_SIZE / 2
@@ -739,12 +739,8 @@ export class Chunk {
     const config = getBiome(biome)
 
     // Colors
-    const trunkColor = biome === BiomeType.Mushroom ? 0x6090b0
-      : biome === BiomeType.Swamp ? 0x2a3010
-      : 0x3a2010
-    const canopyColor = biome === BiomeType.Mushroom ? 0x7030a0
-      : biome === BiomeType.Swamp ? 0x182808
-      : 0x1a3a08
+    const trunkColor = biome === BiomeType.Swamp ? 0x2a3010 : 0x3a2010
+    const canopyColor = biome === BiomeType.Swamp ? 0x182808 : 0x1a3a08
 
     const g = new THREE.Group()
     g.position.set(bestX, bestH, bestZ)
@@ -818,7 +814,7 @@ export class Chunk {
     g.add(foliage)
 
     // For mushroom biome: glowing spots on canopy
-    if (biome === BiomeType.Mushroom) {
+    if (false) { // Mushroom biome merged into Swamp
       const spotMat = this.matCache.getLambert(0xff80ff, { emissive: 0x440044, map: texGen.getTexture('mushroomGlow', 0xff80ff).map })
       for (let i = 0; i < 6; i++) {
         const angle = rng.range(0, Math.PI * 2)
@@ -953,7 +949,7 @@ export class Chunk {
       this.cx * CHUNK_SIZE + CHUNK_SIZE / 2,
       this.cz * CHUNK_SIZE + CHUNK_SIZE / 2,
     )
-    if (biome !== BiomeType.Forest && biome !== BiomeType.Snow && biome !== BiomeType.Tundra) return
+    if (biome !== BiomeType.Forest && biome !== BiomeType.Snow) return
 
     // Find flat spot
     let bestH = -Infinity, bestX = CHUNK_SIZE / 2, bestZ = CHUNK_SIZE / 2
@@ -970,8 +966,8 @@ export class Chunk {
     }
     if (bestH < WATER_LEVEL + 1) return
 
-    const stoneColor = biome === BiomeType.Snow ? 0x7888a0 : biome === BiomeType.Tundra ? 0x606878 : 0x5a4838
-    const darkStone  = biome === BiomeType.Snow ? 0x505870 : biome === BiomeType.Tundra ? 0x484858 : 0x3a2e28
+    const stoneColor = biome === BiomeType.Snow ? 0x7888a0 : 0x5a4838
+    const darkStone  = biome === BiomeType.Snow ? 0x505870 : 0x3a2e28
     const woodColor  = 0x5a3010
 
     const stoneMat = this.matCache.getLambert(stoneColor, { map: texGen.getTexture('stone', stoneColor).map })
@@ -1284,7 +1280,7 @@ export class Chunk {
       const h = sampleHeight(this.heightGrid!, lx, lz)
       if (h < WATER_LEVEL + 1) continue
       const biome = biomeMap.getBiomeAt(this.cx * CHUNK_SIZE + lx, this.cz * CHUNK_SIZE + lz)
-      if (biome !== BiomeType.Forest && biome !== BiomeType.Snow && biome !== BiomeType.Tundra) continue
+      if (biome !== BiomeType.Forest && biome !== BiomeType.Snow) continue
 
       const g = new THREE.Group(); g.position.set(lx, h, lz)
       const stone = this.matCache.getLambert(0x5a4838, { map: texGen.getTexture('stone', 0x5a4838).map })
@@ -1368,7 +1364,7 @@ export class Chunk {
       const h = sampleHeight(this.heightGrid!, lx, lz)
       if (h < WATER_LEVEL + 1) continue
       const biome = biomeMap.getBiomeAt(this.cx * CHUNK_SIZE + lx, this.cz * CHUNK_SIZE + lz)
-      if (biome !== BiomeType.Desert && biome !== BiomeType.Savanna) continue
+      if (biome !== BiomeType.Desert) continue
 
       const g = new THREE.Group(); g.position.set(lx, h, lz)
       const poles = this.matCache.getLambert(0x5a3210, { map: texGen.getTexture('wood', 0x5a3210).map })
@@ -1575,7 +1571,7 @@ export class Chunk {
       const h = sampleHeight(this.heightGrid!, lx, lz)
       if (h < WATER_LEVEL + 1) continue
       const biome = biomeMap.getBiomeAt(this.cx * CHUNK_SIZE + lx, this.cz * CHUNK_SIZE + lz)
-      if (biome !== BiomeType.Tundra) continue
+      if (biome !== BiomeType.Snow) continue
 
       const g = new THREE.Group(); g.position.set(lx, h, lz)
       const gray = this.matCache.getLambert(0x606070, { map: texGen.getTexture('stone', 0x606070).map })
@@ -1614,7 +1610,7 @@ export class Chunk {
       const h = sampleHeight(this.heightGrid!, lx, lz)
       if (h < WATER_LEVEL + 1) continue
       const biome = biomeMap.getBiomeAt(this.cx * CHUNK_SIZE + lx, this.cz * CHUNK_SIZE + lz)
-      if (biome !== BiomeType.Tundra) continue
+      if (biome !== BiomeType.Snow) continue
 
       const g = new THREE.Group(); g.position.set(lx, h, lz)
       const wood = this.matCache.getLambert(0x4a3a28, { map: texGen.getTexture('wood', 0x4a3a28).map })
@@ -1748,7 +1744,7 @@ export class Chunk {
       const h = sampleHeight(this.heightGrid!, lx, lz)
       if (h < WATER_LEVEL + 1) continue
       const biome = biomeMap.getBiomeAt(this.cx * CHUNK_SIZE + lx, this.cz * CHUNK_SIZE + lz)
-      if (biome !== BiomeType.Savanna) continue
+      if (biome !== BiomeType.Desert) continue
 
       const g = new THREE.Group(); g.position.set(lx, h, lz)
       const mud = this.matCache.getLambert(0x6a4820, { map: texGen.getTexture('sand', 0x6a4820).map })
@@ -1791,7 +1787,7 @@ export class Chunk {
       const h = sampleHeight(this.heightGrid!, lx, lz)
       if (h < WATER_LEVEL + 1) continue
       const biome = biomeMap.getBiomeAt(this.cx * CHUNK_SIZE + lx, this.cz * CHUNK_SIZE + lz)
-      if (biome !== BiomeType.Savanna) continue
+      if (biome !== BiomeType.Desert) continue
 
       const g = new THREE.Group(); g.position.set(lx, h, lz)
       const wood = this.matCache.getLambert(0x5a3210, { map: texGen.getTexture('wood', 0x5a3210).map })
@@ -1920,7 +1916,7 @@ export class Chunk {
       const h = sampleHeight(this.heightGrid!, lx, lz)
       if (h < WATER_LEVEL + 1) continue
       const biome = biomeMap.getBiomeAt(this.cx * CHUNK_SIZE + lx, this.cz * CHUNK_SIZE + lz)
-      if (biome !== BiomeType.AshWastes) continue
+      if (biome !== BiomeType.Volcanic) continue
 
       const g = new THREE.Group(); g.position.set(lx, h, lz)
       const gray = this.matCache.getLambert(0x303030, { map: texGen.getTexture('ash', 0x303030).map })
@@ -1963,7 +1959,7 @@ export class Chunk {
       const h = sampleHeight(this.heightGrid!, lx, lz)
       if (h < WATER_LEVEL + 1) continue
       const biome = biomeMap.getBiomeAt(this.cx * CHUNK_SIZE + lx, this.cz * CHUNK_SIZE + lz)
-      if (biome !== BiomeType.AshWastes) continue
+      if (biome !== BiomeType.Volcanic) continue
 
       const g = new THREE.Group(); g.position.set(lx, h, lz)
       const stone = this.matCache.getLambert(0x303030, { map: texGen.getTexture('ash', 0x303030).map })
@@ -2003,7 +1999,7 @@ export class Chunk {
       const h = sampleHeight(this.heightGrid!, lx, lz)
       if (h < WATER_LEVEL + 1) continue
       const biome = biomeMap.getBiomeAt(this.cx * CHUNK_SIZE + lx, this.cz * CHUNK_SIZE + lz)
-      if (biome !== BiomeType.Mushroom) continue
+      if (biome !== BiomeType.Swamp) continue
 
       const g = new THREE.Group(); g.position.set(lx, h, lz)
       const stem = this.matCache.getLambert(0x6090b0, { map: texGen.getTexture('mushroom', 0x6090b0).map })
@@ -2044,7 +2040,7 @@ export class Chunk {
       const h = sampleHeight(this.heightGrid!, lx, lz)
       if (h < WATER_LEVEL + 1) continue
       const biome = biomeMap.getBiomeAt(this.cx * CHUNK_SIZE + lx, this.cz * CHUNK_SIZE + lz)
-      if (biome !== BiomeType.Mushroom) continue
+      if (biome !== BiomeType.Swamp) continue
 
       const g = new THREE.Group(); g.position.set(lx, h, lz)
       const logColor = this.matCache.getLambert(0x6090b0, { map: texGen.getTexture('mushroom', 0x6090b0).map })
@@ -2666,7 +2662,7 @@ export class Chunk {
       for (let lx = spacing / 2; lx < CHUNK_SIZE; lx += spacing) {
         if (rng.next() > 0.35) continue
         const wx = this.cx * CHUNK_SIZE + lx, wz = this.cz * CHUNK_SIZE + lz
-        if (biomeMap.getBiomeAt(wx, wz) !== BiomeType.Alpine) continue
+        if (biomeMap.getBiomeAt(wx, wz) !== BiomeType.Snow) continue
         const h = sampleHeight(this.heightGrid, lx, lz)
         if (h < WATER_LEVEL + 1) continue
         const g = new THREE.Group(); g.position.set(lx, h, lz)
@@ -2689,7 +2685,7 @@ export class Chunk {
       for (let lx = 16; lx < CHUNK_SIZE - 16; lx += 32) {
         if (rng.next() > 0.08) continue
         const wx = this.cx * CHUNK_SIZE + lx, wz = this.cz * CHUNK_SIZE + lz
-        if (biomeMap.getBiomeAt(wx, wz) !== BiomeType.Alpine) continue
+        if (biomeMap.getBiomeAt(wx, wz) !== BiomeType.Snow) continue
         const h = sampleHeight(this.heightGrid, lx, lz)
         if (h < WATER_LEVEL + 1) continue
         const g = new THREE.Group(); g.position.set(lx, h, lz)
@@ -2710,7 +2706,7 @@ export class Chunk {
       for (let lx = 10; lx < CHUNK_SIZE - 10; lx += 16) {
         if (rng.next() > 0.30) continue
         const wx = this.cx * CHUNK_SIZE + lx, wz = this.cz * CHUNK_SIZE + lz
-        if (biomeMap.getBiomeAt(wx, wz) !== BiomeType.Cliffs) continue
+        if (biomeMap.getBiomeAt(wx, wz) !== BiomeType.Snow) continue
         const h = sampleHeight(this.heightGrid, lx, lz)
         if (h < WATER_LEVEL + 1) continue
         const g = new THREE.Group(); g.position.set(lx, h, lz)
@@ -2733,7 +2729,7 @@ export class Chunk {
       for (let lx = 16; lx < CHUNK_SIZE - 16; lx += 30) {
         if (rng.next() > 0.06) continue
         const wx = this.cx * CHUNK_SIZE + lx, wz = this.cz * CHUNK_SIZE + lz
-        if (biomeMap.getBiomeAt(wx, wz) !== BiomeType.Cliffs) continue
+        if (biomeMap.getBiomeAt(wx, wz) !== BiomeType.Snow) continue
         const h = sampleHeight(this.heightGrid, lx, lz)
         if (h < WATER_LEVEL + 2) continue
         const g = new THREE.Group(); g.position.set(lx, h, lz)
@@ -2759,7 +2755,7 @@ export class Chunk {
       for (let lx = 10; lx < CHUNK_SIZE - 10; lx += 18) {
         if (rng.next() > 0.25) continue
         const wx = this.cx * CHUNK_SIZE + lx, wz = this.cz * CHUNK_SIZE + lz
-        if (biomeMap.getBiomeAt(wx, wz) !== BiomeType.FloatingIslands) continue
+        if (biomeMap.getBiomeAt(wx, wz) !== BiomeType.Heaven) continue
         const h = sampleHeight(this.heightGrid, lx, lz)
         const floatY = h + rng.range(10, 35)
         const g = new THREE.Group(); g.position.set(lx, floatY, lz)
@@ -2781,7 +2777,7 @@ export class Chunk {
       for (let lx = 16; lx < CHUNK_SIZE - 16; lx += 28) {
         if (rng.next() > 0.06) continue
         const wx = this.cx * CHUNK_SIZE + lx, wz = this.cz * CHUNK_SIZE + lz
-        if (biomeMap.getBiomeAt(wx, wz) !== BiomeType.FloatingIslands) continue
+        if (biomeMap.getBiomeAt(wx, wz) !== BiomeType.Heaven) continue
         const h = sampleHeight(this.heightGrid, lx, lz)
         const bridgeY = h + rng.range(12, 25)
         const g = new THREE.Group(); g.position.set(lx, bridgeY, lz)
@@ -2948,7 +2944,7 @@ export class Chunk {
       for (let lx = 10; lx < CHUNK_SIZE - 10; lx += 16) {
         if (rng.next() > 0.30) continue
         const wx = this.cx * CHUNK_SIZE + lx, wz = this.cz * CHUNK_SIZE + lz
-        if (biomeMap.getBiomeAt(wx, wz) !== BiomeType.Bog) continue
+        if (biomeMap.getBiomeAt(wx, wz) !== BiomeType.Swamp) continue
         const h = sampleHeight(this.heightGrid, lx, lz)
         const g = new THREE.Group(); g.position.set(lx, h, lz)
         const mw = rng.range(4, 8), mh = rng.range(2, 5)
@@ -2967,7 +2963,7 @@ export class Chunk {
       for (let lx = 16; lx < CHUNK_SIZE - 16; lx += 30) {
         if (rng.next() > 0.08) continue
         const wx = this.cx * CHUNK_SIZE + lx, wz = this.cz * CHUNK_SIZE + lz
-        if (biomeMap.getBiomeAt(wx, wz) !== BiomeType.Bog) continue
+        if (biomeMap.getBiomeAt(wx, wz) !== BiomeType.Swamp) continue
         const h = sampleHeight(this.heightGrid, lx, lz)
         const g = new THREE.Group(); g.position.set(lx, h + 0.5, lz)
         const bridgeLen = rng.range(10, 20)
@@ -2990,7 +2986,7 @@ export class Chunk {
       for (let lx = 10; lx < CHUNK_SIZE - 10; lx += 14) {
         if (rng.next() > 0.32) continue
         const wx = this.cx * CHUNK_SIZE + lx, wz = this.cz * CHUNK_SIZE + lz
-        if (biomeMap.getBiomeAt(wx, wz) !== BiomeType.Badlands) continue
+        if (biomeMap.getBiomeAt(wx, wz) !== BiomeType.Mesa) continue
         const h = sampleHeight(this.heightGrid, lx, lz)
         if (h < WATER_LEVEL + 1) continue
         const g = new THREE.Group(); g.position.set(lx, h, lz)
@@ -3013,7 +3009,7 @@ export class Chunk {
       for (let lx = 16; lx < CHUNK_SIZE - 16; lx += 30) {
         if (rng.next() > 0.06) continue
         const wx = this.cx * CHUNK_SIZE + lx, wz = this.cz * CHUNK_SIZE + lz
-        if (biomeMap.getBiomeAt(wx, wz) !== BiomeType.Badlands) continue
+        if (biomeMap.getBiomeAt(wx, wz) !== BiomeType.Mesa) continue
         const h = sampleHeight(this.heightGrid, lx, lz)
         if (h < WATER_LEVEL + 1) continue
         const g = new THREE.Group(); g.position.set(lx, h, lz)
@@ -3044,7 +3040,7 @@ export class Chunk {
       for (let lx = 10; lx < CHUNK_SIZE - 10; lx += 16) {
         if (rng.next() > 0.22) continue
         const wx = this.cx * CHUNK_SIZE + lx, wz = this.cz * CHUNK_SIZE + lz
-        if (biomeMap.getBiomeAt(wx, wz) !== BiomeType.Taiga) continue
+        if (biomeMap.getBiomeAt(wx, wz) !== BiomeType.Snow) continue
         const h = sampleHeight(this.heightGrid, lx, lz)
         if (h < WATER_LEVEL + 1) continue
         const g = new THREE.Group(); g.position.set(lx, h, lz)
@@ -3067,7 +3063,7 @@ export class Chunk {
       for (let lx = 16; lx < CHUNK_SIZE - 16; lx += 32) {
         if (rng.next() > 0.06) continue
         const wx = this.cx * CHUNK_SIZE + lx, wz = this.cz * CHUNK_SIZE + lz
-        if (biomeMap.getBiomeAt(wx, wz) !== BiomeType.Taiga) continue
+        if (biomeMap.getBiomeAt(wx, wz) !== BiomeType.Snow) continue
         const h = sampleHeight(this.heightGrid, lx, lz)
         if (h < WATER_LEVEL + 1) continue
         const g = new THREE.Group(); g.position.set(lx, h, lz)
@@ -3094,7 +3090,7 @@ export class Chunk {
       for (let lx = 10; lx < CHUNK_SIZE - 10; lx += 14) {
         if (rng.next() > 0.25) continue
         const wx = this.cx * CHUNK_SIZE + lx, wz = this.cz * CHUNK_SIZE + lz
-        if (biomeMap.getBiomeAt(wx, wz) !== BiomeType.Oasis) continue
+        if (biomeMap.getBiomeAt(wx, wz) !== BiomeType.Desert) continue
         const h = sampleHeight(this.heightGrid, lx, lz)
         if (h < WATER_LEVEL + 1) continue
         const g = new THREE.Group(); g.position.set(lx, h, lz)
@@ -3120,7 +3116,7 @@ export class Chunk {
       for (let lx = 16; lx < CHUNK_SIZE - 16; lx += 32) {
         if (rng.next() > 0.06) continue
         const wx = this.cx * CHUNK_SIZE + lx, wz = this.cz * CHUNK_SIZE + lz
-        if (biomeMap.getBiomeAt(wx, wz) !== BiomeType.Oasis) continue
+        if (biomeMap.getBiomeAt(wx, wz) !== BiomeType.Desert) continue
         const h = sampleHeight(this.heightGrid, lx, lz)
         if (h < WATER_LEVEL + 1) continue
         const g = new THREE.Group(); g.position.set(lx, h, lz)

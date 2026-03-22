@@ -107,48 +107,10 @@ export const RUNE_CHALLENGES: RuneChallengeDefinition[] = [
     getProgressText: (p) => `Toxic endurance: ${Math.floor(p.timer)}s/60s`,
   },
   {
-    biome: BiomeType.Tundra,
-    description: 'Witness 3 mammoths together',
-    checkComplete: (ctx) => countSpeciesNear(ctx, 'mammoth', 30) >= 3,
-    getProgressText: () => 'Find 3 mammoths within 30 units',
-  },
-  {
-    biome: BiomeType.Mushroom,
-    description: 'Find the Cathedral at midnight',
-    checkComplete: (ctx) => nearLandmark(ctx, BiomeType.Mushroom) && (ctx.dayTime < 0.02 || ctx.dayTime > 0.98),
-    getProgressText: () => 'At Cathedral + midnight',
-  },
-  {
-    biome: BiomeType.AshWastes,
-    description: 'Endure 120s of ash fall',
-    checkComplete: (ctx, p) => {
-      if (ctx.biome !== BiomeType.AshWastes) return false
-      if (ctx.weather === WeatherType.AshFall) p.timer += 1/60
-      return p.timer >= 120
-    },
-    getProgressText: (p) => `Ash endured: ${Math.floor(p.timer)}s/120s`,
-  },
-  {
     biome: BiomeType.Crystal,
     description: 'Collect all Crystal biome crystals',
     checkComplete: (ctx) => nearLandmark(ctx, BiomeType.Crystal, 10),
     getProgressText: () => 'Explore the Crystal Cathedral',
-  },
-  {
-    biome: BiomeType.Savanna,
-    description: 'Observe a lion hunt',
-    checkComplete: (ctx) => {
-      for (const c of ctx.creatures.values()) {
-        if (c.species !== 'lion' || c.state === 'dead') continue
-        if (c.state === 'chase' || c.state === 'attack') {
-          const dx = c.position.x - ctx.playerPos.x
-          const dz = c.position.z - ctx.playerPos.z
-          if (dx * dx + dz * dz < 400) return true // 20^2
-        }
-      }
-      return false
-    },
-    getProgressText: () => 'Watch a lion chase prey',
   },
   {
     biome: BiomeType.Heaven,
@@ -167,40 +129,6 @@ export const RUNE_CHALLENGES: RuneChallengeDefinition[] = [
     getProgressText: (p) => `Hell survival: ${Math.floor(p.timer)}s/30s`,
   },
   {
-    biome: BiomeType.Alpine,
-    description: 'Summit the Alpine Monastery',
-    checkComplete: (ctx) => {
-      const lm = ctx.landmarkPositions.get(BiomeType.Alpine)
-      if (!lm) return false
-      const dx = ctx.playerPos.x - lm.x
-      const dz = ctx.playerPos.z - lm.z
-      return dx * dx + dz * dz < 900 && ctx.playerPos.y > lm.y + 15
-    },
-    getProgressText: () => 'Reach the summit',
-  },
-  {
-    biome: BiomeType.Cliffs,
-    description: 'Grapple 5 times in Cliffs biome',
-    checkComplete: (ctx, p) => {
-      if (ctx.biome === BiomeType.Cliffs && ctx.grappleCount > 0) {
-        p.count += ctx.grappleCount
-      }
-      return p.count >= 5
-    },
-    getProgressText: (p) => `Grapples: ${Math.min(5, p.count)}/5`,
-  },
-  {
-    biome: BiomeType.FloatingIslands,
-    description: 'Fly between islands — 20s airtime',
-    checkComplete: (ctx, p) => {
-      if (ctx.biome !== BiomeType.FloatingIslands) { p.timer = 0; return false }
-      if (!ctx.isGrounded) p.timer += 1/60
-      else p.timer = 0
-      return p.timer >= 20
-    },
-    getProgressText: (p) => `Airtime: ${Math.floor(p.timer)}s/20s`,
-  },
-  {
     biome: BiomeType.Jungle,
     description: 'Find Jungle Pyramid in a storm',
     checkComplete: (ctx) => nearLandmark(ctx, BiomeType.Jungle) && ctx.weather === WeatherType.HeavyRain,
@@ -217,42 +145,5 @@ export const RUNE_CHALLENGES: RuneChallengeDefinition[] = [
     description: 'Swim through Coral Palace',
     checkComplete: (ctx) => nearLandmark(ctx, BiomeType.CoralReef) && ctx.playerPos.y < 0,
     getProgressText: () => 'Dive to the Coral Palace',
-  },
-  {
-    biome: BiomeType.Bog,
-    description: 'Spot 5 creature species in Bog',
-    checkComplete: (ctx, p) => {
-      if (ctx.biome !== BiomeType.Bog) return false
-      for (const c of ctx.creatures.values()) {
-        if (c.state === 'dead') continue
-        const dx = c.position.x - ctx.playerPos.x
-        const dz = c.position.z - ctx.playerPos.z
-        if (dx * dx + dz * dz < 400) p.uniqueSpecies.add(c.species)
-      }
-      return p.uniqueSpecies.size >= 5
-    },
-    getProgressText: (p) => `Species seen: ${p.uniqueSpecies.size}/5`,
-  },
-  {
-    biome: BiomeType.Badlands,
-    description: 'Survive sandstorm at Monolith',
-    checkComplete: (ctx) => nearLandmark(ctx, BiomeType.Badlands) && ctx.weather === WeatherType.Sandstorm,
-    getProgressText: () => 'At Monolith + sandstorm',
-  },
-  {
-    biome: BiomeType.Taiga,
-    description: 'Approach a wolf pack at night',
-    checkComplete: (ctx) => {
-      const isNight = ctx.dayTime > 0.75 || ctx.dayTime < 0.25
-      if (!isNight) return false
-      return countSpeciesNear(ctx, 'wolf', 10) >= 2
-    },
-    getProgressText: () => 'Find 2+ wolves at night',
-  },
-  {
-    biome: BiomeType.Oasis,
-    description: 'Visit Oasis at dawn',
-    checkComplete: (ctx) => nearLandmark(ctx, BiomeType.Oasis) && ctx.dayTime > 0.22 && ctx.dayTime < 0.28,
-    getProgressText: () => 'At Oasis near dawn (~6AM)',
   },
 ]

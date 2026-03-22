@@ -42,25 +42,9 @@ const MELODIES: Record<number, BiomeMelody> = {
     root: 55, intervals: [0, 3, 5, 6, 7, 10, 12],
     tempo: 1.6, noteCount: 4, noteDuration: 2.8, mood: 'haunting', phraseGap: 16,
   },
-  [BiomeType.Tundra]: {
-    root: 64, intervals: [0, 2, 3, 7, 10, 12, 14],
-    tempo: 2.2, noteCount: 4, noteDuration: 3.5, mood: 'somber', phraseGap: 16,
-  },
-  [BiomeType.Mushroom]: {
-    root: 67, intervals: [0, 2, 4, 6, 7, 11, 12],
-    tempo: 1.0, noteCount: 6, noteDuration: 2.0, mood: 'mystical', phraseGap: 10,
-  },
-  [BiomeType.AshWastes]: {
-    root: 52, intervals: [0, 1, 5, 6, 7, 12, 13],
-    tempo: 2.0, noteCount: 3, noteDuration: 4.0, mood: 'somber', phraseGap: 20,
-  },
   [BiomeType.Crystal]: {
     root: 72, intervals: [0, 4, 7, 11, 12, 16, 19],
     tempo: 1.3, noteCount: 5, noteDuration: 2.5, mood: 'ethereal', phraseGap: 12,
-  },
-  [BiomeType.Savanna]: {
-    root: 60, intervals: [0, 2, 4, 5, 7, 9, 12],
-    tempo: 1.4, noteCount: 5, noteDuration: 2.0, mood: 'serene', phraseGap: 13,
   },
   [BiomeType.Heaven]: {
     root: 72, intervals: [0, 4, 7, 12, 16, 19, 24],
@@ -69,18 +53,6 @@ const MELODIES: Record<number, BiomeMelody> = {
   [BiomeType.Hell]: {
     root: 45, intervals: [0, 1, 3, 6, 7, 12, 13],
     tempo: 1.8, noteCount: 3, noteDuration: 3.5, mood: 'dark', phraseGap: 20,
-  },
-  [BiomeType.Alpine]: {
-    root: 67, intervals: [0, 2, 4, 7, 9, 12, 14],
-    tempo: 1.6, noteCount: 5, noteDuration: 2.5, mood: 'serene', phraseGap: 14,
-  },
-  [BiomeType.Cliffs]: {
-    root: 57, intervals: [0, 2, 3, 7, 8, 12, 14],
-    tempo: 1.8, noteCount: 4, noteDuration: 3.0, mood: 'haunting', phraseGap: 16,
-  },
-  [BiomeType.FloatingIslands]: {
-    root: 65, intervals: [0, 2, 4, 6, 7, 11, 12],
-    tempo: 1.8, noteCount: 5, noteDuration: 3.0, mood: 'mystical', phraseGap: 14,
   },
   [BiomeType.Jungle]: {
     root: 55, intervals: [0, 3, 5, 7, 10, 12, 15],
@@ -93,22 +65,6 @@ const MELODIES: Record<number, BiomeMelody> = {
   [BiomeType.CoralReef]: {
     root: 64, intervals: [0, 4, 5, 7, 11, 12, 16],
     tempo: 1.5, noteCount: 5, noteDuration: 2.5, mood: 'ethereal', phraseGap: 13,
-  },
-  [BiomeType.Bog]: {
-    root: 50, intervals: [0, 1, 3, 6, 7, 10, 12],
-    tempo: 2.0, noteCount: 3, noteDuration: 3.5, mood: 'haunting', phraseGap: 18,
-  },
-  [BiomeType.Badlands]: {
-    root: 55, intervals: [0, 1, 5, 7, 8, 12],
-    tempo: 2.2, noteCount: 3, noteDuration: 3.5, mood: 'somber', phraseGap: 20,
-  },
-  [BiomeType.Taiga]: {
-    root: 62, intervals: [0, 2, 3, 5, 7, 10, 12],
-    tempo: 1.8, noteCount: 4, noteDuration: 3.0, mood: 'somber', phraseGap: 15,
-  },
-  [BiomeType.Oasis]: {
-    root: 65, intervals: [0, 2, 4, 5, 7, 9, 12],
-    tempo: 1.5, noteCount: 5, noteDuration: 2.5, mood: 'serene', phraseGap: 12,
   },
 }
 

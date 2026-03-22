@@ -22,16 +22,11 @@ interface SlabStyle {
 function getStyleForBiome(biome: BiomeType): SlabStyle {
   switch (biome) {
     case BiomeType.Forest:
-    case BiomeType.Taiga:
     case BiomeType.Jungle:
-    case BiomeType.Bog:
       return { color: 0x8a6838, tex: 'sand', w: 5, h: 0.5, elevated: false, stepping: false, wide: false, curbColor: 0x6a4820 }
 
     case BiomeType.Desert:
     case BiomeType.Mesa:
-    case BiomeType.Savanna:
-    case BiomeType.Badlands:
-    case BiomeType.Oasis:
       return { color: 0x908070, tex: 'stone', w: 6, h: 0.55, elevated: false, stepping: false, wide: true, curbColor: 0x706050 }
 
     case BiomeType.Swamp:
@@ -43,21 +38,13 @@ function getStyleForBiome(biome: BiomeType): SlabStyle {
       return { color: 0x3a1810, tex: 'stone', w: 3.5, h: 0.7, elevated: false, stepping: true, wide: false, curbColor: 0x2a1008 }
 
     case BiomeType.Snow:
-    case BiomeType.Tundra:
-    case BiomeType.Alpine:
-    case BiomeType.Cliffs:
       return { color: 0x9aa8b8, tex: 'stone', w: 5.5, h: 0.55, elevated: false, stepping: false, wide: true, curbColor: 0x7a8898 }
 
     case BiomeType.Crystal:
-    case BiomeType.Mushroom:
-    case BiomeType.AshWastes:
       return { color: 0x8a8a98, tex: 'stone', w: 5.5, h: 0.55, elevated: false, stepping: false, wide: true, curbColor: 0x6a6a78 }
 
     case BiomeType.Heaven:
       return { color: 0xeeeeff, tex: 'stone', w: 6, h: 0.5, elevated: false, stepping: false, emissive: 0x556688, wide: true, curbColor: 0xccccdd }
-
-    case BiomeType.FloatingIslands:
-      return { color: 0x808080, tex: 'stone', w: 4, h: 0.8, elevated: false, stepping: true, wide: false, curbColor: 0x606060 }
 
     default:
       return { color: 0x7a7060, tex: 'stone', w: 5, h: 0.5, elevated: false, stepping: false, wide: false, curbColor: 0x5a5040 }

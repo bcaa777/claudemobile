@@ -11,11 +11,11 @@ import type { TraversalAnchor, LavaRockState } from './traversalTypes'
 import type { WalkableBox } from '../world/Chunk'
 
 /** Biomes that get ziplines */
-const ZIPLINE_BIOMES = new Set([BiomeType.Alpine, BiomeType.Cliffs, BiomeType.FloatingIslands])
+const ZIPLINE_BIOMES = new Set([BiomeType.Snow, BiomeType.Heaven])
 /** Biomes that get vine swings */
 const VINE_BIOMES = new Set([BiomeType.Jungle, BiomeType.Forest])
 /** Biomes that get ice slides */
-const ICE_BIOMES = new Set([BiomeType.Snow, BiomeType.Tundra])
+const ICE_BIOMES = new Set([BiomeType.Snow])
 /** Biomes that get lava rocks */
 const LAVA_BIOMES = new Set([BiomeType.Volcanic, BiomeType.Hell])
 
