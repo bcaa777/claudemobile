@@ -5,6 +5,7 @@ import { BiomeType, SkyConfig, VisualIdentity, AtmosphereParticleType } from '..
 import { ColorGradePass } from '../postprocessing/ColorGradePass'
 import { SkyDome } from '../sky/SkyDome'
 import { RENDER_CONFIG } from '../config'
+import { WorldState } from './WorldState'
 
 const TRANSITION_SPEED = 0.2  // blend units per second — 5 second full transition (1/5)
 
@@ -96,6 +97,7 @@ export class BiomeTransition {
   private scene: THREE.Scene
   private colorGrade: ColorGradePass
   private skyDome: SkyDome
+  private worldState: WorldState | null = null
 
   private currentBiome: BiomeType = BiomeType.Forest
   private targetBiome: BiomeType = BiomeType.Forest
@@ -132,6 +134,10 @@ export class BiomeTransition {
 
   setDayFactor(dayFactor: number) {
     this.dayFactor = dayFactor
+  }
+
+  setWorldState(worldState: WorldState) {
+    this.worldState = worldState
   }
 
   update(playerPos: THREE.Vector3, delta: number) {
@@ -232,9 +238,49 @@ export class BiomeTransition {
     this.skyDome.setColors(_zenith, _horizon, _cloud, cloudDensity, haze)
   }
 
-  /** Returns the current smoothly-interpolated visual identity parameters */
+  /** Returns the current smoothly-interpolated visual identity parameters.
+   *  If the current biome is activated, applies subtle visual improvements. */
   getCurrentVisual(): InterpolatedVisual {
-    return this.currentVisual
+    if (!this.worldState || !this.worldState.activatedSites.has(this.currentBiome)) {
+      return this.currentVisual
+    }
+
+    // Activated biome visual improvements
+    const v = this.currentVisual
+    // Global sky brightness bonus from all activations (max +10% at 11/11)
+    const skyBonus = this.worldState.activatedSites.size / 11 * 0.1
+
+    return {
+      colorGrade: {
+        tint: v.colorGrade.tint,
+        contrast: v.colorGrade.contrast,
+        // Color saturation +15%
+        saturation: v.colorGrade.saturation * 1.15,
+      },
+      fog: {
+        nearDistance: v.fog.nearDistance,
+        // Fog far distance +20%
+        farDistance: v.fog.farDistance * 1.2,
+        color: v.fog.color,
+        density: v.fog.density,
+      },
+      ambientLight: {
+        color: v.ambientLight.color,
+        // Ambient light +10%, plus global sky brightness bonus
+        intensity: v.ambientLight.intensity * (1.1 + skyBonus),
+      },
+      atmosphere: {
+        particleType: v.atmosphere.particleType,
+        particleCount: v.atmosphere.particleCount,
+        particleColor: v.atmosphere.particleColor,
+        particleSize: v.atmosphere.particleSize,
+        // Particle speed -30% (calmer, more serene atmosphere)
+        particleSpeed: v.atmosphere.particleSpeed * 0.7,
+      },
+      godRayIntensity: v.godRayIntensity,
+      heatDistortion: v.heatDistortion,
+      groundFogDensity: v.groundFogDensity,
+    }
   }
 
   getCurrentBiome(): BiomeType {

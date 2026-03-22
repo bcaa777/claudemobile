@@ -25,7 +25,8 @@ const SEED_SPACING = BIOME_CONFIG.seedSpacing
 const HEAVEN_RADIUS = 300
 const HEAVEN_BORDER = 40  // transition ring width
 
-const HELL_RADIUS = 300
+const HELL_RADIUS_DEFAULT = 300
+const HELL_RADIUS_MIN = 135
 const HELL_BORDER = 40
 
 const MEGA_MOUNTAIN_COUNT = 8       // total peaks scattered around the world
@@ -37,6 +38,7 @@ export class BiomeMap {
   private heavenCenter: { x: number; z: number } | null = null
   private hellCenter: { x: number; z: number } | null = null
   readonly megaMountains: MegaMountain[] = []
+  private hellRadius: number = HELL_RADIUS_DEFAULT
 
   constructor(seed: number) {
     this.rng = new SeededRandom(seed)
@@ -50,6 +52,14 @@ export class BiomeMap {
 
   setHellCenter(x: number, z: number) { this.hellCenter = { x, z } }
   getHellCenter() { return this.hellCenter }
+
+  /** Shrink Hell's effective radius. Called after each site activation.
+   *  Clamps to HELL_RADIUS_MIN (135) so Hell never fully disappears. */
+  setHellRadius(r: number): void {
+    this.hellRadius = Math.max(HELL_RADIUS_MIN, Math.min(HELL_RADIUS_DEFAULT, r))
+  }
+
+  getHellRadius(): number { return this.hellRadius }
 
   private generateMegaMountains() {
     const rng = new SeededRandom(this.rng.int(0, 999999))
@@ -123,8 +133,8 @@ export class BiomeMap {
   getBiomeAt(wx: number, wz: number): BiomeType {
     // Heaven override — circular region
     if (this.heavenDist(wx, wz) < HEAVEN_RADIUS) return BiomeType.Heaven
-    // Hell override — circular region
-    if (this.hellDist(wx, wz) < HELL_RADIUS) return BiomeType.Hell
+    // Hell override — circular region (radius shrinks with activations)
+    if (this.hellDist(wx, wz) < this.hellRadius) return BiomeType.Hell
 
     let nearestDist = Infinity
     let nearest = BiomeType.Forest
@@ -159,11 +169,11 @@ export class BiomeMap {
 
     // Hell override
     const helld = this.hellDist(wx, wz)
-    if (helld < HELL_RADIUS) {
+    if (helld < this.hellRadius) {
       return { primary: BiomeType.Hell, secondary: BiomeType.Hell, blend: 0 }
     }
-    if (helld < HELL_RADIUS + HELL_BORDER) {
-      const t = (helld - HELL_RADIUS) / HELL_BORDER
+    if (helld < this.hellRadius + HELL_BORDER) {
+      const t = (helld - this.hellRadius) / HELL_BORDER
       const voronoi = this.getVoronoiBiome(wx, wz)
       return { primary: BiomeType.Hell, secondary: voronoi, blend: t }
     }

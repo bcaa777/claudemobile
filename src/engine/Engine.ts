@@ -222,6 +222,7 @@ export class Engine {
 
     // Wire WorldState into systems that need it
     this.weatherSystem.setWorldState(this.worldState)
+    this.biomeTransition.setWorldState(this.worldState)
 
     this.debugMap = new DebugMap(this.castle.position, this.landmarkManager.positions, stairPos, hellStairPos)
     this.debugMap.setRoadEdges(this.roadNetwork.edges)
@@ -302,6 +303,9 @@ export class Engine {
 
     // WorldState: recalculate derived state at start of frame
     this.worldState.update()
+
+    // Hell shrinkage — each activated site reduces Hell radius by 15 (min 135)
+    this.biomeMap.setHellRadius(300 - this.worldState.activatedSites.size * 15)
 
     this.controller.update(delta)
     this.collision.update(this.renderer.camera, this.controller, delta)
