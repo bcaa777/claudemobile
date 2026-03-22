@@ -215,6 +215,9 @@ export class Engine {
       this.worldState.registerResonanceSite(biome, pos)
     }
 
+    // Wire WorldState into systems that need it
+    this.weatherSystem.setWorldState(this.worldState)
+
     this.debugMap = new DebugMap(this.castle.position, this.landmarkManager.positions, stairPos, hellStairPos)
     this.debugMap.setRoadEdges(this.roadNetwork.edges)
 
