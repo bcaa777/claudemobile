@@ -14,6 +14,9 @@ export interface HUDUpdateParams {
   resonanceSites: Map<BiomeType, ResonanceSite>
   activationMessage: string | null
   time: number // elapsed seconds
+  showCompass: boolean
+  journalHintTimer: number
+  compassPullBoost: number
 }
 
 /**
@@ -28,6 +31,8 @@ export class HUD {
   private companion: CompanionIndicator
   private interactionPrompt: HTMLDivElement
   private activationMessageEl: HTMLDivElement
+
+  private journalHint: HTMLDivElement
 
   private healthShowTime = -Infinity // time when health was last shown
   private healthOpacity = 0
@@ -120,6 +125,26 @@ export class HUD {
     })
     this.container.appendChild(this.activationMessageEl)
 
+    // --- Journal hint ("Journal Updated [J]") ---
+    this.journalHint = document.createElement('div')
+    Object.assign(this.journalHint.style, {
+      position: 'absolute',
+      bottom: '80px',
+      left: '50%',
+      transform: 'translateX(-50%)',
+      fontFamily: '"Courier New", monospace',
+      fontSize: '11px',
+      letterSpacing: '0.15em',
+      color: 'rgba(232,210,140,0.8)',
+      textShadow: '0 0 8px rgba(232,210,140,0.3)',
+      pointerEvents: 'none',
+      opacity: '0',
+      transition: 'opacity 0.5s',
+      textTransform: 'uppercase',
+    })
+    this.journalHint.textContent = 'Journal Updated [ J ]'
+    this.container.appendChild(this.journalHint)
+
     document.body.appendChild(this.container)
   }
 
@@ -134,10 +159,18 @@ export class HUD {
       resonanceSites,
       activationMessage,
       time,
+      showCompass,
+      journalHintTimer,
+      compassPullBoost,
     } = params
 
-    // --- Compass ---
+    // --- Compass (hidden until onboarding reveals it) ---
+    this.compass.setVisible(showCompass)
+    this.compass.setPullBoost(compassPullBoost)
     this.compass.update(cameraYaw, playerPos, resonanceSites)
+
+    // --- Journal hint ---
+    this.journalHint.style.opacity = journalHintTimer > 0 ? '1' : '0'
 
     // --- Companion indicator ---
     this.companion.update(companionData)

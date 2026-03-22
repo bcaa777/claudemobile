@@ -42,6 +42,7 @@ import { RoadNetwork } from '../traversal/RoadNetwork'
 import { ZiplineRide } from '../traversal/ZiplineRide'
 import { VineSwing } from '../traversal/VineSwing'
 import { HUD } from '../ui/HUD'
+import { OnboardingSystem } from '../systems/OnboardingSystem'
 
 export class Engine {
   private renderer: Renderer
@@ -89,6 +90,8 @@ export class Engine {
   private narrativeProgression: NarrativeProgression
   private narrativeTimer = 0
   private hud: HUD
+  private onboarding: OnboardingSystem
+  private npcDialogueSeen = false
 
   private lastTime = 0
   private running = false
@@ -232,6 +235,16 @@ export class Engine {
     this.weatherSystem.setWorldState(this.worldState)
     this.biomeTransition.setWorldState(this.worldState)
 
+    // Wire data into the journal overlay
+    this.journalOverlay.setData({
+      journalSystem: this.journalSystem,
+      worldState: this.worldState,
+      narrative: this.narrativeProgression,
+      seeds: this.biomeMap.getSeeds(),
+      audioCtx: this.audioSystem.getContext(),
+      masterGain: this.audioSystem.getMasterGain(),
+    })
+
     this.debugMap = new DebugMap(this.castle.position, this.landmarkManager.positions, stairPos, hellStairPos)
     this.debugMap.setRoadEdges(this.roadNetwork.edges)
 
@@ -258,6 +271,9 @@ export class Engine {
 
     // Minimal HUD overlay (compass, companion indicator, health, prompts)
     this.hud = new HUD()
+
+    // Onboarding system — subtle environmental guidance for first 30 minutes
+    this.onboarding = new OnboardingSystem(this.castle.position)
 
     this.biomeHud = document.getElementById('biome-hud')
     this.timeHud = document.getElementById('time-hud')
@@ -436,6 +452,18 @@ export class Engine {
       this.controller.speedMultiplier = 0
     }
     this.debugMap.setNPCMarkers(this.npcManager.getMapMarkers())
+
+    // Feed live data to journal overlay (campfire + NPC positions)
+    {
+      const cfPositions = this.campfireSystem.positions.map(p => ({ x: p.x, z: p.z }))
+      const npcMks = this.npcManager.getMapMarkers().map(m => ({
+        x: m.pos.x,
+        z: m.pos.z,
+        type: 'npc' as const,
+        label: m.label,
+      }))
+      this.journalOverlay.updateLiveData(cfPositions, npcMks)
+    }
 
     // Update campfire positions for creature awareness
     this.creatureManager.campfirePositions = this.campfireSystem.positions
@@ -661,6 +689,18 @@ export class Engine {
     const deathFade = this.playerState.isDead ? 1.0 : 0
     this.renderer.damagePass.setStrength(this.playerState.damageFlashStrength, deathFade)
 
+    // Onboarding system — subtle environmental guidance
+    if (this.npcManager.isDialogueActive()) this.npcDialogueSeen = true
+    this.onboarding.update(
+      delta, camPos, this.worldState,
+      this.weatherSystem.currentWeather as WeatherType,
+      this.companionSystem.companionId !== null,
+      this.loreStones.collectedCount,
+      this.npcDialogueSeen,
+    )
+    // Apply onboarding time multiplier to day/night cycle
+    this.dayNight.timeMultiplier = this.onboarding.flags.timeMultiplier
+
     // Minimal HUD update (compass, companion, health, interaction, activation message)
     {
       // Camera yaw — extract from camera quaternion
@@ -685,6 +725,9 @@ export class Engine {
         resonanceSites: this.worldState.resonanceSites,
         activationMessage: this.worldState.activationMessage,
         time: this.elapsedTime,
+        showCompass: this.onboarding.flags.showCompass,
+        journalHintTimer: this.onboarding.flags.journalHintTimer,
+        compassPullBoost: this.onboarding.flags.compassPullBoost,
       })
     }
 

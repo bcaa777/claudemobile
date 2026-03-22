@@ -56,6 +56,9 @@ export class DayNightCycle {
   public sunMult = 1.0
   public hemiMult = 1.0
 
+  /** External time multiplier (e.g. onboarding system can set 1.3 to hasten dusk) */
+  public timeMultiplier = 1.0
+
   constructor(scene: THREE.Scene) {
     this.sun = new THREE.DirectionalLight(0xffe8c0, 4.5)
     this.sun.position.set(100, 100, 0)
@@ -73,7 +76,7 @@ export class DayNightCycle {
   }
 
   update(delta: number) {
-    this.elapsed += delta
+    this.elapsed += delta * this.timeMultiplier
     this.timeOfDay = (this.elapsed / TIME_CONFIG.dayDuration) % 1
 
     const t = this.timeOfDay

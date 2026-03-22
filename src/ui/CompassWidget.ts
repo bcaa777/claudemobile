@@ -12,6 +12,8 @@ export class CompassWidget {
   private pullDot: HTMLDivElement
   private readonly STRIP_WIDTH = 280
   private readonly VISIBLE_WIDTH = 200
+  private visible = true
+  private pullBoost = 0
 
   constructor() {
     this.container = document.createElement('div')
@@ -25,6 +27,8 @@ export class CompassWidget {
       overflow: 'hidden',
       pointerEvents: 'none',
       zIndex: '20',
+      opacity: '0',          // hidden until onboarding reveals it
+      transition: 'opacity 1.5s',
     })
 
     // The strip is wider than the container; we scroll it
@@ -138,6 +142,17 @@ export class CompassWidget {
     return this.container
   }
 
+  setVisible(show: boolean): void {
+    if (this.visible === show) return
+    this.visible = show
+    this.container.style.opacity = show ? '1' : '0'
+    this.container.style.transition = 'opacity 1.5s'
+  }
+
+  setPullBoost(boost: number): void {
+    this.pullBoost = boost
+  }
+
   /**
    * @param yaw Camera yaw in radians (0 = +Z, increases clockwise looking down)
    * @param playerPos Player world position
@@ -188,7 +203,11 @@ export class CompassWidget {
       // Only show if within visible range
       if (dotPx >= 0 && dotPx <= this.VISIBLE_WIDTH) {
         this.pullDot.style.left = `${dotPx}px`
-        this.pullDot.style.opacity = '1'
+        const baseOpacity = 0.7 + this.pullBoost
+        this.pullDot.style.opacity = `${Math.min(1, baseOpacity)}`
+        // Scale up when boosted for extra visibility
+        const scale = this.pullBoost > 0 ? 1.5 : 1
+        this.pullDot.style.transform = `scale(${scale})`
       } else {
         this.pullDot.style.opacity = '0'
       }
