@@ -33,10 +33,8 @@ export class JournalSystem {
       this.lastBiome = currentBiome
       if (this.state.discover(`biome_${currentBiome}`)) {
         const names: Record<number, string> = {
-          0:'Forest',1:'Desert',2:'Volcanic',3:'Snow',4:'Swamp',5:'Tundra',
-          6:'Mushroom',7:'Ash Wastes',8:'Crystal',9:'Savanna',10:'Heaven',
-          11:'Hell',12:'Alpine',13:'Cliffs',14:'Floating Islands',15:'Jungle',
-          16:'Mesa',17:'Coral Reef',18:'Bog',19:'Badlands',20:'Taiga',21:'Oasis',
+          0:'Forest',1:'Desert',2:'Swamp',3:'Snow',4:'Volcanic',
+          5:'Crystal',6:'Jungle',7:'Mesa',8:'Coral Reef',9:'Heaven',10:'Hell',
         }
         this.showPopup(`New Biome: ${names[currentBiome] || 'Unknown'}`)
       }
@@ -77,13 +75,9 @@ export class JournalSystem {
         const key = `landmark_${biome}`
         if (this.state.discover(key)) {
           const names: Record<number, string> = {
-            0:'Druid Ring',1:'Great Pyramid',2:'Obsidian Citadel',3:'Ice Palace',
-            4:'Swamp Ziggurat',5:'Ancestor Field',6:'Mycelium Cathedral',
-            7:'Ash Colosseum',8:'Crystal Cathedral',9:'Savanna Obelisk',
-            10:'Cloud Temple',11:'Infernal Citadel',12:'Alpine Monastery',
-            13:'Cliff Fortress',14:'Sky Temple',15:'Jungle Pyramid',
-            16:'Mesa Citadel',17:'Coral Palace',18:'Bog Shrine',
-            19:'Badlands Monolith',20:'Taiga Longhouse',21:'Oasis Minaret',
+            0:'Druid Ring Temple',1:'Great Pyramid',2:'Swamp Ziggurat',3:'Ice Palace',
+            4:'Obsidian Citadel',5:'Crystal Cathedral',6:'Jungle Pyramid',
+            7:'Mesa Citadel',8:'Coral Palace',9:'Cloud Temple',10:'Infernal Citadel',
           }
           this.showPopup(`New Landmark: ${names[biome] || 'Unknown'}`)
         }
