@@ -263,6 +263,13 @@ export class Engine {
       overlay.classList.add('hidden')
       setTimeout(() => overlay.remove(), 600)
       this.audioSystem.init()
+      // Create resonance site visuals now that audio is available
+      this.landmarkManager.createResonanceSites(
+        this.renderer.scene,
+        this.worldState.activatedSites,
+        this.audioSystem.getContext(),
+        this.audioSystem.getMasterGain(),
+      )
       if (!this.running) this.start()
     })
 

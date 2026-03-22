@@ -36,6 +36,10 @@ export class AudioSystem {
   public musicVolume = 1
   public ambientVolume = 1
 
+  /** Expose AudioContext and master gain for external tone systems (e.g., HarmonicTone) */
+  getContext(): AudioContext | null { return this.ctx }
+  getMasterGain(): GainNode | null { return this.masterGain }
+
   constructor() {
     this.muteEl = document.getElementById('mute-hud')
     this.muted = localStorage.getItem(MUTE_KEY) === '1'

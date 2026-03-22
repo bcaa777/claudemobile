@@ -18,6 +18,7 @@ import { MesaCitadel } from './MesaCitadel'
 import { CoralPalace } from './CoralPalace'
 import { LandmarkCrystal } from './LandmarkCrystal'
 import { HEAVEN_ALTITUDE, HELL_DEPTH } from '../world/TerrainGenerator'
+import { ResonanceSiteVisual } from '../systems/ResonanceSite'
 
 interface Updatable {
   update(delta: number, time: number): void
@@ -51,6 +52,7 @@ export class LandmarkManager {
   readonly allWalkables: CastleWalkable[] = []
   readonly positions = new Map<BiomeType, THREE.Vector3>()
   readonly allCrystals: LandmarkCrystal[] = []
+  readonly resonanceSites: ResonanceSiteVisual[] = []
   // Scene objects per landmark for distance-based visibility culling
   private landmarkSceneObjects: { pos: THREE.Vector3; objects: THREE.Object3D[] }[] = []
 
@@ -188,9 +190,41 @@ export class LandmarkManager {
     }
   }
 
+  /** Create resonance site visuals at each landmark position.
+   *  Called after audio is initialized so tones can be wired up. */
+  createResonanceSites(
+    scene: THREE.Scene,
+    activatedSites: Set<BiomeType>,
+    audioCtx?: AudioContext | null,
+    audioDestination?: AudioNode | null,
+  ): void {
+    for (const [biome, pos] of this.positions) {
+      const site = new ResonanceSiteVisual(
+        biome, pos, scene,
+        audioCtx ?? undefined,
+        audioDestination ?? undefined,
+      )
+      // Restore activation from saved state
+      if (activatedSites.has(biome)) {
+        site.activate()
+      }
+      this.resonanceSites.push(site)
+    }
+  }
+
   update(delta: number, time: number, playerPos?: THREE.Vector3) {
     for (const lm of this.landmarks) lm.update(delta, time)
     for (const cr of this.allCrystals) cr.update(delta, time)
+
+    // Update resonance sites
+    if (playerPos) {
+      for (const site of this.resonanceSites) {
+        const dx = site.position.x - playerPos.x
+        const dz = site.position.z - playerPos.z
+        const dist = Math.sqrt(dx * dx + dz * dz)
+        site.update(delta, dist, time)
+      }
+    }
 
     // Hide landmarks inside terrain distance with margin so terrain always loads first
     if (playerPos) {
