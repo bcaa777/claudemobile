@@ -6,7 +6,7 @@ import { ColorGradePass } from '../postprocessing/ColorGradePass'
 import { SkyDome } from '../sky/SkyDome'
 import { RENDER_CONFIG } from '../config'
 
-const TRANSITION_SPEED = 1.5  // blend units per second
+const TRANSITION_SPEED = 0.2  // blend units per second — 5 second full transition (1/5)
 
 // Reusable temp colors to avoid per-frame allocations
 const _zenith  = new THREE.Color()
