@@ -9,6 +9,11 @@ import { PerfOverlay } from './PerfOverlay'
 import { AtmosphereParticles } from '../systems/AtmosphereParticles'
 import { GroundFog } from '../systems/GroundFog'
 import { AudioSystem } from '../audio/AudioSystem'
+import { WorldState } from '../systems/WorldState'
+import { RitualSystem } from '../systems/RitualSystem'
+import { NarrativeProgression } from '../lore/NarrativeProgression'
+import { OnboardingSystem } from '../systems/OnboardingSystem'
+import { BiomeType } from '../biomes/types'
 import {
   PLAYER_CONFIG, POST_CONFIG, SPRITE_CONFIG,
   WORLD_CONFIG, TIME_CONFIG, BIOME_CONFIG, CREATURE_CONFIG,
@@ -31,6 +36,20 @@ function readLS(): SavedLS {
   try { return JSON.parse(localStorage.getItem(LS_CONFIG_KEY) || '{}') } catch { return {} }
 }
 
+const BIOME_NAMES: Record<number, string> = {
+  [BiomeType.Forest]:    'Forest',
+  [BiomeType.Desert]:    'Desert',
+  [BiomeType.Swamp]:     'Swamp',
+  [BiomeType.Snow]:      'Snow',
+  [BiomeType.Volcanic]:  'Volcanic',
+  [BiomeType.Crystal]:   'Crystal',
+  [BiomeType.Jungle]:    'Jungle',
+  [BiomeType.Mesa]:      'Mesa',
+  [BiomeType.CoralReef]: 'Coral',
+  [BiomeType.Heaven]:    'Heaven',
+  [BiomeType.Hell]:      'Hell',
+}
+
 export class DebugPanel {
   private panel: HTMLDivElement
   private dayNight: DayNightCycle
@@ -44,7 +63,17 @@ export class DebugPanel {
   private atmosphereParticles: AtmosphereParticles
   private groundFog: GroundFog
   private audioSystem: AudioSystem
+  private worldState: WorldState
+  private ritualSystem: RitualSystem
+  private narrative: NarrativeProgression
+  private onboarding: OnboardingSystem
   public isOpen = false
+
+  // Live display elements (updated each frame via refreshLiveDisplays)
+  private worldStateDisplay: HTMLElement | null = null
+  private narrativePhaseDisplay: HTMLElement | null = null
+  private ritualProgressDisplay: HTMLElement | null = null
+  private onboardingDisplay: HTMLElement | null = null
 
   constructor(
     dayNight: DayNightCycle,
@@ -58,6 +87,10 @@ export class DebugPanel {
     atmosphereParticles: AtmosphereParticles,
     groundFog: GroundFog,
     audioSystem: AudioSystem,
+    worldState: WorldState,
+    ritualSystem: RitualSystem,
+    narrative: NarrativeProgression,
+    onboarding: OnboardingSystem,
   ) {
     this.dayNight = dayNight
     this.flashlight = flashlight
@@ -70,6 +103,10 @@ export class DebugPanel {
     this.atmosphereParticles = atmosphereParticles
     this.groundFog = groundFog
     this.audioSystem = audioSystem
+    this.worldState = worldState
+    this.ritualSystem = ritualSystem
+    this.narrative = narrative
+    this.onboarding = onboarding
 
     // Restore saved debug state (lighting mults, playerLight)
     const saved = readLS()
@@ -103,6 +140,56 @@ export class DebugPanel {
   private toggle() {
     this.isOpen = !this.isOpen
     this.panel.style.display = this.isOpen ? 'block' : 'none'
+    if (this.isOpen) this.refreshLiveDisplays()
+  }
+
+  /** Call from the game loop to keep live debug displays up-to-date */
+  refreshLiveDisplays(): void {
+    if (!this.isOpen) return
+
+    // WorldState inspector
+    if (this.worldStateDisplay) {
+      const ws = this.worldState
+      this.worldStateDisplay.textContent =
+        `Harmony: ${(ws.globalHarmony * 100).toFixed(0)}%  Sites: ${ws.activatedSites.size}/11` +
+        `\nWeather: ${ws.currentWeather} (${(ws.weatherSeverity * 100).toFixed(0)}%)` +
+        `\nChord: ${ws.chordComplete ? 'COMPLETE' : 'incomplete'}`
+    }
+
+    // Narrative phase
+    if (this.narrativePhaseDisplay) {
+      this.narrativePhaseDisplay.textContent = `Phase: ${this.narrative.getPhase()} / 4`
+    }
+
+    // Ritual progress per biome
+    if (this.ritualProgressDisplay) {
+      let text = ''
+      for (let i = 0; i <= 10; i++) {
+        const biome = i as BiomeType
+        const name = BIOME_NAMES[i] || String(i)
+        const activated = this.worldState.activatedSites.has(biome)
+        const obs = this.worldState.ritualObservations.get(biome)
+        if (activated) {
+          text += `${name}: DONE\n`
+        } else if (obs) {
+          const c = obs.creatureBehavior ? 'C' : '-'
+          const w = obs.weatherReveal ? 'W' : '-'
+          const l = obs.loreCount
+          text += `${name}: [${c}${w}] L:${l}\n`
+        } else {
+          text += `${name}: [--] L:0\n`
+        }
+      }
+      this.ritualProgressDisplay.textContent = text.trimEnd()
+    }
+
+    // Onboarding state
+    if (this.onboardingDisplay) {
+      const f = this.onboarding.flags
+      this.onboardingDisplay.textContent =
+        `Compass: ${f.showCompass ? 'on' : 'off'}  TimeMul: ${f.timeMultiplier.toFixed(1)}` +
+        `\nComplete: ${f.complete ? 'YES' : 'no'}`
+    }
   }
 
   private saveConfig() {
@@ -215,10 +302,66 @@ export class DebugPanel {
       return b
     }
 
+    // Small button helper for inline biome activation buttons
+    const smallBtn = (text: string, onClick: () => void) => {
+      const b = document.createElement('button')
+      b.textContent = text
+      Object.assign(b.style, {
+        display: 'inline-block', marginRight: '3px', marginBottom: '3px',
+        padding: '2px 5px', background: '#1a2a3a', color: '#8cf',
+        border: '1px solid #3a5a7a', borderRadius: '2px',
+        font: '9px "Courier New", monospace', cursor: 'pointer',
+      })
+      b.addEventListener('mouseenter', () => { b.style.background = '#2a4a6a' })
+      b.addEventListener('mouseleave', () => { b.style.background = '#1a2a3a' })
+      b.addEventListener('click', onClick)
+      return b
+    }
+
     // ── Title ────────────────────────────────────────────────────────────────
     panel.appendChild(el('div', { color: '#555', textAlign: 'center', marginBottom: '2px', letterSpacing: '1px' }, '[ F3 ] DEBUG PANEL'))
     panel.appendChild(el('div', { color: '#383838', fontSize: '9px', textAlign: 'center', marginBottom: '2px' }, 'Esc = release cursor   M = map'))
     panel.appendChild(el('div', { color: '#665533', fontSize: '9px', textAlign: 'center', marginBottom: '4px' }, '↺ = requires Save & Reload'))
+
+    // ── WORLD STATE ───────────────────────────────────────────────────────────
+    panel.appendChild(section('WORLD STATE'))
+    this.worldStateDisplay = el('pre', {
+      color: '#aaddaa', fontSize: '9px', margin: '0', whiteSpace: 'pre-wrap',
+    }, 'Loading...')
+    panel.appendChild(this.worldStateDisplay)
+
+    // ── NARRATIVE ──────────────────────────────────────────────────────────────
+    panel.appendChild(section('NARRATIVE'))
+    this.narrativePhaseDisplay = el('div', { color: '#ddccaa', fontSize: '10px' }, 'Phase: ?')
+    panel.appendChild(this.narrativePhaseDisplay)
+
+    // ── RITUAL PROGRESS ────────────────────────────────────────────────────────
+    panel.appendChild(section('RITUAL PROGRESS'))
+    panel.appendChild(el('div', { color: '#666', fontSize: '9px', marginBottom: '4px' }, 'C=creature W=weather L=lore'))
+    this.ritualProgressDisplay = el('pre', {
+      color: '#ccbb88', fontSize: '9px', margin: '0', whiteSpace: 'pre-wrap',
+    }, 'Loading...')
+    panel.appendChild(this.ritualProgressDisplay)
+
+    // Force activate buttons per biome
+    panel.appendChild(el('div', { color: '#666', fontSize: '9px', marginTop: '6px', marginBottom: '2px' }, 'Force activate:'))
+    const activateBtnRow = el('div', { display: 'flex', flexWrap: 'wrap' })
+    for (let i = 0; i <= 10; i++) {
+      const biome = i as BiomeType
+      const name = BIOME_NAMES[i] || String(i)
+      activateBtnRow.appendChild(smallBtn(name, () => {
+        this.ritualSystem.forceActivateSite(biome, this.worldState)
+        this.refreshLiveDisplays()
+      }))
+    }
+    panel.appendChild(activateBtnRow)
+
+    // ── ONBOARDING ─────────────────────────────────────────────────────────────
+    panel.appendChild(section('ONBOARDING'))
+    this.onboardingDisplay = el('pre', {
+      color: '#bbaadd', fontSize: '9px', margin: '0', whiteSpace: 'pre-wrap',
+    }, 'Loading...')
+    panel.appendChild(this.onboardingDisplay)
 
     // ── PERFORMANCE ──────────────────────────────────────────────────────────
     panel.appendChild(section('PERFORMANCE'))
@@ -341,6 +484,15 @@ export class DebugPanel {
     const resetBtn = btn('RESET DEFAULTS', '#2a1a1a', '#4a2a2a', '#f66', '#6a3a3a')
     resetBtn.addEventListener('click', () => { localStorage.removeItem(LS_CONFIG_KEY); window.location.reload() })
     panel.appendChild(resetBtn)
+
+    const resetProgressBtn = btn('RESET ALL PROGRESSION', '#2a1a2a', '#4a2a4a', '#f8f', '#6a3a6a')
+    resetProgressBtn.addEventListener('click', () => {
+      localStorage.removeItem('worldState')
+      localStorage.removeItem('journal')
+      localStorage.removeItem(LS_CONFIG_KEY)
+      window.location.reload()
+    })
+    panel.appendChild(resetProgressBtn)
 
     return panel
   }

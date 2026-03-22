@@ -325,6 +325,12 @@ export class RitualSystem {
     return false
   }
 
+  /** Force-activate a biome site from the debug panel */
+  forceActivateSite(biome: BiomeType, worldState: WorldState): void {
+    if (worldState.activatedSites.has(biome)) return
+    this.activateSite(biome, worldState)
+  }
+
   private activateSite(biome: BiomeType, worldState: WorldState): void {
     worldState.activatedSites.add(biome)
 

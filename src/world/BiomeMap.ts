@@ -198,6 +198,11 @@ export class BiomeMap {
     return { primary: b1, secondary: b2, blend }
   }
 
+  /** Expose seed positions for the journal map (read-only). */
+  getSeeds(): ReadonlyArray<{ x: number; z: number; biome: BiomeType }> {
+    return this.seeds
+  }
+
   private getVoronoiBiome(wx: number, wz: number): BiomeType {
     let nearestDist = Infinity
     let nearest = BiomeType.Forest

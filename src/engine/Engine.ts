@@ -255,6 +255,12 @@ export class Engine {
 
     this.perfOverlay = new PerfOverlay(this.renderer.renderer)
 
+    // Minimal HUD overlay (compass, companion indicator, health, prompts)
+    this.hud = new HUD()
+
+    // Onboarding system — subtle environmental guidance for first 30 minutes
+    this.onboarding = new OnboardingSystem(this.castle.position)
+
     this.debugPanel = new DebugPanel(
       this.dayNight,
       this.flashlight,
@@ -267,13 +273,11 @@ export class Engine {
       this.atmosphereParticles,
       this.groundFog,
       this.audioSystem,
+      this.worldState,
+      this.ritualSystem,
+      this.narrativeProgression,
+      this.onboarding,
     )
-
-    // Minimal HUD overlay (compass, companion indicator, health, prompts)
-    this.hud = new HUD()
-
-    // Onboarding system — subtle environmental guidance for first 30 minutes
-    this.onboarding = new OnboardingSystem(this.castle.position)
 
     this.biomeHud = document.getElementById('biome-hud')
     this.timeHud = document.getElementById('time-hud')
@@ -670,6 +674,9 @@ export class Engine {
       this.runeSystem.getMapMarkers().map(m => m.pos),
       this.worldState,
     )
+
+    // Debug panel live displays (only updates when panel is open)
+    this.debugPanel.refreshLiveDisplays()
 
     // Debug map markers
     this.debugMap.setCampfireMarkers(this.campfireSystem.getMapMarkers())
