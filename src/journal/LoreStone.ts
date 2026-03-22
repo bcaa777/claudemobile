@@ -15,6 +15,7 @@ export interface LoreStoneInstance {
   loreIndex: number
   collected: boolean
   mesh: THREE.Group | null
+  nightOnly: boolean
 }
 
 export class LoreStoneManager {
@@ -46,12 +47,16 @@ export class LoreStoneManager {
 
       const loreIndex = rng.int(0, LORE_TEXTS.length - 1)
       const collected = this.collectedSet.has(loreIndex)
+      // ~30% of stones are night-only (seeded by position hash)
+      const posHash = (Math.floor(wx) * 73856093) ^ (Math.floor(wz) * 19349663)
+      const nightOnly = ((posHash >>> 0) % 100) < 30
 
       instances.push({
         position: new THREE.Vector3(wx, h + 0.4, wz),
         loreIndex,
         collected,
         mesh: null,
+        nightOnly,
       })
     }
 
@@ -83,14 +88,26 @@ export class LoreStoneManager {
     return result
   }
 
-  update(playerPos: THREE.Vector3): { loreIndex: number; text: string } | null {
+  update(playerPos: THREE.Vector3, timeOfDay = 0.5): { loreIndex: number; text: string } | null {
     let collected: { loreIndex: number; text: string } | null = null
     const baseDist = this.foxBonusActive ? FOX_STONE_VISIBLE_DIST : BASE_STONE_VISIBLE_DIST
     const visDist = (baseDist * RENDER_CONFIG.renderScale) ** 2
 
+    // Night window: timeOfDay 0.8–1.0 and 0.0–0.2
+    const isNight = timeOfDay >= 0.8 || timeOfDay <= 0.2
+
     for (const instances of this.stones.values()) {
       for (const s of instances) {
         if (s.collected) {
+          if (s.mesh) {
+            this.scene.remove(s.mesh)
+            s.mesh = null
+          }
+          continue
+        }
+
+        // Night-only stones are invisible and non-interactive during day
+        if (s.nightOnly && !isNight) {
           if (s.mesh) {
             this.scene.remove(s.mesh)
             s.mesh = null
@@ -105,7 +122,7 @@ export class LoreStoneManager {
         // Create/destroy mesh based on distance
         if (distSq < visDist) {
           if (!s.mesh) {
-            s.mesh = this.createMesh(s.position)
+            s.mesh = this.createMesh(s.position, s.nightOnly)
             this.scene.add(s.mesh)
           }
           // Pulse glow
@@ -119,7 +136,7 @@ export class LoreStoneManager {
           s.mesh = null
         }
 
-        // Collect
+        // Collect — night-only stones only collectible at night
         if (distSq < STONE_COLLECT_DIST_SQ && !s.collected) {
           s.collected = true
           this.collectedSet.add(s.loreIndex)
@@ -136,14 +153,18 @@ export class LoreStoneManager {
     return collected
   }
 
-  private createMesh(pos: THREE.Vector3): THREE.Group {
+  private createMesh(pos: THREE.Vector3, nightOnly = false): THREE.Group {
     const group = new THREE.Group()
     group.position.copy(pos)
+
+    // Night-only stones glow silver/white; regular stones glow blue-gold
+    const outerColor = nightOnly ? 0xddeeff : 0x88ccff
+    const innerColor = nightOnly ? 0xffffff : 0xffffff
 
     // Glowing box
     const geo = new THREE.BoxGeometry(0.4, 0.6, 0.2)
     const mat = new THREE.MeshBasicMaterial({
-      color: 0x88ccff,
+      color: outerColor,
       transparent: true,
       opacity: 0.8,
     })
@@ -153,9 +174,9 @@ export class LoreStoneManager {
     // Inner glow
     const innerGeo = new THREE.BoxGeometry(0.25, 0.4, 0.12)
     const innerMat = new THREE.MeshBasicMaterial({
-      color: 0xffffff,
+      color: innerColor,
       transparent: true,
-      opacity: 0.4,
+      opacity: nightOnly ? 0.7 : 0.4,
     })
     const inner = new THREE.Mesh(innerGeo, innerMat)
     group.add(inner)

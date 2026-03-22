@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { BiomeType } from '../biomes/types'
-import { NPC_DEFINITIONS, ALL_NPC_IDS, type NPCId, type NPCDef } from './NPCData'
+import { NPC_DEFINITIONS, ALL_NPC_IDS, type NPCId, type NPCDef, type TimeCondition } from './NPCData'
 import { loadNPCStates, saveNPCStates, type NPCStateData } from './NPCState'
 import { NPCMesh } from './NPCMesh'
 import { NPCBeacon } from './NPCBeacon'
@@ -109,7 +109,7 @@ export class NPCManager {
     return new THREE.Vector3(x, y, z)
   }
 
-  update(delta: number, playerPos: THREE.Vector3, time: number, input: InputManager) {
+  update(delta: number, playerPos: THREE.Vector3, time: number, input: InputManager, timeOfDay = 0.5) {
     let nearestNPC: ActiveNPC | null = null
     let nearestDistSq = Infinity
 
@@ -146,6 +146,7 @@ export class NPCManager {
         nearestDistSq = distSq
       }
 
+
       // Relocate check: all lines delivered at current stage, player moved away
       if (npc.awaitingRelocate && distSq > RELOCATE_DIST_SQ) {
         this.relocateNPC(npc)
@@ -156,7 +157,7 @@ export class NPCManager {
     if (nearestNPC && !this.dialogue.isActive()) {
       this.dialogue.showInteractPrompt()
       if (input.consumeInteract()) {
-        this.startNPCDialogue(nearestNPC)
+        this.startNPCDialogue(nearestNPC, timeOfDay)
       }
     } else if (!this.dialogue.isActive()) {
       this.dialogue.hideInteractPrompt()
@@ -190,13 +191,28 @@ export class NPCManager {
     }
   }
 
-  private startNPCDialogue(npc: ActiveNPC) {
+  private startNPCDialogue(npc: ActiveNPC, timeOfDay = 0.5) {
     const stageIndex = npc.state.currentLocationIndex
     const stages = npc.def.dialogue
     if (stageIndex >= stages.length) return
 
-    const lines = stages[stageIndex]
-    this.dialogue.startDialogue(npc.def.name, npc.def.title, lines)
+    // Resolve current time condition from timeOfDay (0-1)
+    const currentTimeCondition: TimeCondition = (
+      (timeOfDay >= 0.23 && timeOfDay <= 0.27) ? 'dawn' :
+      (timeOfDay >= 0.73 && timeOfDay <= 0.77) ? 'dusk' :
+      (timeOfDay >= 0.8 || timeOfDay <= 0.2)   ? 'night' :
+      'day'
+    )
+
+    // Filter dialogue lines: include lines with no timeCondition or matching condition
+    const dialogueLines = stages[stageIndex]
+    const filteredTexts = dialogueLines
+      .filter(line => !line.timeCondition || line.timeCondition === currentTimeCondition)
+      .map(line => line.text)
+
+    if (filteredTexts.length === 0) return
+
+    this.dialogue.startDialogue(npc.def.name, npc.def.title, filteredTexts)
 
     // Mark all lines as delivered for this stage
     npc.state.allLinesDelivered = true

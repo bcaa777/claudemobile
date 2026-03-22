@@ -399,7 +399,7 @@ export class Engine {
     this.playerState.update(delta, this.elapsedTime)
 
     // NPC system — update before creatures, lock movement during dialogue
-    this.npcManager.update(delta, camPos, this.elapsedTime, this.input)
+    this.npcManager.update(delta, camPos, this.elapsedTime, this.input, this.worldState.timeOfDay)
     if (this.npcManager.isDialogueActive()) {
       this.controller.speedMultiplier = 0
     }
@@ -536,7 +536,7 @@ export class Engine {
       }
     }
     this.loreStones.foxBonusActive = this.companionSystem.hasLoreGlow()
-    const lorePickup = this.loreStones.update(camPos)
+    const lorePickup = this.loreStones.update(camPos, this.worldState.timeOfDay)
     if (lorePickup) {
       this.journalSystem.discoverLore(lorePickup.loreIndex)
       this.audioSystem.chime?.playPickup()
@@ -688,7 +688,9 @@ export class Engine {
     {
       const grOverride = this.renderer.godRayPass.intensityOverride
       const godRayBiomeIntensity = this.biomeTransition.getCurrentVisual().godRayIntensity
-      const godRayIntensity = grOverride >= 0 ? grOverride : godRayBiomeIntensity * dayFactor
+      // Thin times (dawn/dusk): god rays intensify by 50%
+      const thinTimeMult = (this.worldState.isDawn || this.worldState.isDusk) ? 1.5 : 1.0
+      const godRayIntensity = grOverride >= 0 ? grOverride : godRayBiomeIntensity * thinTimeMult * dayFactor
       this.renderer.godRayPass.setIntensity(godRayIntensity)
       if (godRayIntensity > 0.001) {
         // Place sun far away along sun direction, project to NDC then to 0–1 UV
