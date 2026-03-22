@@ -7,6 +7,9 @@ export type TimeCondition = 'day' | 'night' | 'dawn' | 'dusk'
 export interface DialogueLine {
   text: string
   timeCondition?: TimeCondition
+  minLoreFound?: number
+  requiresSiteActivated?: BiomeType[]
+  companionSpecies?: string
 }
 
 export interface NPCVisualConfig {
@@ -67,33 +70,43 @@ export const NPC_DEFINITIONS: Record<NPCId, NPCDef> = {
       { biome: BiomeType.Desert, offset: { x: -20, z: -18 } },
     ],
     dialogue: [
-      // Stage 1 — Forest (introduces world, cheerful, scatterbrained)
+      // Stage 1 — Introduction (Forest)
       [
-        { text: "Oh! A traveler! You have no idea how long I've been mapping these woods. The trees keep... moving. Or maybe I do. Hard to say!" },
-        { text: "This world wasn't always broken apart like this, you know. Used to be one big beautiful place. Now it's all... chunks. Like a dropped mirror." },
-        { text: "I've drawn maps of every biome I can find, but they never quite fit together. Like someone tore a painting into pieces and shuffled them." },
-        { text: "Head south toward the savanna if you want answers. Or was it north? My compass hasn't worked since The Shattering. None of them do." },
-        { text: "The stones glow differently after dark, have you noticed? Not just the crystals — the old ones, the ones with markings. They hum.", timeCondition: 'night' },
+        { text: "Oh! A traveler! The trees keep rearranging when I'm not looking. Or perhaps I do. Hard to say." },
+        { text: "I've drawn maps of every biome, but they never quite fit together. Like a torn painting." },
+        { text: "The forest hums at a frequency just below hearing. Press your hand to the oldest tree and you'll feel it." },
+        { text: "I've heard the desert hums at dawn. Never been brave enough to check." },
+        { text: "The stones glow differently after dark. The old ones, the ones with markings. They remember.", timeCondition: 'night' },
+        { text: "The swamp keeps secrets that the forest only whispers about." },
+        { text: "Ah, you travel with a fox. They know paths that aren't on any map.", companionSpecies: 'fox' },
+        { text: "A deer companion. The deer remember a dance that we've forgotten.", companionSpecies: 'deer' },
+        { text: "That bird above you — it sees what the ground hides.", companionSpecies: 'bird' },
+        { text: "Goats always know where the earth is thinnest. Trust yours.", companionSpecies: 'goat' },
+        { text: "You've been reading the stones. Good. The land has more to say than any of us.", minLoreFound: 3 },
+        { text: "Since the forest site awakened, my compass twitches north again. Almost.", requiresSiteActivated: [BiomeType.Forest] },
       ],
-      // Stage 2 — Savanna (mentions Vesper, sends player onward)
+      // Stage 2 — Cross-biome hints
       [
-        { text: "Oh, you found me again! I swear I didn't move—the world just... rearranged. That's my theory anyway." },
-        { text: "I met an astronomer once, up in the snowy peaks. Vesper, she called herself. Terribly sad woman. Said she could read the old sky, before it cracked." },
-        { text: "She told me the stars used to form a pattern—a map of the whole realm. Now there are gaps where constellations used to be. Gave me chills." },
-        { text: "They speak louder after dark. The stones, I mean. Go find one at night — you'll hear it.", timeCondition: 'night' },
+        { text: "Oh, you found me again! The world rearranged. That's my theory anyway." },
+        { text: "An astronomer in the peaks — Vesper. She reads the cracked sky like a book." },
+        { text: "The stars used to form a map. Now there are gaps shaped like questions." },
+        { text: "They speak louder after dark. The stones, I mean.", timeCondition: 'night' },
+        { text: "A fox walked me to a stone once. Sat beside it until I listened.", companionSpecies: 'fox' },
+        { text: "So many stones found. You're assembling a language nobody taught you.", minLoreFound: 8 },
+        { text: "The snow peaks feel different now. Warmer, maybe. Or just less lonely.", requiresSiteActivated: [BiomeType.Snow] },
       ],
-      // Stage 3 — Oasis (mentions Bramble, hints at the knight's guilt)
+      // Stage 3 — Mystery deepens
       [
-        { text: "There's a knight wandering the swamps. Bramble. Big fellow, broken sword on his back. Won't look you in the eye." },
-        { text: "He told me—well, mumbled really—that he struck the blow that broke the world. Can you imagine carrying that guilt?" },
-        { text: "Funny thing is, everyone I talk to has a different piece of the story. Like we're all holding one shard of the same broken mirror." },
+        { text: "A knight in the swamps — Bramble. He carries a broken sword and a heavier burden." },
+        { text: "Everyone holds one shard of the same story. Even me." },
+        { text: "Night makes cartographers of us all. Everything looks different in the dark.", timeCondition: 'night' },
+        { text: "Two sites humming now. The map is drawing itself.", requiresSiteActivated: [BiomeType.Forest, BiomeType.Snow] },
       ],
-      // Stage 4 — Desert (reflects, hints at bigger truth)
+      // Stage 4 — Reflection
       [
-        { text: "You know what's strange? The more I map this world, the more it feels... intentional. Like someone broke it on purpose." },
-        { text: "Not out of malice. More like... tearing down a house before a flood takes it. Controlled demolition, you might say." },
-        { text: "If you really want the whole truth, find Thornwick. Eccentric old librarian, last I heard he was freezing in the tundra. He reads books nobody else can." },
-        { text: "Safe travels, friend. And if my map leads you off a cliff—well, that's a feature, not a bug!" },
+        { text: "The more I map this world, the more it feels intentional. Like controlled demolition." },
+        { text: "Find Thornwick. He reads books nobody else can. Last I heard, he was freezing somewhere." },
+        { text: "Safe travels. And if my map leads you off a cliff — that's a feature." },
       ],
     ],
     artefact: {
@@ -127,31 +140,42 @@ export const NPC_DEFINITIONS: Record<NPCId, NPCDef> = {
       { biome: BiomeType.Snow, offset: { x: 20, z: 16 } },
     ],
     dialogue: [
-      // Stage 1 — Snow (melancholic, poetic, introduces cosmic lore)
+      // Stage 1 — Introduction (Snow)
       [
-        { text: "...the stars weep. Can you hear them? No. Of course not. Only I can, and I wish I couldn't." },
-        { text: "Before The Shattering, the night sky told a story. Seven constellations for seven Keepers. Now three are missing entirely." },
-        { text: "I charted every star for forty years. Then one morning the sky... stuttered. Cracked like old glass. And the Harmony was gone." },
-        { text: "Somewhere up in the crystal caves, the light still bends the way it used to. Refractions of the old world. I must go see." },
-        { text: "The hum changes when the sun goes down. Listen. The world breathes differently at night — you can almost hear what it lost.", timeCondition: 'night' },
+        { text: "The stars weep. Can you hear them? No. Of course not." },
+        { text: "I charted every star for forty years. Then the sky stuttered like old glass." },
+        { text: "The snow holds light from constellations that no longer exist." },
+        { text: "The crystal caves still bend light the old way. Refractions of what was." },
+        { text: "The world breathes differently at night. You can almost hear what it lost.", timeCondition: 'night' },
+        { text: "The desert sands shift in patterns that mirror the missing stars." },
+        { text: "A fox at your heel. They see the old starlight that we've forgotten.", companionSpecies: 'fox' },
+        { text: "Your deer knows the old paths. Watch where it pauses — those places still resonate.", companionSpecies: 'deer' },
+        { text: "That bird traces arcs the lost constellations used to follow.", companionSpecies: 'bird' },
+        { text: "Goats climb toward what's highest. Perhaps yours seeks the sky I mourn.", companionSpecies: 'goat' },
+        { text: "You've gathered fragments of the old language. The stones speak more freely now.", minLoreFound: 3 },
+        { text: "The snow site awakens. A star I thought dead just flickered.", requiresSiteActivated: [BiomeType.Snow] },
       ],
-      // Stage 2 — Crystal (connects to Finch, deepens lore)
+      // Stage 2 — Cross-biome connections
       [
-        { text: "The crystals remember what we've forgotten. Each one hums a note from the old Harmony. If you listen... fragments of a song." },
-        { text: "A cartographer found me once. Finch. Bright little soul. She maps the broken world with such... optimism. I envy that." },
-        { text: "There were eight of us originally. Eight Keepers. But the Eighth... we don't speak that name. Not anymore." },
-        { text: "At night I can almost read the old constellations again. There's a pattern forming in the gaps — an absence shaped like intent.", timeCondition: 'night' },
+        { text: "Each crystal hums a note from the old Harmony. Fragments of a song." },
+        { text: "A cartographer — Finch — maps the broken world with such optimism. I envy that." },
+        { text: "Eight Keepers once. The Eighth has no name now. Convenient, that." },
+        { text: "At night the old constellations almost form again. An absence shaped like intent.", timeCondition: 'night' },
+        { text: "Your deer pauses near the resonance. It hears the note I've been chasing.", companionSpecies: 'deer' },
+        { text: "So many stones read. You carry more of the old sky than I do.", minLoreFound: 8 },
+        { text: "The crystal site sings again. The refractions have found their source.", requiresSiteActivated: [BiomeType.Crystal] },
       ],
-      // Stage 3 — Heaven (reveals the sky's truth)
+      // Stage 3 — Revelation
       [
-        { text: "Up here, above the clouds, the old sky almost looks whole. Almost. The cracks are thinner at this altitude." },
-        { text: "The Eighth Keeper saw something coming. Something that would devour the world whole. I know because I saw it too—in the stars." },
-        { text: "A darkness between constellations. Growing. Hungry. The Shattering wasn't destruction. It was... surgery. Cutting away the infected limb." },
+        { text: "Above the clouds, the cracks are thinner. The old sky almost looks whole." },
+        { text: "The Eighth saw something coming. A darkness between constellations, growing." },
+        { text: "The Shattering wasn't destruction. It was surgery.", timeCondition: 'night' },
+        { text: "Two wounds in the sky have closed. The pattern reshapes itself.", requiresSiteActivated: [BiomeType.Snow, BiomeType.Crystal] },
       ],
-      // Stage 4 — Alpine (final reflection)
+      // Stage 4 — Resolution
       [
-        { text: "I've made my peace with the broken sky. Each fragment still holds light. That must count for something." },
-        { text: "Find Pearl if you can. The healer. She dreams of the old world—actually dreams it. She might show you what we lost." },
+        { text: "Each fragment still holds light. That must count for something." },
+        { text: "Find Pearl. The healer. She dreams the old world whole." },
         { text: "...and what we saved." },
       ],
     ],
@@ -186,34 +210,43 @@ export const NPC_DEFINITIONS: Record<NPCId, NPCDef> = {
       { biome: BiomeType.Volcanic, offset: { x: -22, z: 16 } },
     ],
     dialogue: [
-      // Stage 1 — Swamp (gruff, guarded, introduces his burden)
+      // Stage 1 — Introduction (Swamp)
       [
-        { text: "...what do you want. No, don't answer. I don't care. Turn around and walk away." },
-        { text: "Still here? Fine. Look at this sword on my back. Sundered. Broken. Just like everything else I've touched." },
-        { text: "I struck the blow that shattered the world. Me. These hands. This blade. Does that satisfy your curiosity?" },
-        { text: "Go bother someone else. There's a trickster in the mushroom groves—Plume. At least she'll entertain you while she lies to your face." },
-        { text: "...at night the blade still rings. A thin sound, like a bell underwater. I've never told anyone that.", timeCondition: 'night' },
+        { text: "What do you want. No, don't answer. Turn around." },
+        { text: "This sword on my back. Sundered. Broken. Just like everything I've touched." },
+        { text: "I struck the blow that shattered the world. Does that satisfy you?" },
+        { text: "The swamp water glows where old roots remember the Harmony." },
+        { text: "At night the blade still rings. A thin sound, like a bell underwater.", timeCondition: 'night' },
+        { text: "Go find Plume in the mushroom groves. At least she'll entertain you while she lies." },
+        { text: "That fox watches me like it knows what I did.", companionSpecies: 'fox' },
+        { text: "Your deer flinches near me. Smart animal. Knows a blade-bearer when it sees one.", companionSpecies: 'deer' },
+        { text: "Your bird won't land near me. Even the sky keeps its distance.", companionSpecies: 'bird' },
+        { text: "A goat. Stubborn creature. Reminds me of someone I'd rather forget.", companionSpecies: 'goat' },
+        { text: "You've been finding the old stones. They tell a kinder version of my story.", minLoreFound: 3 },
+        { text: "The swamp site stirs. Even the rot tastes different now.", requiresSiteActivated: [BiomeType.Swamp] },
       ],
-      // Stage 2 — Bog (opens up slightly, reveals he was tricked)
+      // Stage 2 — Opens up
       [
-        { text: "You again. Persistent little wretch, aren't you." },
-        { text: "I didn't know what I was doing. That's the worst part. I was told the strike would SAVE the Harmony. Forge it anew." },
-        { text: "Cinder made the blade. The forgemaster. Intense fellow—lives for his craft. He poured everything into that weapon. Said it was his masterwork." },
-        { text: "We were both tools. Used by someone who saw further than either of us could." },
-        { text: "There are things that only come out after dark. Truths, mostly. The dark has a way of pulling them up.", timeCondition: 'night' },
+        { text: "You again. Persistent." },
+        { text: "I was told the strike would save the Harmony. Forge it anew. I believed that." },
+        { text: "Cinder forged the blade. Poured everything into it. We were both tools." },
+        { text: "The dark pulls up truths. The swamp and I have that in common.", timeCondition: 'night' },
+        { text: "Your fox sniffs at the blade's shadow. Perhaps it smells the old Harmony.", companionSpecies: 'fox' },
+        { text: "The stones you carry — they hold pieces of the moment I'd rather forget.", minLoreFound: 8 },
+        { text: "The volcanic site woke. Cinder must feel that in his bones.", requiresSiteActivated: [BiomeType.Volcanic] },
       ],
-      // Stage 3 — Taiga (softening, regret mixed with dawning understanding)
+      // Stage 3 — Dawning understanding
       [
-        { text: "I've walked every swamp, every bog, every frozen waste. Punishing myself. But lately I wonder..." },
-        { text: "What if the blow I struck—what if it actually did save the world? Not the way I intended, but... in the only way that was left?" },
-        { text: "Vesper told me about the darkness she saw in the stars. Something coming to consume everything. What if shattering was the only choice?" },
+        { text: "I've walked every waste punishing myself. But lately I wonder..." },
+        { text: "What if the blow actually saved the world? Not how I intended, but the only way left?" },
+        { text: "Vesper spoke of darkness in the stars. Something consuming. What if shattering was mercy?", timeCondition: 'night' },
+        { text: "Sites awakening. The pieces I broke are mending themselves.", requiresSiteActivated: [BiomeType.Swamp, BiomeType.Volcanic] },
       ],
-      // Stage 4 — Volcanic (near resolution)
+      // Stage 4 — Near resolution
       [
-        { text: "I came back to the fire. Where Cinder forged the blade. Feels right, somehow. Endings and beginnings." },
-        { text: "If you've spoken to the others—if you've heard their pieces—then you know more than any of us did alone." },
-        { text: "Find Thornwick. The librarian. He has the last page of the story. The one that explains why any of this had to happen." },
-        { text: "And tell him... tell him Bramble is done running." },
+        { text: "I came back to the fire. Endings and beginnings share the same warmth." },
+        { text: "Find Thornwick. He has the last page." },
+        { text: "Tell him Bramble is done running." },
       ],
     ],
     artefact: {
@@ -247,33 +280,43 @@ export const NPC_DEFINITIONS: Record<NPCId, NPCDef> = {
       { biome: BiomeType.Mesa, offset: { x: 22, z: 14 } },
     ],
     dialogue: [
-      // Stage 1 — Mushroom (theatrical, sing-song, half-truths)
+      // Stage 1 — Introduction (Swamp/Mushroom)
       [
-        { text: "Step right up, step right up! Plume's Emporium of Truths, Half-Truths, and Outright Fabrications! Today's special: one genuine secret, only slightly used!" },
-        { text: "They call me a liar. Harsh! I prefer 'narrative entrepreneur.' Every story I tell is true—from a certain point of view." },
-        { text: "Want to know about The Shattering? Oh, everyone has a version. The knight says guilt. The astronomer says fate. I say... good business!" },
-        { text: "A broken world has more borders, more borders means more customs, more customs means more... opportunities. But I digress. Head to the jungle if you want another piece of the puzzle!" },
-        { text: "Psst. Night buyer's rate: the stones that only appear in the dark hold lore even I don't have in my catalogue. You should collect them.", timeCondition: 'night' },
+        { text: "Step right up! Plume's Emporium of Truths and Outright Fabrications!" },
+        { text: "They call me a liar. I prefer 'narrative entrepreneur.'" },
+        { text: "The mushrooms here grow in spirals that match the old Harmony's rhythm." },
+        { text: "I hear the jungle vines still sing at dawn, if you know how to listen." },
+        { text: "Night buyer's rate: the stones that glow after dark hold secrets even I can't sell.", timeCondition: 'night' },
+        { text: "The mesa canyons echo with a voice that isn't wind." },
+        { text: "Ah, a fox! They're natural merchants — always trading silence for knowledge.", companionSpecies: 'fox' },
+        { text: "A deer at your side. Careful — they trade in honesty. Bad for my business.", companionSpecies: 'deer' },
+        { text: "Your bird has sharp eyes. It'll find my hidden wares before you do.", companionSpecies: 'bird' },
+        { text: "A goat? Stubborn customers, goats. Never accept the first offer.", companionSpecies: 'goat' },
+        { text: "You've been reading the stones. Collecting truths I haven't catalogued yet.", minLoreFound: 3 },
+        { text: "A site awakened in the swamp. Even lies ring truer there now.", requiresSiteActivated: [BiomeType.Swamp] },
       ],
-      // Stage 2 — Jungle (drops real intel between jokes)
+      // Stage 2 — Real intel
       [
-        { text: "You came back! Most don't. They take one look at my prices and flee. But you—you want truth, not trinkets." },
-        { text: "Fine, a real one, free of charge: there were EIGHT Keepers, not seven. Everyone forgets the Eighth. Convenient, that." },
-        { text: "The Eighth Keeper had no title. No constellation. Just... purpose. And when the darkness came, they acted alone." },
-        { text: "After dark, the world's secrets have fewer places to hide. I do my best business at midnight.", timeCondition: 'night' },
+        { text: "You came back. You want truth, not trinkets." },
+        { text: "Eight Keepers, not seven. Everyone forgets the Eighth. Convenient." },
+        { text: "The Eighth had no title. Just purpose. When the darkness came, they acted alone." },
+        { text: "After dark, secrets have fewer places to hide.", timeCondition: 'night' },
+        { text: "Your fox tilts its head at me. It knows I'm mixing truth with performance.", companionSpecies: 'fox' },
+        { text: "All those stones, and still you come to me for answers. Flattering.", minLoreFound: 8 },
+        { text: "The jungle site hums now. Even my stories feel heavier there.", requiresSiteActivated: [BiomeType.Jungle] },
       ],
-      // Stage 3 — Mesa (more serious, drops the mask slightly)
+      // Stage 3 — Drops the mask
       [
-        { text: "You know, between you and me—and I'll deny saying this—I miss the old world. The unbroken one." },
-        { text: "I was the Keeper of Stories. Every tale, every song, every whispered legend passed through me. Now the stories are scattered too." },
-        { text: "Cinder forged the blade. Bramble swung it. But who told Bramble where to strike? Who whispered the words that made it seem heroic? ...not me. The Eighth." },
+        { text: "Between you and me — I miss the unbroken world." },
+        { text: "I was the Keeper of Stories. Now the stories are scattered too." },
+        { text: "Who whispered to Bramble where to strike? Not me. The Eighth.", timeCondition: 'night' },
+        { text: "Sites waking everywhere. My old stories are becoming true again.", requiresSiteActivated: [BiomeType.Swamp, BiomeType.Jungle] },
       ],
-      // Stage 4 — Badlands (almost honest)
+      // Stage 4 — Almost honest
       [
-        { text: "Last truth, and it's a big one, so lean in close: the Eighth Keeper loved this world more than any of us." },
-        { text: "That's why they shattered it. You don't break something you don't love. You just... let it burn." },
-        { text: "Pearl knows more. The healer dreams of the moment it happened. Ask her—gently. She's fragile these days." },
-        { text: "And when you find Thornwick, tell him Plume sent you. He'll overcharge you for the truth, but at least his version is accurate!" },
+        { text: "The Eighth loved this world more than any of us. That's why they broke it." },
+        { text: "Pearl dreams the moment it happened. Ask her gently." },
+        { text: "Find Thornwick. Tell him Plume sent you." },
       ],
     ],
     artefact: {
@@ -307,32 +350,43 @@ export const NPC_DEFINITIONS: Record<NPCId, NPCDef> = {
       { biome: BiomeType.Snow, offset: { x: -18, z: 18 } },
     ],
     dialogue: [
-      // Stage 1 — Volcanic (intense, obsessive about craft)
+      // Stage 1 — Introduction (Volcanic)
       [
-        { text: "The metal still sings here. Can you feel it in the ground? The old fire, the true fire. This is where I forged the Blade of Ending." },
-        { text: "Don't look at me like that. A smith doesn't choose how his weapons are used. I forged perfection. What Bramble did with it is his burden." },
-        { text: "...that's what I tell myself. Every day. Every hour. While the lava bubbles and the world stays broken." },
-        { text: "The Eighth Keeper brought me the design. Said it was the only way to cut the Harmony cleanly. A surgical tool, not a weapon." },
-        { text: "The forge is loudest after dark. Something in the rock resonates at night — the old ore still remembers the heat of creation.", timeCondition: 'night' },
+        { text: "The metal still sings here. This is where I forged the Blade of Ending." },
+        { text: "A smith doesn't choose how his weapons are used. That's what I tell myself." },
+        { text: "The lava remembers the heat of the first forging. Before any of us existed." },
+        { text: "The Eighth brought me the design. Said it was surgery, not violence." },
+        { text: "The forge is loudest after dark. The old ore remembers the heat of creation.", timeCondition: 'night' },
+        { text: "I hear there's ice in the far peaks that won't melt. Frozen in the moment of the Shattering." },
+        { text: "Your fox watches the forge-light. It sees the old fire beneath the new.", companionSpecies: 'fox' },
+        { text: "That deer stands where the cooling water flows. It knows the metal's grief.", companionSpecies: 'deer' },
+        { text: "Your bird circles the smoke. Even ash carries messages.", companionSpecies: 'bird' },
+        { text: "A goat here? They seek the hottest stone. Perhaps it reminds them of something.", companionSpecies: 'goat' },
+        { text: "The stones you carry hum near the forge. Old metal recognizes old words.", minLoreFound: 3 },
+        { text: "The volcanic site pulses. My hammer hand twitches in answer.", requiresSiteActivated: [BiomeType.Volcanic] },
       ],
-      // Stage 2 — Ash Wastes (connecting to Bramble)
+      // Stage 2 — Connecting to Bramble
       [
-        { text: "Bramble came to me, you know. Before the strike. Hands shaking. Eyes full of purpose someone else put there." },
-        { text: "I handed him the blade and I saw his face change. Like holding it made the decision for him. The metal wanted to swing." },
-        { text: "I've tried to forge another—to reforge the Harmony. But the pieces won't fit. The world isn't broken. It's... redistributed." },
-        { text: "At night I hear the blade in my memory. One clean note. One perfect strike. I will never make anything better, and I will never forgive myself for it.", timeCondition: 'night' },
+        { text: "Bramble came to me before the strike. Hands shaking. Eyes full of borrowed purpose." },
+        { text: "The world isn't broken. It's redistributed." },
+        { text: "The pieces won't reforge. I've tried." },
+        { text: "At night I hear the blade in memory. One clean note. One perfect strike.", timeCondition: 'night' },
+        { text: "Your fox pressed its nose to the old anvil. Smelled something I've missed.", companionSpecies: 'fox' },
+        { text: "All those fragments gathered. You carry the Harmony's echo now.", minLoreFound: 8 },
+        { text: "The hell-fires burn calmer since the deep site woke.", requiresSiteActivated: [BiomeType.Hell] },
       ],
-      // Stage 3 — Hell (deep underground, closer to truth)
+      // Stage 3 — Truth
       [
-        { text: "Down here, beneath everything, the old forges still burn. The Eighth Keeper's workshop was here. I found their notes." },
-        { text: "They calculated everything. The angle of the strike, the resonance frequency, the exact point where the Harmony could be split without shattering into dust." },
-        { text: "It wasn't chaos. It was the most precise act of creation I've ever seen. Disguised as destruction." },
+        { text: "The Eighth's workshop was down here. I found their notes." },
+        { text: "They calculated everything. The angle, the frequency, the exact fracture point." },
+        { text: "It wasn't chaos. It was the most precise creation I've ever seen.", timeCondition: 'night' },
+        { text: "Two forges answer each other now. The old frequency is returning.", requiresSiteActivated: [BiomeType.Volcanic, BiomeType.Hell] },
       ],
-      // Stage 4 — Cliffs (acceptance)
+      // Stage 4 — Acceptance
       [
-        { text: "I've stopped trying to reforge. You can't unmake a decision that saved the world." },
-        { text: "Each biome holds a fragment of the Harmony. Together, they still hum the old song. Just... quieter. Spread thinner." },
-        { text: "Thornwick has the Eighth's journal. The real one, not copies. Find him and you'll understand why the world had to break." },
+        { text: "I've stopped trying to reforge. You can't unmake mercy." },
+        { text: "Each biome hums the old song. Quieter now. Spread thinner." },
+        { text: "Thornwick has the Eighth's journal. The real one." },
       ],
     ],
     artefact: {
@@ -366,33 +420,43 @@ export const NPC_DEFINITIONS: Record<NPCId, NPCDef> = {
       { biome: BiomeType.Heaven, offset: { x: -14, z: -22 } },
     ],
     dialogue: [
-      // Stage 1 — Coral Reef (gentle, ethereal, half-asleep)
+      // Stage 1 — Introduction (Coral Reef)
       [
-        { text: "Mmm... sorry, I was dreaming. I'm always dreaming. The old world visits me when I sleep. It misses us, I think." },
-        { text: "In my dreams, the Harmony plays like music. Seven voices, eight parts. The eighth part is silence—but a meaningful silence." },
-        { text: "The coral here grows in the old patterns. Before The Shattering, all of nature sang along. Now only the coral remembers the melody." },
-        { text: "If you meet Vesper, tell her the stars in my dreams are still whole. It might give her comfort." },
-        { text: "The dreams are clearest at night. When I close my eyes now I can almost touch the Eighth's memory — warm, like embers.", timeCondition: 'night' },
+        { text: "Sorry, I was dreaming. The old world visits me when I sleep." },
+        { text: "The Harmony plays in my dreams. Seven voices, eight parts. The eighth is silence." },
+        { text: "The coral grows in patterns from before the Shattering. It remembers the melody." },
+        { text: "If you find Vesper, tell her the stars in my dreams are still whole." },
+        { text: "The dreams are clearest at night. I can almost touch the Eighth's memory.", timeCondition: 'night' },
+        { text: "The desert oasis reflects a sky that hasn't existed for ages." },
+        { text: "Your fox curls beside me when I dream. It sees what I see.", companionSpecies: 'fox' },
+        { text: "The deer knows the old dance. In my dreams, the whole world dances with it.", companionSpecies: 'deer' },
+        { text: "That bird sings a note from the old Harmony. Only one, but it's enough.", companionSpecies: 'bird' },
+        { text: "Your goat stands so still near me. Perhaps it dreams too.", companionSpecies: 'goat' },
+        { text: "The stones you've touched glow in my dreams. Brighter each time.", minLoreFound: 3 },
+        { text: "The coral site wakes. My dreams have color again.", requiresSiteActivated: [BiomeType.CoralReef] },
       ],
-      // Stage 2 — Oasis (visions becoming clearer)
+      // Stage 2 — Visions clearer
       [
-        { text: "I dreamed of the moment it happened. The Shattering. It was... beautiful. Terrible and beautiful." },
-        { text: "The Eighth Keeper stood at the center of everything. They didn't flinch. Didn't weep. They just... let go." },
-        { text: "They poured themselves into the breaking. That's why the pieces still hold together—the Eighth is the mortar between the shards." },
-        { text: "Come to me at night some time. The visions I cannot speak in daylight come more freely under the stars.", timeCondition: 'night' },
+        { text: "I dreamed of the Shattering. It was terrible and beautiful." },
+        { text: "The Eighth stood at the center. They didn't flinch. They let go." },
+        { text: "They poured themselves into the breaking. The mortar between the shards." },
+        { text: "At night the visions speak freely. Daylight makes them shy.", timeCondition: 'night' },
+        { text: "Your deer stood in my dream last night. It was leading me somewhere.", companionSpecies: 'deer' },
+        { text: "So many fragments found. My dreams grow sharper with each one you carry.", minLoreFound: 8 },
+        { text: "The desert site pulses. In my dreams, it sounds like a heartbeat.", requiresSiteActivated: [BiomeType.Desert] },
       ],
-      // Stage 3 — Floating Islands (reveals the sacrifice)
+      // Stage 3 — The sacrifice
       [
-        { text: "Up here, between earth and sky, I can almost reach them. The Eighth. They're woven into everything now." },
-        { text: "They didn't just shatter the world. They gave themselves to hold it together in its broken state. A sacrifice so complete there's nothing left to find." },
-        { text: "That's why we can't remember their name. They became the world itself. Every breeze, every wave, every grain of sand." },
+        { text: "Between earth and sky, I can almost reach the Eighth. Woven into everything." },
+        { text: "They gave themselves to hold the broken world together. Nothing left to find." },
+        { text: "We can't remember their name. They became every breeze, every grain of sand.", timeCondition: 'night' },
+        { text: "Two sites dreaming in harmony now. The Eighth stirs in the deep places.", requiresSiteActivated: [BiomeType.CoralReef, BiomeType.Heaven] },
       ],
-      // Stage 4 — Heaven (final truth)
+      // Stage 4 — Final truth
       [
-        { text: "I see it all now. The old world was dying. Something vast and hungry was coming—a void that would leave nothing behind." },
-        { text: "The Eighth Keeper shattered the Harmony to scatter us, to make the world too fragmented for the void to consume in one bite." },
-        { text: "We weren't broken. We were saved. Every biome is a lifeboat, and the Eighth is the ocean holding them all afloat." },
-        { text: "Go to Thornwick. He has the words I can only see in dreams. He'll give you the ending. Or perhaps... the beginning." },
+        { text: "The old world was dying. Something vast and hungry was coming." },
+        { text: "We weren't broken. We were saved. Each biome is a lifeboat." },
+        { text: "Go to Thornwick. He has the words I can only see in dreams." },
       ],
     ],
     artefact: {
@@ -426,34 +490,44 @@ export const NPC_DEFINITIONS: Record<NPCId, NPCDef> = {
       { biome: BiomeType.Forest, offset: { x: 16, z: -22 } },
     ],
     dialogue: [
-      // Stage 1 — Tundra (eccentric, rapid-fire, hints at everything)
+      // Stage 1 — Introduction (Snow/Tundra)
       [
-        { text: "YES! A reader! A seeker! A—wait, can you read? Doesn't matter, I'll read FOR you. Page 47, paragraph 3, subsection—oh, wrong book." },
-        { text: "The Shattering, yes yes YES. Everyone talks about it like it was a tragedy. It was a THESIS! A masterwork of applied metaphysics!" },
-        { text: "Seven Keepers, eight parts, one Harmony, zero warning. Well, not zero—I had warning. It's all in the books. Nobody reads the books!" },
-        { text: "Come find me in the ash wastes. I need to cross-reference something. Also I'm cold. Terribly, achingly cold." },
-        { text: "The chapters I haven't transcribed yet — I can only read them at night, by the light of the things that refuse to be read in daylight.", timeCondition: 'night' },
+        { text: "A seeker! Can you read? Doesn't matter. I'll read for you." },
+        { text: "The Shattering wasn't a tragedy. It was a thesis. Applied metaphysics." },
+        { text: "Seven Keepers, eight parts, one Harmony. Nobody reads the books!" },
+        { text: "The volcanic forges hold pages written in heat. I must go there next." },
+        { text: "These chapters only reveal themselves at night. Ink that fears the sun.", timeCondition: 'night' },
+        { text: "The swamp's oldest trees have bark-writing. Older than any of my books." },
+        { text: "A fox! Foxes can read the wind. Page seven of my field guide confirms it.", companionSpecies: 'fox' },
+        { text: "Your deer. Deer appear in chapter twelve — the Keepers' first companions.", companionSpecies: 'deer' },
+        { text: "That bird! Birds carried messages between the Keepers. It's in the appendix.", companionSpecies: 'bird' },
+        { text: "A goat. Page 204: 'The mountain goat knows every page the mountain has written.'", companionSpecies: 'goat' },
+        { text: "You've been reading the stones! Cross-referencing beautifully with my notes.", minLoreFound: 3 },
+        { text: "A site activated in the snow. My frozen ink is thawing. Literally.", requiresSiteActivated: [BiomeType.Snow] },
       ],
-      // Stage 2 — Ash Wastes (connecting the threads)
+      // Stage 2 — Connecting threads
       [
-        { text: "Right, where was I—page 203, the Eighth Keeper's personal journal. 'When the Consuming Dark reaches the outer stars, the Harmony must be unmade or all is lost.'" },
-        { text: "Clear as day! Written centuries before it happened! The Eighth KNEW. Planned everything. The forge, the blade, the knight, the strike." },
-        { text: "Even us—scattered across the biomes—that was intentional. Seven fragments of consciousness to keep seven fragments of world alive." },
-        { text: "Page 312 only shows ink at night. I have theories. Many theories. The most likely: the Eighth encoded secrets in ink that responds to darkness.", timeCondition: 'night' },
+        { text: "Page 203: 'When the Consuming Dark reaches the outer stars, the Harmony must be unmade.'" },
+        { text: "Written centuries before it happened. The Eighth planned everything." },
+        { text: "Us, scattered across biomes — intentional. Seven fragments keeping seven worlds alive." },
+        { text: "Page 312 only shows ink at night. The Eighth encoded darkness-responsive text.", timeCondition: 'night' },
+        { text: "Your fox led me to a passage I'd overlooked. Remarkable research assistant.", companionSpecies: 'fox' },
+        { text: "Your stone collection rivals my library. Different format, same knowledge.", minLoreFound: 8 },
+        { text: "The volcanic site stirs. Cross-reference with chapter nine — the Forge Prophecy.", requiresSiteActivated: [BiomeType.Volcanic] },
       ],
-      // Stage 3 — Mushroom (the full picture)
+      // Stage 3 — Full picture
       [
-        { text: "Plume will tell you I'm mad. Plume is correct, but that's beside the point. Mad people see patterns sane people miss." },
-        { text: "Here's the pattern: the Eighth Keeper didn't just shatter the Harmony. They became it. Dispersed into every atom of every biome." },
-        { text: "That's why the world still works! Why rain falls and trees grow and mushrooms—these magnificent mushrooms—still bloom in the dark!" },
-        { text: "The Eighth is the operating system of the broken world. Running in the background. Keeping the fragments from drifting apart." },
+        { text: "Plume says I'm mad. Correct, but beside the point." },
+        { text: "The Eighth didn't just shatter the Harmony. They became it. Every atom." },
+        { text: "That's why rain still falls and mushrooms bloom. The Eighth runs in the background.", timeCondition: 'night' },
+        { text: "Multiple sites singing. The bibliography is assembling itself.", requiresSiteActivated: [BiomeType.Snow, BiomeType.Volcanic] },
       ],
-      // Stage 4 — Forest (the ending, where it began)
+      // Stage 4 — The ending
       [
-        { text: "We've come full circle. Forest. Where Finch started mapping. Where the first Keeper woke after The Shattering with no memory and a broken compass." },
-        { text: "The truth, then. All of it. The Consuming Dark still exists, out beyond the edges of the world. But it can't get in. The fragments are too small, too scattered, too alive." },
-        { text: "The Eighth Keeper's sacrifice wasn't just destruction—it was an act of love so vast it rewrote the laws of reality." },
-        { text: "And you, traveler—collecting artefacts, hearing our stories, piecing it all together—you're doing exactly what the Eighth hoped someone would. Remembering." },
+        { text: "Full circle. Forest. Where the first Keeper woke with no memory." },
+        { text: "The Consuming Dark still exists beyond the edges. But it can't get in." },
+        { text: "The Eighth's sacrifice was love so vast it rewrote reality." },
+        { text: "You — collecting, listening, piecing together — you're doing what the Eighth hoped. Remembering." },
       ],
     ],
     artefact: {

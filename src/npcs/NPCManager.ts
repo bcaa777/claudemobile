@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { BiomeType } from '../biomes/types'
-import { NPC_DEFINITIONS, ALL_NPC_IDS, type NPCId, type NPCDef, type TimeCondition } from './NPCData'
+import { NPC_DEFINITIONS, ALL_NPC_IDS, type NPCId, type NPCDef, type DialogueLine, type TimeCondition } from './NPCData'
 import { loadNPCStates, saveNPCStates, type NPCStateData } from './NPCState'
 import { NPCMesh } from './NPCMesh'
 import { NPCBeacon } from './NPCBeacon'
@@ -10,6 +10,7 @@ import { sampleWorldHeight } from '../world/TerrainGenerator'
 import type { BiomeMap } from '../world/BiomeMap'
 import type { InputManager } from '../engine/InputManager'
 import { RENDER_CONFIG } from '../config'
+import type { WorldState } from '../systems/WorldState'
 
 const INTERACT_DIST_SQ = 5 * 5
 const RELOCATE_DIST_SQ = 60 * 60
@@ -109,7 +110,7 @@ export class NPCManager {
     return new THREE.Vector3(x, y, z)
   }
 
-  update(delta: number, playerPos: THREE.Vector3, time: number, input: InputManager, timeOfDay = 0.5) {
+  update(delta: number, playerPos: THREE.Vector3, time: number, input: InputManager, timeOfDay = 0.5, worldState?: WorldState, companionSpecies?: string | null, loreFound = 0) {
     let nearestNPC: ActiveNPC | null = null
     let nearestDistSq = Infinity
 
@@ -157,7 +158,7 @@ export class NPCManager {
     if (nearestNPC && !this.dialogue.isActive()) {
       this.dialogue.showInteractPrompt()
       if (input.consumeInteract()) {
-        this.startNPCDialogue(nearestNPC, timeOfDay)
+        this.startNPCDialogue(nearestNPC, timeOfDay, worldState, companionSpecies ?? null, loreFound)
       }
     } else if (!this.dialogue.isActive()) {
       this.dialogue.hideInteractPrompt()
@@ -191,7 +192,7 @@ export class NPCManager {
     }
   }
 
-  private startNPCDialogue(npc: ActiveNPC, timeOfDay = 0.5) {
+  private startNPCDialogue(npc: ActiveNPC, timeOfDay = 0.5, worldState?: WorldState, companionSpecies: string | null = null, loreFound = 0) {
     const stageIndex = npc.state.currentLocationIndex
     const stages = npc.def.dialogue
     if (stageIndex >= stages.length) return
@@ -204,10 +205,10 @@ export class NPCManager {
       'day'
     )
 
-    // Filter dialogue lines: include lines with no timeCondition or matching condition
+    // Filter dialogue lines based on all conditions
     const dialogueLines = stages[stageIndex]
     const filteredTexts = dialogueLines
-      .filter(line => !line.timeCondition || line.timeCondition === currentTimeCondition)
+      .filter(line => this.linePassesConditions(line, currentTimeCondition, worldState, companionSpecies, loreFound))
       .map(line => line.text)
 
     if (filteredTexts.length === 0) return
@@ -218,6 +219,33 @@ export class NPCManager {
     npc.state.allLinesDelivered = true
     npc.awaitingRelocate = true
     saveNPCStates(this.states)
+  }
+
+  /** Check whether a dialogue line's conditions are all met. */
+  private linePassesConditions(
+    line: DialogueLine,
+    currentTime: TimeCondition,
+    worldState?: WorldState,
+    companionSpecies: string | null = null,
+    loreFound = 0,
+  ): boolean {
+    // Time condition
+    if (line.timeCondition && line.timeCondition !== currentTime) return false
+
+    // Minimum lore stones found
+    if (line.minLoreFound !== undefined && loreFound < line.minLoreFound) return false
+
+    // Companion species requirement
+    if (line.companionSpecies && line.companionSpecies !== companionSpecies) return false
+
+    // Requires specific biome site(s) activated — any match passes
+    if (line.requiresSiteActivated && line.requiresSiteActivated.length > 0) {
+      if (!worldState) return false
+      const hasAny = line.requiresSiteActivated.some(biome => worldState.activatedSites.has(biome))
+      if (!hasAny) return false
+    }
+
+    return true
   }
 
   private relocateNPC(npc: ActiveNPC) {

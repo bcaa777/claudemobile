@@ -30,6 +30,11 @@ export class LoreStoneManager {
   private collectedFragmentIds: Set<string> = new Set()
   foxBonusActive = false
 
+  /** Number of unique lore stones the player has collected. */
+  get collectedCount(): number {
+    return this.collectedSet.size
+  }
+
   constructor(scene: THREE.Scene, biomeMap: BiomeMap) {
     this.scene = scene
     this.biomeMap = biomeMap

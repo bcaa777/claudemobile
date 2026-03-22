@@ -420,7 +420,7 @@ export class Engine {
     this.playerState.update(delta, this.elapsedTime)
 
     // NPC system — update before creatures, lock movement during dialogue
-    this.npcManager.update(delta, camPos, this.elapsedTime, this.input, this.worldState.timeOfDay)
+    this.npcManager.update(delta, camPos, this.elapsedTime, this.input, this.worldState.timeOfDay, this.worldState, this.companionSystem.companionSpecies, this.loreStones.collectedCount)
     if (this.npcManager.isDialogueActive()) {
       this.controller.speedMultiplier = 0
     }
