@@ -24,6 +24,10 @@ export class WorldState {
   currentWeather: string = 'clear'
   weatherSeverity: number = 0 // 0-1
 
+  // Weather-site reveal tracking (populated by WeatherSystem)
+  // Maps BiomeType → Set of reveal keys e.g. 'rain_reveal', 'fog_reveal', etc.
+  weatherReveals: Map<BiomeType, Set<string>> = new Map()
+
   // Time (written by DayNightCycle)
   timeOfDay: number = 0.5 // 0-1
   isDawn: boolean = false  // 0.23-0.27
@@ -83,8 +87,13 @@ export class WorldState {
 
   // Save/load for persistence (localStorage)
   save(): string {
+    // Serialize weatherReveals as an array of [biomeIndex, revealKey[]] pairs
+    const revealsArray = Array.from(this.weatherReveals.entries()).map(
+      ([biome, keys]) => [biome, Array.from(keys)] as [number, string[]]
+    )
     return JSON.stringify({
       activatedSites: Array.from(this.activatedSites),
+      weatherReveals: revealsArray,
     })
   }
 
@@ -94,9 +103,32 @@ export class WorldState {
       if (parsed.activatedSites) {
         this.activatedSites = new Set(parsed.activatedSites)
       }
+      if (Array.isArray(parsed.weatherReveals)) {
+        this.weatherReveals = new Map()
+        for (const [biome, keys] of parsed.weatherReveals as [number, string[]][]) {
+          this.weatherReveals.set(biome as BiomeType, new Set(keys))
+        }
+      }
     } catch {
       // Ignore corrupt data
     }
+  }
+
+  /** Record that the player witnessed a weather event near a biome's resonance site */
+  addWeatherReveal(biome: BiomeType, revealKey: string): boolean {
+    let reveals = this.weatherReveals.get(biome)
+    if (!reveals) {
+      reveals = new Set()
+      this.weatherReveals.set(biome, reveals)
+    }
+    if (reveals.has(revealKey)) return false // already known
+    reveals.add(revealKey)
+    return true // newly discovered
+  }
+
+  /** Check whether a specific weather reveal has been witnessed */
+  hasWeatherReveal(biome: BiomeType, revealKey: string): boolean {
+    return this.weatherReveals.get(biome)?.has(revealKey) ?? false
   }
 
   /** Register a resonance site from LandmarkManager */

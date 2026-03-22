@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { BiomeType } from '../biomes/types'
+import { WorldState } from './WorldState'
 
 export enum WeatherType {
   Clear = 0,
@@ -94,6 +95,12 @@ const FOG_COLORS: Partial<Record<WeatherType, THREE.Color>> = {
 
 const MAX_PARTICLES = 300
 
+// Weather types capable of triggering lightning reveals
+const LIGHTNING_WEATHERS = new Set<WeatherType>([WeatherType.HeavyRain, WeatherType.Blizzard])
+
+// Distance threshold (units) for weather-site reveal detection
+const REVEAL_DISTANCE = 100
+
 export class WeatherSystem {
   private scene: THREE.Scene
   currentWeather = WeatherType.Clear
@@ -117,6 +124,12 @@ export class WeatherSystem {
   // Fog
   fogFarOverride = -1  // -1 means no override
   private weatherFogIntensity = 0  // 0–1, how strongly weather fog applies
+
+  // Weather reveal tracking — store the last weather we ran reveals for, so we
+  // only check once per weather event rather than every frame.
+  private worldState: WorldState | null = null
+  private lastRevealWeather: WeatherType = WeatherType.Clear
+  private revealChecked = false  // guard: checked once per weather event
 
   constructor(scene: THREE.Scene) {
     this.scene = scene
@@ -147,6 +160,11 @@ export class WeatherSystem {
     }
   }
 
+  /** Provide WorldState so weather reveal tracking can write to it. */
+  setWorldState(state: WorldState): void {
+    this.worldState = state
+  }
+
   update(delta: number, biome: BiomeType, playerPos: THREE.Vector3) {
     // Track biome changes — start a transition but don't slam instantly
     if (biome !== this.currentBiome) {
@@ -164,6 +182,7 @@ export class WeatherSystem {
       if (next !== this.currentWeather) {
         this.targetWeather = next
         this.blendProgress = 0
+        this.revealChecked = false  // new weather event — allow one reveal check
       }
     }
 
@@ -191,6 +210,58 @@ export class WeatherSystem {
 
     // Lightning (HeavyRain only)
     this.updateLightning(delta, effectiveWeather)
+
+    // Weather-site reveal detection — run once per weather event
+    if (!this.revealChecked && this.worldState && effectiveWeather !== WeatherType.Clear) {
+      // Only check once the weather has fully settled (blend complete or at 50%+ target)
+      if (this.blendProgress >= 1 || (this.blendProgress > 0.5 && this.targetWeather !== this.lastRevealWeather)) {
+        this.checkWeatherReveals(effectiveWeather, playerPos)
+        this.lastRevealWeather = effectiveWeather
+        this.revealChecked = true
+      }
+    }
+  }
+
+  /**
+   * Check whether the player is near any resonance site and if so record
+   * the appropriate weather reveal in WorldState.
+   * Called once per weather event (not every frame).
+   */
+  private checkWeatherReveals(weather: WeatherType, playerPos: THREE.Vector3): void {
+    if (!this.worldState) return
+
+    for (const [biome, site] of this.worldState.resonanceSites) {
+      const dx = site.position.x - playerPos.x
+      const dz = site.position.z - playerPos.z
+      const distSq = dx * dx + dz * dz
+
+      if (distSq > REVEAL_DISTANCE * REVEAL_DISTANCE) continue
+
+      // Rain (Rain or HeavyRain) near any site
+      if (weather === WeatherType.Rain || weather === WeatherType.HeavyRain) {
+        this.worldState.addWeatherReveal(biome, 'rain_reveal')
+      }
+
+      // Sandstorm near Desert site
+      if (weather === WeatherType.Sandstorm && biome === BiomeType.Desert) {
+        this.worldState.addWeatherReveal(biome, 'sandstorm_reveal')
+      }
+
+      // Fog near Swamp site
+      if (weather === WeatherType.Fog && biome === BiomeType.Swamp) {
+        this.worldState.addWeatherReveal(biome, 'fog_reveal')
+      }
+
+      // Snow (Snow or Blizzard) near Snow site
+      if ((weather === WeatherType.Snow || weather === WeatherType.Blizzard) && biome === BiomeType.Snow) {
+        this.worldState.addWeatherReveal(biome, 'snow_reveal')
+      }
+
+      // Lightning-capable weather near any site
+      if (LIGHTNING_WEATHERS.has(weather)) {
+        this.worldState.addWeatherReveal(biome, 'lightning_reveal')
+      }
+    }
   }
 
   private updateParticles(delta: number, weather: WeatherType, intensity: number, playerPos: THREE.Vector3) {
