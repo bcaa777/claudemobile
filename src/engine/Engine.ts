@@ -34,6 +34,7 @@ import { RuneSystem } from '../challenges/RuneSystem'
 import { WeatherType } from '../systems/WeatherSystem'
 import { GrappleSystem } from '../player/GrappleSystem'
 import { AtmosphereParticles } from '../systems/AtmosphereParticles'
+import { GroundFog } from '../systems/GroundFog'
 import { RoadNetwork } from '../traversal/RoadNetwork'
 import { ZiplineRide } from '../traversal/ZiplineRide'
 import { VineSwing } from '../traversal/VineSwing'
@@ -74,6 +75,7 @@ export class Engine {
   private runeSystem: RuneSystem
   private grapple: GrappleSystem
   private atmosphereParticles: AtmosphereParticles
+  private groundFog: GroundFog
   private grappleCountThisFrame = 0
   private roadNetwork: RoadNetwork
   private ziplineRide: ZiplineRide
@@ -196,6 +198,7 @@ export class Engine {
     this.companionSystem = new CompanionSystem()
     this.grapple = new GrappleSystem(this.renderer.scene)
     this.atmosphereParticles = new AtmosphereParticles(this.renderer.scene)
+    this.groundFog = new GroundFog(this.renderer.scene)
     this.ziplineRide = new ZiplineRide(this.renderer.scene)
     this.vineSwing = new VineSwing(this.renderer.scene)
     this.runeSystem = new RuneSystem(this.renderer.scene, this.biomeMap, this.landmarkManager.positions)
@@ -277,6 +280,13 @@ export class Engine {
     this.skyDome.update(this.renderer.camera, t, this._sunDir, this._sunCol, delta)
     this.biomeTransition.setDayFactor(dayFactor)
     this.biomeTransition.update(this.renderer.camera.position, delta)
+
+    // Ground fog — low-lying biome-specific fog layer
+    this.groundFog.update(
+      delta, this.renderer.camera.position,
+      this.biomeTransition.getCurrentVisual(),
+      t,
+    )
 
     // Atmosphere particles — ambient per-biome particles (after biome transition, before rendering)
     this.atmosphereParticles.update(
