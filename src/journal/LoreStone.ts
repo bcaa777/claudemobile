@@ -72,6 +72,17 @@ export class LoreStoneManager {
     }
   }
 
+  /** Returns all loaded lore stone instances (used by companion affinities). */
+  getAllStones(): LoreStoneInstance[] {
+    const result: LoreStoneInstance[] = []
+    for (const instances of this.stones.values()) {
+      for (const s of instances) {
+        result.push(s)
+      }
+    }
+    return result
+  }
+
   update(playerPos: THREE.Vector3): { loreIndex: number; text: string } | null {
     let collected: { loreIndex: number; text: string } | null = null
     const baseDist = this.foxBonusActive ? FOX_STONE_VISIBLE_DIST : BASE_STONE_VISIBLE_DIST

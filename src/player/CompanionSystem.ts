@@ -1,6 +1,10 @@
 import * as THREE from 'three'
 import { Creature } from '../creatures/Creature'
 import { SPECIES, SpeciesId } from '../creatures/Species'
+import { WorldState } from '../systems/WorldState'
+import { BiomeType } from '../biomes/types'
+import type { LoreStoneInstance } from '../journal/LoreStone'
+import type { LandmarkCrystal } from '../landmarks/LandmarkCrystal'
 
 const BOND_DIST = 6
 const BOND_TIME = 8
@@ -14,6 +18,8 @@ const COMPANION_NAMES = [
 
 type CompanionBonus = 'speed' | 'crystal_trail' | 'predator_warning' | 'lore_glow' | 'jump' | 'regen'
 
+export type CompanionMood = 'normal' | 'alert' | 'resonating' | 'distressed'
+
 const SPECIES_BONUS: Partial<Record<SpeciesId, CompanionBonus>> = {
   rabbit: 'speed',
   deer: 'crystal_trail',
@@ -23,11 +29,36 @@ const SPECIES_BONUS: Partial<Record<SpeciesId, CompanionBonus>> = {
   goat: 'jump',
 }
 
+// Resonance site biomes the deer responds to
+const DEER_RESONANCE_BIOMES: BiomeType[] = [BiomeType.Forest, BiomeType.Snow]
+const DEER_RESONANCE_DIST = 40
+const FOX_SENSE_DIST = 50
+const FOX_DISTRESS_STABILITY_THRESHOLD = 0.55
+const BIRD_CIRCLING_HDIST = 15
+const GOAT_STAMP_DIST = 10
+
 export class CompanionSystem {
   companionId: string | null = null
   companionName = ''
   companionSpecies: SpeciesId | null = null
   activeBonus: CompanionBonus | null = null
+
+  // Mystery affinity properties
+  /** Direction to nearest undiscovered lore stone within 50 units (fox). Null if none nearby. */
+  foxSenseDirection: THREE.Vector3 | null = null
+  /** True when fox companion senses low biome stability (destabilization zone). */
+  foxDistressed = false
+  /** True when deer companion is within 40 units of a Forest or Snow resonance site. */
+  companionResonating = false
+  /** True when bird companion is directly above a lore stone (within 15 horizontal units). */
+  birdCircling = false
+  /** World position the bird is circling over (valid when birdCircling is true). */
+  birdCirclingPos: THREE.Vector3 | null = null
+  /** True when goat companion stands within 10 units of a hidden landmark crystal. */
+  goatStamping = false
+
+  /** Current companion mood. */
+  mood: CompanionMood = 'normal'
 
   private bondProgress = 0
   private bondTarget: string | null = null
@@ -36,6 +67,9 @@ export class CompanionSystem {
   private warningEl: HTMLElement | null
   private lossTimer = 0
   private collarMesh: THREE.Mesh | null = null
+
+  // Shared reusable vector
+  private _tmpDir = new THREE.Vector3()
 
   constructor() {
     this.hudEl = document.getElementById('companion-hud')
@@ -50,6 +84,9 @@ export class CompanionSystem {
     isCrouching: boolean,
     creatures: Map<string, Creature>,
     playerForward: THREE.Vector3,
+    worldState?: WorldState,
+    loreStones?: LoreStoneInstance[],
+    landmarkCrystals?: LandmarkCrystal[],
   ) {
     // Loss message fade
     if (this.lossTimer > 0) {
@@ -92,8 +129,8 @@ export class CompanionSystem {
       }
 
       // Predator warning bonus
+      let nearPredator = false
       if (this.activeBonus === 'predator_warning' && this.warningEl) {
-        let nearPredator = false
         for (const c of creatures.values()) {
           if (c.state === 'dead') continue
           const sp = SPECIES[c.species]
@@ -108,9 +145,118 @@ export class CompanionSystem {
         this.warningEl.style.display = nearPredator ? 'block' : 'none'
       }
 
+      // --- Mystery affinities ---
+      this.foxSenseDirection = null
+      this.foxDistressed = false
+      this.companionResonating = false
+      this.birdCircling = false
+      this.birdCirclingPos = null
+      this.goatStamping = false
+
+      const species = this.companionSpecies
+
+      // Fox: sense nearest undiscovered lore stone within 50 units + detect instability
+      if (species === 'fox') {
+        if (loreStones && loreStones.length > 0) {
+          let bestDistSq = FOX_SENSE_DIST * FOX_SENSE_DIST
+          let bestStone: LoreStoneInstance | null = null
+
+          for (const stone of loreStones) {
+            if (stone.collected) continue
+            const sdx = stone.position.x - playerPos.x
+            const sdz = stone.position.z - playerPos.z
+            const sDistSq = sdx * sdx + sdz * sdz
+            if (sDistSq < bestDistSq) {
+              bestDistSq = sDistSq
+              bestStone = stone
+            }
+          }
+
+          if (bestStone) {
+            this._tmpDir.set(
+              bestStone.position.x - playerPos.x,
+              0,
+              bestStone.position.z - playerPos.z,
+            ).normalize()
+            this.foxSenseDirection = this._tmpDir.clone()
+          }
+        }
+
+        // Fox distress: low biome stability in player's current biome
+        if (worldState) {
+          const stability = worldState.biomeStability.get(worldState.playerBiome) ?? 1.0
+          this.foxDistressed = stability < FOX_DISTRESS_STABILITY_THRESHOLD
+        }
+      }
+
+      // Deer: resonating near Forest or Snow resonance sites
+      if (species === 'deer' && worldState) {
+        for (const biome of DEER_RESONANCE_BIOMES) {
+          const site = worldState.resonanceSites.get(biome)
+          if (!site) continue
+          const rdx = site.position.x - playerPos.x
+          const rdz = site.position.z - playerPos.z
+          if (rdx * rdx + rdz * rdz < DEER_RESONANCE_DIST * DEER_RESONANCE_DIST) {
+            this.companionResonating = true
+            break
+          }
+        }
+      }
+
+      // Bird: circling above lore stones (within 15 horizontal units)
+      if (species === 'bird' || species === 'parrot') {
+        if (loreStones && loreStones.length > 0) {
+          const threshSq = BIRD_CIRCLING_HDIST * BIRD_CIRCLING_HDIST
+          for (const stone of loreStones) {
+            if (stone.collected) continue
+            const bdx = stone.position.x - playerPos.x
+            const bdz = stone.position.z - playerPos.z
+            if (bdx * bdx + bdz * bdz < threshSq) {
+              this.birdCircling = true
+              this.birdCirclingPos = stone.position.clone()
+              break
+            }
+          }
+        }
+      }
+
+      // Goat: stamping near hidden landmark crystals within 10 units
+      if (species === 'goat' && landmarkCrystals && landmarkCrystals.length > 0) {
+        const threshSq = GOAT_STAMP_DIST * GOAT_STAMP_DIST
+        for (const crystal of landmarkCrystals) {
+          if (crystal.collected) continue
+          const gdx = crystal.worldPos.x - playerPos.x
+          const gdz = crystal.worldPos.z - playerPos.z
+          if (gdx * gdx + gdz * gdz < threshSq) {
+            this.goatStamping = true
+            break
+          }
+        }
+      }
+
+      // --- Mood calculation ---
+      if (this.foxDistressed) {
+        this.mood = 'distressed'
+      } else if (this.companionResonating) {
+        this.mood = 'resonating'
+      } else if (nearPredator || this.birdCircling) {
+        this.mood = 'alert'
+      } else {
+        this.mood = 'normal'
+      }
+
       this.updateHud()
       return
     }
+
+    // Reset affinity state when no companion
+    this.foxSenseDirection = null
+    this.foxDistressed = false
+    this.companionResonating = false
+    this.birdCircling = false
+    this.birdCirclingPos = null
+    this.goatStamping = false
+    this.mood = 'normal'
 
     // Bonding attempt — crouching + near herbivore + slow movement
     if (this.warningEl) this.warningEl.style.display = 'none'
@@ -175,6 +321,13 @@ export class CompanionSystem {
     this.companionId = null
     this.companionSpecies = null
     this.activeBonus = null
+    this.foxSenseDirection = null
+    this.foxDistressed = false
+    this.companionResonating = false
+    this.birdCircling = false
+    this.birdCirclingPos = null
+    this.goatStamping = false
+    this.mood = 'normal'
 
     if (this.hudEl) {
       this.hudEl.textContent = 'Your companion has fallen...'

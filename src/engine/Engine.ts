@@ -516,6 +516,9 @@ export class Engine {
       this.input.crouchHeld,
       this.creatureManager.creatures,
       this._fwd,
+      this.worldState,
+      this.loreStones.getAllStones(),
+      this.landmarkManager.allCrystals,
     )
 
     // Apply companion bonuses
