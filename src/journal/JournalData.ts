@@ -1,6 +1,7 @@
 import { BiomeType } from '../biomes/types'
 import { SpeciesId, ALL_SPECIES, SPECIES } from '../creatures/Species'
 import { WeatherType } from '../systems/WeatherSystem'
+import { getAllFragments, TOTAL_LORE_FRAGMENTS } from '../lore/LoreContent'
 
 export type JournalCategory = 'creature' | 'biome' | 'landmark' | 'weather' | 'lore' | 'rune'
 
@@ -183,24 +184,52 @@ export function buildJournalEntries(): JournalEntry[] {
     })
   }
 
-  // Biomes (11)
+  // Biomes (11) — narrative descriptions referencing the Resonance Builders
+  const BIOME_NARRATIVE: Record<number, string> = {
+    [BiomeType.Forest]: 'Where the Builders first heard the world\'s frequency beneath the roots. The deer still circle the old resonance stones at dusk.',
+    [BiomeType.Desert]: 'The Builders\' civilization grew here, amplifying the desert\'s dry frequency through monuments of stone and air. The sand still vibrates near the pyramid.',
+    [BiomeType.Swamp]: 'Here the harmony first broke. The bog absorbs sound and twists it. Ancient pipes leak gas the Builders could never seal.',
+    [BiomeType.Snow]: 'The Builders froze their knowledge into the ice. Mammoth herds encode memories in their breath-patterns. What the ice preserves, the thaw reveals.',
+    [BiomeType.Volcanic]: 'Beneath the fire, the world\'s deepest frequency. The Builders tapped it for power, channeling lava through carved conduits of pure resonance.',
+    [BiomeType.Crystal]: 'The crystals carry signals across the world — a network the Builders awakened but did not create. Every formation sings the same song.',
+    [BiomeType.Jungle]: 'The strongest frequency, dense and layered. The Builders built platforms to rise above the canopy and hear the individual notes within the green chord.',
+    [BiomeType.Mesa]: 'The world\'s own memory, written in layered stone. Each stratum a different age, each fossil a note in a chord millions of years old.',
+    [BiomeType.CoralReef]: 'The tides carry frequencies between continents. The reef is a crossroads of harmonics where every current arrives bearing a song from elsewhere.',
+    [BiomeType.Heaven]: 'The Builders rode harmonics upward and built platforms in the sky. The skywhales sing the original chord — but Heaven is crumbling.',
+    [BiomeType.Hell]: 'Born from the Builders\' failed experiment — a new frequency that cracked the harmony. Dissonance given form, growing when the chord weakens.',
+  }
+
   for (let i = 0; i <= 10; i++) {
     const biome = i as BiomeType
     entries.push({
       key: `biome_${biome}`,
       name: BIOME_NAMES[biome] || `Biome ${biome}`,
-      description: `You visited the ${BIOME_NAMES[biome] || 'unknown'}.`,
+      description: BIOME_NARRATIVE[biome] || `You visited the ${BIOME_NAMES[biome] || 'unknown'}.`,
       category: 'biome',
     })
   }
 
-  // Landmarks (11)
+  // Landmarks (11) — narrative descriptions
+  const LANDMARK_NARRATIVE: Record<number, string> = {
+    [BiomeType.Forest]: 'The Druid Ring — the Builders\' first resonance experiment. Stones tuned to the forest\'s voice still hum when the wind is right.',
+    [BiomeType.Desert]: 'The Great Pyramid — their masterwork of amplification. When the capstone was placed, every grain of sand within a league trembled.',
+    [BiomeType.Swamp]: 'The Ziggurat — an attempt to purify the swamp\'s corrupted frequency. It failed beautifully, vibrating with a chord between harmony and dissonance.',
+    [BiomeType.Snow]: 'The Ice Palace — sung into shape during the longest night. Each wall a frozen waveform, re-sung each winter as the summer melt erases it.',
+    [BiomeType.Volcanic]: 'The Obsidian Citadel — forged in eruption. The Builders convinced the volcano to shape itself; molten stone flowed into molds of pure sound.',
+    [BiomeType.Crystal]: 'The Crystal Cathedral — built where seven crystal veins intersect. Stand at its center and hear every biome\'s frequency at once.',
+    [BiomeType.Jungle]: 'The Jungle Pyramid — consumed by growth within a decade. Its resonance chambers merged with the canopy until jungle and structure became one instrument.',
+    [BiomeType.Mesa]: 'The Mesa Citadel — carved, not built. Every removed stone changed the cliff\'s resonance. The architects worked by ear as much as by eye.',
+    [BiomeType.CoralReef]: 'The Coral Palace — half-submerged to listen to both worlds. Above: wind and birdsong. Below: the deep hum of currents that circle the globe.',
+    [BiomeType.Heaven]: 'The Cloud Temple — where every frequency arrives in perfect balance. For one moment, the Builders heard the world as it was meant to sound.',
+    [BiomeType.Hell]: 'The Infernal Citadel — not built by the Builders. It assembled itself from the wreckage of their greatest experiment.',
+  }
+
   for (let i = 0; i <= 10; i++) {
     const biome = i as BiomeType
     entries.push({
       key: `landmark_${biome}`,
       name: LANDMARK_NAMES[biome] || `Landmark ${biome}`,
-      description: `A monument found in the ${BIOME_NAMES[biome] || 'unknown'}.`,
+      description: LANDMARK_NARRATIVE[biome] || `A monument found in the ${BIOME_NAMES[biome] || 'unknown'}.`,
       category: 'landmark',
     })
   }
@@ -215,7 +244,18 @@ export function buildJournalEntries(): JournalEntry[] {
     })
   }
 
-  // Lore stones (80)
+  // Narrative lore fragments from LoreContent (biome-specific)
+  const allFragments = getAllFragments()
+  for (const frag of allFragments) {
+    entries.push({
+      key: `lore_${frag.id}`,
+      name: `Resonance Fragment: ${frag.id.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}`,
+      description: frag.text,
+      category: 'lore',
+    })
+  }
+
+  // Legacy lore stones (kept for backward compatibility with existing saves)
   for (let i = 0; i < LORE_TEXTS.length; i++) {
     entries.push({
       key: `lore_${i}`,
@@ -228,4 +268,4 @@ export function buildJournalEntries(): JournalEntry[] {
   return entries
 }
 
-export const TOTAL_ENTRIES = 21 + 11 + 11 + 8 + LORE_TEXTS.length // ~131
+export const TOTAL_ENTRIES = 21 + 11 + 11 + 8 + TOTAL_LORE_FRAGMENTS + LORE_TEXTS.length
