@@ -190,6 +190,11 @@ export interface MusicContext {
   playerSpeed: number         // units/sec, high = sprinting
   playerPos: THREE.Vector3
   creatures: Map<string, Creature>
+  /**
+   * True when the player is near an active Resonance Site.
+   * Near sites the harmonic tone IS the music, so BiomeMusic should fade further.
+   */
+  nearResonanceSite?: boolean
 }
 
 // ──────────────────────────────────────────────
@@ -221,11 +226,26 @@ export class BiomeMusic {
 
   // Suppression
   private suppressed = false
+  /** True when player is near a Resonance Site — music fades to a whisper */
+  private nearSite = false
+
+  /**
+   * Base internal gain. Applied on top of the musicGain layer (0.35) in AudioSystem.
+   * Kept at 1.0 so the music layer node alone controls the base level.
+   * Near-site reduction is applied via nearSiteGain.
+   *
+   * Combat / sprinting → full suppression (fade out).
+   * Near resonance site → reduced to NEAR_SITE_GAIN (harmonic tone takes over).
+   * Exploration → 30-40% silence gaps handled by the phrase state machine.
+   */
+  private readonly BASE_GAIN = 1.0
+  /** Volume fraction when near a Resonance Site (harmonic tone dominates) */
+  private readonly NEAR_SITE_GAIN = 0.25
 
   constructor(ctx: AudioContext, master: GainNode) {
     this.ctx = ctx
     this.master = ctx.createGain()
-    this.master.gain.value = 0.55
+    this.master.gain.value = this.BASE_GAIN
     this.master.connect(master)
 
     this.phraseGain = ctx.createGain()
@@ -233,8 +253,8 @@ export class BiomeMusic {
     this.phraseGain.connect(this.master)
   }
 
-  /** Scale master output volume (0–1 multiplier applied on top of base 0.55) */
-  setVolume(v: number) { this.master.gain.value = 0.55 * v }
+  /** Scale master output volume (0–1 multiplier) — kept for external debug controls */
+  setVolume(v: number) { this.master.gain.value = this.BASE_GAIN * v }
 
   // ── Update (called every frame) ──
 
@@ -254,14 +274,21 @@ export class BiomeMusic {
     }
 
     // Check suppression signals
-    const shouldSuppress = this.checkSuppression(context)
-    if (shouldSuppress && !this.suppressed) {
+    const { suppress, nearSite } = this.checkSuppression(context)
+    if (suppress && !this.suppressed) {
       this.suppressed = true
       if (this.state === 'playing' || this.state === 'fading_in') {
         this.transitionTo('fading_out')
       }
-    } else if (!shouldSuppress && this.suppressed) {
+    } else if (!suppress && this.suppressed) {
       this.suppressed = false
+    }
+
+    // Near Resonance Site: fade music down to NEAR_SITE_GAIN (harmonic tone takes over)
+    if (nearSite !== this.nearSite) {
+      this.nearSite = nearSite
+      const targetGain = nearSite ? this.NEAR_SITE_GAIN : this.BASE_GAIN
+      this.master.gain.setTargetAtTime(targetGain, this.ctx.currentTime, 1.5)
     }
 
     // State machine tick
@@ -308,24 +335,27 @@ export class BiomeMusic {
     }
   }
 
-  private checkSuppression(context?: MusicContext): boolean {
-    if (!context) return false
+  private checkSuppression(context?: MusicContext): { suppress: boolean; nearSite: boolean } {
+    if (!context) return { suppress: false, nearSite: false }
 
-    // Weather severity > 0.5 suppresses music
-    if (context.weatherSeverity > 0.5) return true
+    // Near Resonance Site — harmonic tone takes over, music fades to whisper
+    const nearSite = context.nearResonanceSite ?? false
 
-    // Player sprinting (speed > 8 units/sec)
-    if (context.playerSpeed > 8) return true
+    // Weather severity > 0.5 suppresses music (combat-level intensity)
+    if (context.weatherSeverity > 0.5) return { suppress: true, nearSite }
 
-    // Hostile creature within 20 units — check for chase/attack states
+    // Combat: hostile creature within 20 units in chase/attack state
     for (const [, creature] of context.creatures) {
       if (creature.state === 'chase' || creature.state === 'attack') {
         const dist = creature.position.distanceTo(context.playerPos)
-        if (dist < 20) return true
+        if (dist < 20) return { suppress: true, nearSite }
       }
     }
 
-    return false
+    // Player sprinting (speed > 8 units/sec) — suppress for high-action moments
+    if (context.playerSpeed > 8) return { suppress: true, nearSite }
+
+    return { suppress: false, nearSite }
   }
 
   private transitionTo(newState: MusicState) {

@@ -6,7 +6,11 @@ import { createSpatialPanner } from './SpatialAudioHelper'
 import { WorldState } from '../systems/WorldState'
 
 const MAX_CREATURES = 3
-const MAX_RANGE_SQ = 625 // 25 units
+/** Creatures beyond this distance are inaudible */
+const MAX_RANGE = 60
+const MAX_RANGE_SQ = MAX_RANGE * MAX_RANGE // 3600
+/** Creatures within this distance play at full volume */
+const FULL_VOLUME_RANGE = 10
 
 /** Interval (seconds) for rhythmic calls near Resonance Sites */
 const SITE_CALL_INTERVAL = 2.0
@@ -60,7 +64,12 @@ export class CreatureSound {
 
     for (let i = 0; i < count; i++) {
       const { creature, distSq } = candidates[i]
-      const volume = Math.max(0.01, 0.07 * (1 - distSq / MAX_RANGE_SQ))
+      // Distance attenuation: full volume within FULL_VOLUME_RANGE, linear falloff to 0 at MAX_RANGE
+      const dist = Math.sqrt(distSq)
+      const attenuated = dist <= FULL_VOLUME_RANGE
+        ? 1.0
+        : 1.0 - (dist - FULL_VOLUME_RANGE) / (MAX_RANGE - FULL_VOLUME_RANGE)
+      const volume = Math.max(0, 0.07 * attenuated)
 
       const isNearSite = creature.state === 'reverence' || creature.state === 'resonating'
       const sp = SPECIES[creature.species]
