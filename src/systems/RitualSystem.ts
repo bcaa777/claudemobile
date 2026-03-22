@@ -3,6 +3,7 @@ import { BiomeType } from '../biomes/types'
 import { WorldState } from './WorldState'
 import { RITUAL_BY_BIOME } from './RitualData'
 import { ResonanceSiteVisual } from './ResonanceSite'
+import { HarmonicTone } from '../audio/HarmonicTone'
 import { Creature } from '../creatures/Creature'
 
 export interface RitualObservation {
@@ -26,6 +27,12 @@ export interface RitualObservation {
 export class RitualSystem {
   private resonanceSiteVisuals: ResonanceSiteVisual[] = []
 
+  // Final ritual state (Hell endgame 10-second stand mechanic)
+  private finalRitualProgress: number = 0 // 0-10 seconds
+  private finalRitualLastCrescendoIndex: number = -1
+  private lastPlayerPos: THREE.Vector3 = new THREE.Vector3()
+  private finalRitualActive: boolean = false
+
   // Reusable scratch vector
   private _tmpVec = new THREE.Vector3()
 
@@ -46,6 +53,12 @@ export class RitualSystem {
   ): void {
     // Tick down activation message timer
     this.updateActivationMessage(dt, worldState)
+
+    // Boost Hell resonance site glow when 8+ sites activated
+    this.updateHellSiteGlow(worldState)
+
+    // Track final ritual progress for Hell endgame
+    this.updateFinalRitual(dt, worldState, playerPos)
 
     // For each biome that has a resonance site registered
     for (const [biome, site] of worldState.resonanceSites) {
@@ -129,9 +142,122 @@ export class RitualSystem {
         )) continue
       }
 
+      // Hell uses the special 10-second final ritual — skip normal activation
+      if (biome === BiomeType.Hell) continue
+
       // All conditions met — activate!
       this.activateSite(biome, worldState)
     }
+  }
+
+  /** Increase Hell resonance site glow intensity when 8+ sites are activated */
+  private updateHellSiteGlow(worldState: WorldState): void {
+    if (worldState.activatedSites.size < 8) return
+    if (worldState.activatedSites.has(BiomeType.Hell)) return
+
+    for (const visual of this.resonanceSiteVisuals) {
+      if (visual.biome === BiomeType.Hell && !visual.activated) {
+        // Boost the ring glow based on how many sites are activated (8-10)
+        visual.setGlowBoost(worldState.activatedSites.size >= 8
+          ? 0.3 + (worldState.activatedSites.size - 8) * 0.15
+          : 0)
+        break
+      }
+    }
+  }
+
+  /**
+   * Final ritual mechanic: player must stand within 3 units of Hell site
+   * for 10 continuous seconds with 8+ sites activated.
+   * Moving away resets progress. Each second triggers a harmonic crescendo.
+   */
+  private updateFinalRitual(dt: number, worldState: WorldState, playerPos: THREE.Vector3): void {
+    // Skip if Hell already activated or chord already complete
+    if (worldState.activatedSites.has(BiomeType.Hell) || worldState.chordComplete) return
+
+    // Need 8+ sites activated
+    if (worldState.activatedSites.size < 8) {
+      this.finalRitualProgress = 0
+      this.finalRitualActive = false
+      return
+    }
+
+    const hellSite = worldState.resonanceSites.get(BiomeType.Hell)
+    if (!hellSite) return
+
+    const dx = playerPos.x - hellSite.position.x
+    const dz = playerPos.z - hellSite.position.z
+    const distSq = dx * dx + dz * dz
+    const RITUAL_RADIUS = 3
+
+    // Check if player is within radius and essentially standing still
+    const moveThreshold = 0.5 // allow tiny sway
+    const playerMoved = this.lastPlayerPos.distanceTo(playerPos) > moveThreshold * dt * 10
+
+    if (distSq > RITUAL_RADIUS * RITUAL_RADIUS || playerMoved) {
+      // Player moved away or too far — reset
+      if (this.finalRitualActive && this.finalRitualProgress > 0) {
+        console.log('[Ritual] Final ritual progress reset')
+      }
+      this.finalRitualProgress = 0
+      this.finalRitualLastCrescendoIndex = -1
+      this.finalRitualActive = false
+      this.lastPlayerPos.copy(playerPos)
+      return
+    }
+
+    this.lastPlayerPos.copy(playerPos)
+    this.finalRitualActive = true
+    this.finalRitualProgress += dt
+
+    // Each second, trigger a harmonic crescendo on one tone
+    const currentSecond = Math.floor(this.finalRitualProgress)
+    if (currentSecond > this.finalRitualLastCrescendoIndex && currentSecond < 10) {
+      this.finalRitualLastCrescendoIndex = currentSecond
+      this.triggerCrescendoAtIndex(currentSecond)
+    }
+
+    // At 10 seconds: complete the ritual
+    if (this.finalRitualProgress >= 10) {
+      this.activateSite(BiomeType.Hell, worldState)
+      this.completeChord(worldState)
+      this.finalRitualActive = false
+      this.finalRitualProgress = 0
+    }
+  }
+
+  /** Trigger a crescendo swell on one harmonic tone (by index in activation order) */
+  private triggerCrescendoAtIndex(index: number): void {
+    // Find activated site visuals and swell their tones in sequence
+    const activatedVisuals = this.resonanceSiteVisuals.filter(v => v.activated && v.harmonicTone)
+    if (index < activatedVisuals.length) {
+      activatedVisuals[index].harmonicTone?.crescendo()
+    }
+    console.log(`[Ritual] Crescendo tone ${index + 1}`)
+  }
+
+  /** Complete the chord — all 11 sites activated, transform the world */
+  private completeChord(worldState: WorldState): void {
+    worldState.chordComplete = true
+
+    // Trigger final crescendo on all tones
+    for (const visual of this.resonanceSiteVisuals) {
+      if (visual.harmonicTone) {
+        visual.harmonicTone.crescendo()
+      }
+    }
+
+    // Set the final activation message
+    worldState.activationMessage = 'The chord is complete. The world remembers its song.'
+    worldState.activationMessageTimer = 10.0 // longer display for the finale
+
+    worldState.saveToStorage()
+    console.log('[Ritual] THE CHORD IS COMPLETE')
+  }
+
+  /** Get current final ritual progress (0-10) for UI display */
+  getFinalRitualProgress(): number {
+    return this.finalRitualActive ? this.finalRitualProgress : 0
   }
 
   private checkTimeOfDay(required: string | undefined, timeOfDay: number): boolean {

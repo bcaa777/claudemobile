@@ -59,6 +59,22 @@ export class HarmonicTone {
     this.gainNode.gain.setTargetAtTime(targetGain, this.ctx.currentTime, 0.3)
   }
 
+  /**
+   * Crescendo: briefly swell the volume of this tone then return to normal.
+   * Used during the final ritual sequence — each tone swells in sequence.
+   */
+  crescendo(peakGain: number = 0.15, duration: number = 1.0): void {
+    if (!this.gainNode || !this.playing) return
+
+    const now = this.ctx.currentTime
+    // Swell up over 30% of duration, sustain briefly, then decay back
+    this.gainNode.gain.cancelScheduledValues(now)
+    this.gainNode.gain.setValueAtTime(this.gainNode.gain.value, now)
+    this.gainNode.gain.linearRampToValueAtTime(peakGain, now + duration * 0.3)
+    this.gainNode.gain.linearRampToValueAtTime(peakGain * 0.8, now + duration * 0.7)
+    this.gainNode.gain.linearRampToValueAtTime(this.baseGain, now + duration)
+  }
+
   /** Stop the tone */
   stop(): void {
     if (!this.playing) return

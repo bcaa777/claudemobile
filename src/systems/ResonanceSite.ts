@@ -146,6 +146,13 @@ export class ResonanceSiteVisual {
     }
   }
 
+  /** Boost the ring glow intensity (used for Hell site when 8+ sites activated) */
+  setGlowBoost(boost: number): void {
+    if (this.activated) return
+    // Override the base pulse with a brighter minimum
+    this.ringMaterial.opacity = Math.max(this.ringMaterial.opacity, 0.15 + boost)
+  }
+
   activate(): void {
     if (this.activated) return
     this.activated = true

@@ -48,6 +48,9 @@ export class WorldState {
   activationMessage: string | null = null
   activationMessageTimer: number = 0
 
+  // Endgame state
+  chordComplete: boolean = false
+
   // Hazard zones (repopulated each update by HazardSystem — used for journal/mystery tracking)
   hazardZones: Array<{
     type: string        // 'lava', 'toxic_gas', 'crystal_shards', 'ice'
@@ -59,6 +62,7 @@ export class WorldState {
   // Derived modifiers (recalculated each frame)
   creatureAggressionModifier: number = 1.0
   weatherIntensityModifier: number = 1.0
+  hellTransformFactor: number = 0 // 0 = normal red, 1 = peaceful purple-blue
 
   constructor() {
     // Initialize all biome stabilities to 1.0
@@ -97,7 +101,16 @@ export class WorldState {
     this.creatureAggressionModifier = 1.0 - this.globalHarmony * 0.5
 
     // Higher harmony = calmer weather
-    this.weatherIntensityModifier = 1.0 - this.globalHarmony * 0.3
+    // Post-completion: weather fully calm
+    this.weatherIntensityModifier = this.chordComplete ? 0 : 1.0 - this.globalHarmony * 0.3
+
+    // Hell color tint shift: when 8+ sites are activated, Hell's tint shifts
+    // from deep red toward purple-blue (tracked as a 0-1 factor)
+    this.hellTransformFactor = this.chordComplete
+      ? 1.0
+      : this.activatedSites.size >= 8
+        ? Math.min(1.0, (this.activatedSites.size - 8) / 3) // 8→0.0, 9→0.33, 10→0.66, 11→1.0
+        : 0
   }
 
   // Save/load for persistence (localStorage)
@@ -114,6 +127,7 @@ export class WorldState {
       activatedSites: Array.from(this.activatedSites),
       weatherReveals: revealsArray,
       ritualObservations: obsArray,
+      chordComplete: this.chordComplete,
     })
   }
 
@@ -134,6 +148,9 @@ export class WorldState {
         for (const [biome, obs] of parsed.ritualObservations as [number, { creatureBehavior: boolean; weatherReveal: boolean; loreCount: number }][]) {
           this.ritualObservations.set(biome as BiomeType, obs)
         }
+      }
+      if (parsed.chordComplete) {
+        this.chordComplete = true
       }
     } catch {
       // Ignore corrupt data
