@@ -44,6 +44,10 @@ export class WorldState {
   // Ritual observation tracking per biome (populated by RitualSystem)
   ritualObservations: Map<BiomeType, { creatureBehavior: boolean; weatherReveal: boolean; loreCount: number }> = new Map()
 
+  // Ritual activation message (consumed by HUD in Layer 4)
+  activationMessage: string | null = null
+  activationMessageTimer: number = 0
+
   // Hazard zones (repopulated each update by HazardSystem — used for journal/mystery tracking)
   hazardZones: Array<{
     type: string        // 'lava', 'toxic_gas', 'crystal_shards', 'ice'

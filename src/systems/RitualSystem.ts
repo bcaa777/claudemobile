@@ -44,6 +44,9 @@ export class RitualSystem {
     creatures: Map<string, Creature>,
     playerPos: THREE.Vector3,
   ): void {
+    // Tick down activation message timer
+    this.updateActivationMessage(dt, worldState)
+
     // For each biome that has a resonance site registered
     for (const [biome, site] of worldState.resonanceSites) {
       // Skip already-activated sites
@@ -204,16 +207,242 @@ export class RitualSystem {
     if (site) site.activated = true
 
     // Find and activate the visual
+    let sitePosition: THREE.Vector3 | null = null
+    let siteScene: THREE.Scene | null = null
     for (const visual of this.resonanceSiteVisuals) {
       if (visual.biome === biome && !visual.activated) {
         visual.activate()
+        sitePosition = visual.position
+        siteScene = visual.mesh.parent as THREE.Scene | null
         break
       }
     }
+
+    // Trigger per-biome burst effect
+    if (sitePosition && siteScene) {
+      this.activateVisualEffect(biome, sitePosition, siteScene)
+    }
+
+    // Set activation message for HUD
+    const biomeName = BIOME_DISPLAY_NAMES[biome] ?? BiomeType[biome]
+    worldState.activationMessage = `The ${biomeName} resonates once more.`
+    worldState.activationMessageTimer = 5.0 // display for 5 seconds
 
     // Persist
     worldState.saveToStorage()
 
     console.log(`[Ritual] Site activated: ${BiomeType[biome]} (${worldState.activatedSites.size}/11)`)
   }
+
+  /**
+   * Per-biome activation visual effect — spawns a burst of 80 instanced particles
+   * that rise/expand over ~4 seconds then are removed from the scene.
+   */
+  activateVisualEffect(biome: BiomeType, sitePosition: THREE.Vector3, scene: THREE.Scene): void {
+    const config = BIOME_EFFECT_CONFIG[biome]
+    if (!config) return
+
+    const PARTICLE_COUNT = 80
+    const DURATION = 4.0 // seconds
+
+    const geo = new THREE.PlaneGeometry(0.4, 0.4)
+    const mat = new THREE.MeshBasicMaterial({
+      color: config.primaryColor,
+      transparent: true,
+      opacity: 0.9,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+    })
+
+    const mesh = new THREE.InstancedMesh(geo, mat, PARTICLE_COUNT)
+    mesh.frustumCulled = false
+    mesh.position.copy(sitePosition)
+    scene.add(mesh)
+
+    // Pre-compute per-particle data
+    const angles = new Float32Array(PARTICLE_COUNT)
+    const speeds = new Float32Array(PARTICLE_COUNT)
+    const radii = new Float32Array(PARTICLE_COUNT)
+    const yOffsets = new Float32Array(PARTICLE_COUNT)
+
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      angles[i] = Math.random() * Math.PI * 2
+      speeds[i] = 0.5 + Math.random() * 1.0
+      radii[i] = Math.random() * 4
+      yOffsets[i] = Math.random() * 0.5
+    }
+
+    const dummy = new THREE.Object3D()
+    const startTime = performance.now() / 1000
+    const secondaryColor = new THREE.Color(config.secondaryColor)
+
+    const animate = () => {
+      const elapsed = performance.now() / 1000 - startTime
+      const t = Math.min(elapsed / DURATION, 1.0)
+
+      if (t >= 1.0) {
+        // Cleanup
+        scene.remove(mesh)
+        geo.dispose()
+        mat.dispose()
+        return
+      }
+
+      // Fade out in last 40%
+      mat.opacity = t > 0.6 ? 0.9 * (1.0 - (t - 0.6) / 0.4) : 0.9
+
+      // Lerp color from primary to secondary over time
+      const baseColor = new THREE.Color(config.primaryColor)
+      baseColor.lerp(secondaryColor, t * 0.5)
+      mat.color.copy(baseColor)
+
+      for (let i = 0; i < PARTICLE_COUNT; i++) {
+        const angle = angles[i] + elapsed * speeds[i] * config.spinSpeed
+        const expandRadius = radii[i] + t * config.expandRate
+        const x = Math.cos(angle) * expandRadius
+        const z = Math.sin(angle) * expandRadius
+        // For negative riseSpeed (Jungle rain-down), start particles high
+        const baseY = config.riseSpeed < 0 ? 12.0 : 0
+        const y = baseY + yOffsets[i] + elapsed * config.riseSpeed * speeds[i]
+
+        dummy.position.set(x, y, z)
+        const scale = (1.0 - t * 0.6) * (0.5 + speeds[i] * 0.5)
+        dummy.scale.setScalar(scale)
+        dummy.updateMatrix()
+        mesh.setMatrixAt(i, dummy.matrix)
+      }
+      mesh.instanceMatrix.needsUpdate = true
+
+      requestAnimationFrame(animate)
+    }
+
+    requestAnimationFrame(animate)
+  }
+
+  /** Tick down activation message timer */
+  updateActivationMessage(dt: number, worldState: WorldState): void {
+    if (worldState.activationMessageTimer > 0) {
+      worldState.activationMessageTimer -= dt
+      if (worldState.activationMessageTimer <= 0) {
+        worldState.activationMessage = null
+        worldState.activationMessageTimer = 0
+      }
+    }
+  }
+}
+
+/** Display names for biomes */
+const BIOME_DISPLAY_NAMES: Record<BiomeType, string> = {
+  [BiomeType.Forest]: 'Forest',
+  [BiomeType.Desert]: 'Desert',
+  [BiomeType.Swamp]: 'Swamp',
+  [BiomeType.Snow]: 'Snow',
+  [BiomeType.Volcanic]: 'Volcanic Reach',
+  [BiomeType.Crystal]: 'Crystal Cavern',
+  [BiomeType.Jungle]: 'Jungle',
+  [BiomeType.Mesa]: 'Mesa',
+  [BiomeType.CoralReef]: 'Coral Coast',
+  [BiomeType.Heaven]: 'Heaven',
+  [BiomeType.Hell]: 'Hell',
+}
+
+/** Per-biome visual effect configuration */
+interface BiomeEffectConfig {
+  primaryColor: number
+  secondaryColor: number
+  riseSpeed: number    // units/sec upward
+  spinSpeed: number    // radians/sec rotation multiplier
+  expandRate: number   // how much radius expands over full duration
+}
+
+const BIOME_EFFECT_CONFIG: Record<BiomeType, BiomeEffectConfig> = {
+  // Forest: Golden particle burst upward from ring, ring turns golden
+  [BiomeType.Forest]: {
+    primaryColor: 0xffdd44,
+    secondaryColor: 0xffee88,
+    riseSpeed: 3.0,
+    spinSpeed: 0.3,
+    expandRate: 2.0,
+  },
+  // Desert: Sand-colored particles spiral upward, ground lightens
+  [BiomeType.Desert]: {
+    primaryColor: 0xeebb66,
+    secondaryColor: 0xffddaa,
+    riseSpeed: 2.5,
+    spinSpeed: 1.5,
+    expandRate: 3.0,
+  },
+  // Swamp: Green/purple particles rise, fog clears in expanding circle
+  [BiomeType.Swamp]: {
+    primaryColor: 0x44ff66,
+    secondaryColor: 0xaa44ff,
+    riseSpeed: 1.8,
+    spinSpeed: 0.5,
+    expandRate: 4.0,
+  },
+  // Snow: White/blue crystal particles, bright flash
+  [BiomeType.Snow]: {
+    primaryColor: 0xccddff,
+    secondaryColor: 0x88bbff,
+    riseSpeed: 2.0,
+    spinSpeed: 0.8,
+    expandRate: 3.0,
+  },
+  // Volcanic: Orange-red particles stream from ground, lava glow pulse
+  [BiomeType.Volcanic]: {
+    primaryColor: 0xff4400,
+    secondaryColor: 0xff8800,
+    riseSpeed: 4.0,
+    spinSpeed: 0.2,
+    expandRate: 1.5,
+  },
+  // Crystal: All-direction blue light burst, prismatic particles
+  [BiomeType.Crystal]: {
+    primaryColor: 0x4488ff,
+    secondaryColor: 0xaa88ff,
+    riseSpeed: 2.5,
+    spinSpeed: 2.0,
+    expandRate: 5.0,
+  },
+  // Jungle: Green particles rain from above, golden light shaft
+  [BiomeType.Jungle]: {
+    primaryColor: 0x44ff44,
+    secondaryColor: 0xffdd44,
+    riseSpeed: -2.0, // negative = rain down from above
+    spinSpeed: 0.4,
+    expandRate: 2.0,
+  },
+  // Mesa: Terracotta particles rise in layers, amber glow
+  [BiomeType.Mesa]: {
+    primaryColor: 0xcc6633,
+    secondaryColor: 0xffaa44,
+    riseSpeed: 2.0,
+    spinSpeed: 0.3,
+    expandRate: 2.5,
+  },
+  // Coral Coast: Turquoise particles spiral, water shimmer effect
+  [BiomeType.CoralReef]: {
+    primaryColor: 0x44ddcc,
+    secondaryColor: 0x88eeff,
+    riseSpeed: 1.5,
+    spinSpeed: 1.8,
+    expandRate: 3.5,
+  },
+  // Heaven: Bright white/gold burst, ascending particles
+  [BiomeType.Heaven]: {
+    primaryColor: 0xffffff,
+    secondaryColor: 0xffeeaa,
+    riseSpeed: 4.0,
+    spinSpeed: 0.5,
+    expandRate: 4.0,
+  },
+  // Hell: Dark-to-light transition, red particles transform to white
+  [BiomeType.Hell]: {
+    primaryColor: 0xff2200,
+    secondaryColor: 0xffffff,
+    riseSpeed: 3.0,
+    spinSpeed: 1.0,
+    expandRate: 3.0,
+  },
 }
