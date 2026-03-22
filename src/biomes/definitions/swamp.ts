@@ -59,4 +59,31 @@ export const swampBiome: BiomeConfig = {
   particleType: 'fireflies',
   particleColor: new THREE.Color(0xaaff44),
   particleCount: 50,         // more fireflies + spore particles
+  visualIdentity: {
+    colorGrade: {
+      tint: [0.85, 0.95, 0.75],
+      contrast: 0.9,
+      saturation: 0.7,
+    },
+    fog: {
+      nearDistance: 8,
+      farDistance: 60,
+      color: [0.35, 0.45, 0.25],
+      density: 0.7,
+    },
+    ambientLight: {
+      color: [0.1, 0.17, 0.06],
+      intensity: 0.6,
+    },
+    atmosphere: {
+      particleType: 'fireflies',
+      particleCount: 120,
+      particleColor: [0.67, 1.0, 0.27],
+      particleSize: 0.1,
+      particleSpeed: 0.15,
+    },
+    godRayIntensity: 0.2,
+    heatDistortion: 0,
+    groundFogDensity: 0.8,
+  },
 }

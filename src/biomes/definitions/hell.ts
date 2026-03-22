@@ -51,4 +51,31 @@ export const hellBiome: BiomeConfig = {
   particleType: 'snow',
   particleColor: new THREE.Color(0xff6600),
   particleCount: 80,
+  visualIdentity: {
+    colorGrade: {
+      tint: [1.15, 0.75, 0.7],
+      contrast: 1.2,
+      saturation: 0.8,
+    },
+    fog: {
+      nearDistance: 15,
+      farDistance: 100,
+      color: [0.2, 0.04, 0.0],
+      density: 0.7,
+    },
+    ambientLight: {
+      color: [0.2, 0.07, 0.03],
+      intensity: 0.5,
+    },
+    atmosphere: {
+      particleType: 'ash',
+      particleCount: 200,
+      particleColor: [0.6, 0.3, 0.15],
+      particleSize: 0.1,
+      particleSpeed: 0.4,
+    },
+    godRayIntensity: 0,
+    heatDistortion: 0.5,
+    groundFogDensity: 0.4,
+  },
 }

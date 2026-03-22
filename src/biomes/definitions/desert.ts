@@ -58,4 +58,31 @@ export const desertBiome: BiomeConfig = {
   particleType: 'ash',
   particleColor: new THREE.Color(0xd4a050),
   particleCount: 20,         // slightly more for savanna dust
+  visualIdentity: {
+    colorGrade: {
+      tint: [1.1, 0.95, 0.8],
+      contrast: 1.1,
+      saturation: 0.9,
+    },
+    fog: {
+      nearDistance: 15,
+      farDistance: 90,
+      color: [0.85, 0.7, 0.45],
+      density: 0.3,
+    },
+    ambientLight: {
+      color: [0.29, 0.19, 0.06],
+      intensity: 1.2,
+    },
+    atmosphere: {
+      particleType: 'sand',
+      particleCount: 150,
+      particleColor: [0.83, 0.63, 0.31],
+      particleSize: 0.06,
+      particleSpeed: 0.8,
+    },
+    godRayIntensity: 0.6,
+    heatDistortion: 0.6,
+    groundFogDensity: 0.05,
+  },
 }

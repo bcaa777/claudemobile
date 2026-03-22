@@ -53,4 +53,31 @@ export const crystalBiome: BiomeConfig = {
   particleType: null,
   particleColor: new THREE.Color(0x80d0ff),
   particleCount: 0,
+  visualIdentity: {
+    colorGrade: {
+      tint: [0.85, 0.9, 1.15],
+      contrast: 1.05,
+      saturation: 1.3,
+    },
+    fog: {
+      nearDistance: 22,
+      farDistance: 130,
+      color: [0.06, 0.16, 0.25],
+      density: 0.2,
+    },
+    ambientLight: {
+      color: [0.06, 0.19, 0.31],
+      intensity: 1.0,
+    },
+    atmosphere: {
+      particleType: 'motes',
+      particleCount: 80,
+      particleColor: [0.5, 0.82, 1.0],
+      particleSize: 0.05,
+      particleSpeed: 0.2,
+    },
+    godRayIntensity: 0,
+    heatDistortion: 0,
+    groundFogDensity: 0.1,
+  },
 }

@@ -58,4 +58,31 @@ export const heavenBiome: BiomeConfig = {
   particleType: 'snow',
   particleColor: new THREE.Color(0xffeedd),
   particleCount: 50,
+  visualIdentity: {
+    colorGrade: {
+      tint: [1.05, 1.0, 0.95],
+      contrast: 0.95,
+      saturation: 0.9,
+    },
+    fog: {
+      nearDistance: 50,
+      farDistance: 280,
+      color: [0.82, 0.91, 1.0],
+      density: 0.2,
+    },
+    ambientLight: {
+      color: [0.93, 0.91, 0.87],
+      intensity: 1.5,
+    },
+    atmosphere: {
+      particleType: 'motes',
+      particleCount: 150,
+      particleColor: [1.0, 0.98, 0.9],
+      particleSize: 0.08,
+      particleSpeed: 0.15,
+    },
+    godRayIntensity: 1.0,
+    heatDistortion: 0,
+    groundFogDensity: 0.3,
+  },
 }

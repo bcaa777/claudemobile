@@ -58,4 +58,35 @@ export interface BiomeConfig {
   particleType: 'snow' | 'ash' | 'fireflies' | 'embers' | null
   particleColor: THREE.Color
   particleCount: number
+  visualIdentity: VisualIdentity
+}
+
+export type AtmosphereParticleType = 'dust' | 'snow' | 'embers' | 'spores' | 'fireflies' | 'motes' | 'sand' | 'rain' | 'ash' | 'spray' | 'smoke' | 'none'
+
+export interface VisualIdentity {
+  colorGrade: {
+    tint: [number, number, number]
+    contrast: number
+    saturation: number
+  }
+  fog: {
+    nearDistance: number
+    farDistance: number
+    color: [number, number, number]
+    density: number
+  }
+  ambientLight: {
+    color: [number, number, number]
+    intensity: number
+  }
+  atmosphere: {
+    particleType: AtmosphereParticleType
+    particleCount: number
+    particleColor: [number, number, number]
+    particleSize: number
+    particleSpeed: number
+  }
+  godRayIntensity: number
+  heatDistortion: number
+  groundFogDensity: number
 }

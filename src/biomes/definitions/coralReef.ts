@@ -53,4 +53,31 @@ export const coralReefBiome: BiomeConfig = {
   particleType: 'fireflies',
   particleColor: new THREE.Color(0x44ffdd),
   particleCount: 40,
+  visualIdentity: {
+    colorGrade: {
+      tint: [0.9, 1.0, 1.05],
+      contrast: 1.0,
+      saturation: 1.1,
+    },
+    fog: {
+      nearDistance: 20,
+      farDistance: 100,
+      color: [0.4, 0.7, 0.75],
+      density: 0.35,
+    },
+    ambientLight: {
+      color: [0.53, 0.73, 0.8],
+      intensity: 1.0,
+    },
+    atmosphere: {
+      particleType: 'spray',
+      particleCount: 100,
+      particleColor: [0.85, 0.92, 0.95],
+      particleSize: 0.06,
+      particleSpeed: 0.4,
+    },
+    godRayIntensity: 0.5,
+    heatDistortion: 0,
+    groundFogDensity: 0.15,
+  },
 }

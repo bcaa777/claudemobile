@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { BiomeMap } from '../world/BiomeMap'
 import { getBiome } from '../biomes/BiomeRegistry'
-import { BiomeType, SkyConfig } from '../biomes/types'
+import { BiomeType, SkyConfig, VisualIdentity, AtmosphereParticleType } from '../biomes/types'
 import { ColorGradePass } from '../postprocessing/ColorGradePass'
 import { SkyDome } from '../sky/SkyDome'
 import { RENDER_CONFIG } from '../config'
@@ -17,6 +17,78 @@ const _tmpB    = new THREE.Color()
 
 function lerpSkyColor(out: THREE.Color, dayCol: THREE.Color, nightCol: THREE.Color, dayFactor: number): THREE.Color {
   return out.lerpColors(nightCol, dayCol, dayFactor)
+}
+
+function lerpTuple3(a: [number, number, number], b: [number, number, number], t: number): [number, number, number] {
+  return [
+    a[0] + (b[0] - a[0]) * t,
+    a[1] + (b[1] - a[1]) * t,
+    a[2] + (b[2] - a[2]) * t,
+  ]
+}
+
+function lerpNum(a: number, b: number, t: number): number {
+  return a + (b - a) * t
+}
+
+/** Interpolated visual identity — all values smoothly blended between biomes */
+export interface InterpolatedVisual {
+  colorGrade: {
+    tint: [number, number, number]
+    contrast: number
+    saturation: number
+  }
+  fog: {
+    nearDistance: number
+    farDistance: number
+    color: [number, number, number]
+    density: number
+  }
+  ambientLight: {
+    color: [number, number, number]
+    intensity: number
+  }
+  atmosphere: {
+    particleType: AtmosphereParticleType
+    particleCount: number
+    particleColor: [number, number, number]
+    particleSize: number
+    particleSpeed: number
+  }
+  godRayIntensity: number
+  heatDistortion: number
+  groundFogDensity: number
+}
+
+function interpolateVisual(from: VisualIdentity, to: VisualIdentity, t: number): InterpolatedVisual {
+  return {
+    colorGrade: {
+      tint: lerpTuple3(from.colorGrade.tint, to.colorGrade.tint, t),
+      contrast: lerpNum(from.colorGrade.contrast, to.colorGrade.contrast, t),
+      saturation: lerpNum(from.colorGrade.saturation, to.colorGrade.saturation, t),
+    },
+    fog: {
+      nearDistance: lerpNum(from.fog.nearDistance, to.fog.nearDistance, t),
+      farDistance: lerpNum(from.fog.farDistance, to.fog.farDistance, t),
+      color: lerpTuple3(from.fog.color, to.fog.color, t),
+      density: lerpNum(from.fog.density, to.fog.density, t),
+    },
+    ambientLight: {
+      color: lerpTuple3(from.ambientLight.color, to.ambientLight.color, t),
+      intensity: lerpNum(from.ambientLight.intensity, to.ambientLight.intensity, t),
+    },
+    atmosphere: {
+      // Use target particle type once we're past halfway
+      particleType: t < 0.5 ? from.atmosphere.particleType : to.atmosphere.particleType,
+      particleCount: lerpNum(from.atmosphere.particleCount, to.atmosphere.particleCount, t),
+      particleColor: lerpTuple3(from.atmosphere.particleColor, to.atmosphere.particleColor, t),
+      particleSize: lerpNum(from.atmosphere.particleSize, to.atmosphere.particleSize, t),
+      particleSpeed: lerpNum(from.atmosphere.particleSpeed, to.atmosphere.particleSpeed, t),
+    },
+    godRayIntensity: lerpNum(from.godRayIntensity, to.godRayIntensity, t),
+    heatDistortion: lerpNum(from.heatDistortion, to.heatDistortion, t),
+    groundFogDensity: lerpNum(from.groundFogDensity, to.groundFogDensity, t),
+  }
 }
 
 export class BiomeTransition {
@@ -35,6 +107,8 @@ export class BiomeTransition {
 
   private dayFactor = 1.0
 
+  private currentVisual: InterpolatedVisual
+
   constructor(biomeMap: BiomeMap, scene: THREE.Scene, colorGrade: ColorGradePass, skyDome: SkyDome) {
     this.biomeMap = biomeMap
     this.scene = scene
@@ -48,6 +122,9 @@ export class BiomeTransition {
     this.currentFogColor.copy(initBiome.fogColor)
     this.currentFogNear = initBiome.fogNear
     this.currentFogFar = initBiome.fogFar
+
+    // Init visual identity from forest
+    this.currentVisual = interpolateVisual(initBiome.visualIdentity, initBiome.visualIdentity, 0)
 
     // Init sky with forest config
     this.applySkyConfig(initBiome.skyConfig, initBiome.skyConfig, 0)
@@ -115,6 +192,16 @@ export class BiomeTransition {
     // Update ColorGrade uniform with current biome tint
     this.colorGrade.setBiomeTint(fogColor, t)
 
+    // Interpolate visual identity parameters
+    this.currentVisual = interpolateVisual(from.visualIdentity, to.visualIdentity, t)
+
+    // Apply per-biome color grading to the shader
+    this.colorGrade.setBiomeColorGrade(
+      this.currentVisual.colorGrade.tint,
+      this.currentVisual.colorGrade.contrast,
+      this.currentVisual.colorGrade.saturation,
+    )
+
     // Blend sky configs
     this.applySkyConfig(from.skyConfig, to.skyConfig, t)
 
@@ -143,6 +230,11 @@ export class BiomeTransition {
     const haze = from.hazeStrength + (to.hazeStrength - from.hazeStrength) * t
 
     this.skyDome.setColors(_zenith, _horizon, _cloud, cloudDensity, haze)
+  }
+
+  /** Returns the current smoothly-interpolated visual identity parameters */
+  getCurrentVisual(): InterpolatedVisual {
+    return this.currentVisual
   }
 
   getCurrentBiome(): BiomeType {

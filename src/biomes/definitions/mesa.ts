@@ -58,4 +58,31 @@ export const mesaBiome: BiomeConfig = {
   particleType: 'ash',       // badlands dust particles
   particleColor: new THREE.Color(0xccaa88),
   particleCount: 20,         // badlands dust
+  visualIdentity: {
+    colorGrade: {
+      tint: [1.1, 0.9, 0.75],
+      contrast: 1.1,
+      saturation: 0.95,
+    },
+    fog: {
+      nearDistance: 35,
+      farDistance: 240,
+      color: [0.78, 0.63, 0.5],
+      density: 0.25,
+    },
+    ambientLight: {
+      color: [0.85, 0.75, 0.63],
+      intensity: 1.1,
+    },
+    atmosphere: {
+      particleType: 'dust',
+      particleCount: 120,
+      particleColor: [0.8, 0.67, 0.53],
+      particleSize: 0.07,
+      particleSpeed: 0.5,
+    },
+    godRayIntensity: 0.7,
+    heatDistortion: 0.2,
+    groundFogDensity: 0.05,
+  },
 }

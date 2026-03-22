@@ -53,4 +53,31 @@ export const jungleBiome: BiomeConfig = {
   particleType: 'fireflies',
   particleColor: new THREE.Color(0x88ff44),
   particleCount: 60,
+  visualIdentity: {
+    colorGrade: {
+      tint: [0.85, 1.0, 0.8],
+      contrast: 1.0,
+      saturation: 1.2,
+    },
+    fog: {
+      nearDistance: 15,
+      farDistance: 120,
+      color: [0.25, 0.4, 0.2],
+      density: 0.45,
+    },
+    ambientLight: {
+      color: [0.13, 0.22, 0.1],
+      intensity: 0.9,
+    },
+    atmosphere: {
+      particleType: 'rain',
+      particleCount: 250,
+      particleColor: [0.7, 0.75, 0.8],
+      particleSize: 0.04,
+      particleSpeed: 1.2,
+    },
+    godRayIntensity: 0.4,
+    heatDistortion: 0,
+    groundFogDensity: 0.35,
+  },
 }

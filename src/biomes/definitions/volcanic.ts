@@ -58,4 +58,31 @@ export const volcanicBiome: BiomeConfig = {
   particleType: 'ash',       // ash wastes dominant particle — wider ash coverage
   particleColor: new THREE.Color(0xa0a090),  // ash wastes pale ash color
   particleCount: 60,         // increased for wider ash particle coverage
+  visualIdentity: {
+    colorGrade: {
+      tint: [1.1, 0.85, 0.7],
+      contrast: 1.2,
+      saturation: 1.0,
+    },
+    fog: {
+      nearDistance: 20,
+      farDistance: 100,
+      color: [0.29, 0.08, 0.0],
+      density: 0.5,
+    },
+    ambientLight: {
+      color: [0.23, 0.06, 0.03],
+      intensity: 0.7,
+    },
+    atmosphere: {
+      particleType: 'embers',
+      particleCount: 180,
+      particleColor: [1.0, 0.4, 0.1],
+      particleSize: 0.12,
+      particleSpeed: 0.6,
+    },
+    godRayIntensity: 0.3,
+    heatDistortion: 0.8,
+    groundFogDensity: 0.1,
+  },
 }

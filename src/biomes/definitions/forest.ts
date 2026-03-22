@@ -53,4 +53,31 @@ export const forestBiome: BiomeConfig = {
   particleType: 'fireflies',
   particleColor: new THREE.Color(0x88ff44),
   particleCount: 30,
+  visualIdentity: {
+    colorGrade: {
+      tint: [1.0, 0.95, 0.85],
+      contrast: 1.0,
+      saturation: 1.1,
+    },
+    fog: {
+      nearDistance: 20,
+      farDistance: 120,
+      color: [0.85, 0.78, 0.55],
+      density: 0.4,
+    },
+    ambientLight: {
+      color: [0.1, 0.2, 0.12],
+      intensity: 0.8,
+    },
+    atmosphere: {
+      particleType: 'dust',
+      particleCount: 100,
+      particleColor: [0.9, 0.85, 0.6],
+      particleSize: 0.08,
+      particleSpeed: 0.3,
+    },
+    godRayIntensity: 0.8,
+    heatDistortion: 0,
+    groundFogDensity: 0.2,
+  },
 }

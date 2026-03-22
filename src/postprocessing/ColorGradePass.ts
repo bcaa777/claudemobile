@@ -9,6 +9,9 @@ const ColorGradeShader = {
     tintStrength: { value: 0.12 },
     contrast:   { value: 1.0 },
     saturation: { value: 0.80 },
+    tintColor:      { value: new THREE.Vector3(1.0, 1.0, 1.0) },
+    biomeContrast:  { value: 1.0 },
+    biomeSaturation: { value: 1.0 },
   },
   vertexShader: /* glsl */`
     varying vec2 vUv;
@@ -23,6 +26,9 @@ const ColorGradeShader = {
     uniform float tintStrength;
     uniform float contrast;
     uniform float saturation;
+    uniform vec3 tintColor;
+    uniform float biomeContrast;
+    uniform float biomeSaturation;
     varying vec2 vUv;
 
     vec3 adjustContrast(vec3 color, float c) {
@@ -41,12 +47,15 @@ const ColorGradeShader = {
       // Biome fog tint
       color = mix(color, biomeTint, tintStrength * 0.4);
 
+      // Per-biome color grading — multiply by biome tint color
+      color *= tintColor;
+
       // PS1-style color quantization (5-bit)
       color = floor(color * 31.0 + 0.5) / 31.0;
 
-      // Contrast + saturation
-      color = adjustContrast(color, contrast);
-      color = adjustSaturation(color, saturation);
+      // Contrast + saturation (base pass values multiplied by biome values)
+      color = adjustContrast(color, contrast * biomeContrast);
+      color = adjustSaturation(color, saturation * biomeSaturation);
 
       gl_FragColor = vec4(color, texel.a);
     }
@@ -60,5 +69,11 @@ export class ColorGradePass extends ShaderPass {
 
   setBiomeTint(color: THREE.Color, _blend: number) {
     this.uniforms['biomeTint'].value.copy(color)
+  }
+
+  setBiomeColorGrade(tint: [number, number, number], contrast: number, saturation: number) {
+    this.uniforms['tintColor'].value.set(tint[0], tint[1], tint[2])
+    this.uniforms['biomeContrast'].value = contrast
+    this.uniforms['biomeSaturation'].value = saturation
   }
 }
