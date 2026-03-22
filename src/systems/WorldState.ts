@@ -41,6 +41,9 @@ export class WorldState {
   // Companion
   companionSpecies: string | null = null
 
+  // Ritual observation tracking per biome (populated by RitualSystem)
+  ritualObservations: Map<BiomeType, { creatureBehavior: boolean; weatherReveal: boolean; loreCount: number }> = new Map()
+
   // Hazard zones (repopulated each update by HazardSystem — used for journal/mystery tracking)
   hazardZones: Array<{
     type: string        // 'lava', 'toxic_gas', 'crystal_shards', 'ice'
@@ -99,9 +102,14 @@ export class WorldState {
     const revealsArray = Array.from(this.weatherReveals.entries()).map(
       ([biome, keys]) => [biome, Array.from(keys)] as [number, string[]]
     )
+    // Serialize ritualObservations as [biomeIndex, {creatureBehavior, weatherReveal, loreCount}][]
+    const obsArray = Array.from(this.ritualObservations.entries()).map(
+      ([biome, obs]) => [biome, obs] as [number, { creatureBehavior: boolean; weatherReveal: boolean; loreCount: number }]
+    )
     return JSON.stringify({
       activatedSites: Array.from(this.activatedSites),
       weatherReveals: revealsArray,
+      ritualObservations: obsArray,
     })
   }
 
@@ -115,6 +123,12 @@ export class WorldState {
         this.weatherReveals = new Map()
         for (const [biome, keys] of parsed.weatherReveals as [number, string[]][]) {
           this.weatherReveals.set(biome as BiomeType, new Set(keys))
+        }
+      }
+      if (Array.isArray(parsed.ritualObservations)) {
+        this.ritualObservations = new Map()
+        for (const [biome, obs] of parsed.ritualObservations as [number, { creatureBehavior: boolean; weatherReveal: boolean; loreCount: number }][]) {
+          this.ritualObservations.set(biome as BiomeType, obs)
         }
       }
     } catch {

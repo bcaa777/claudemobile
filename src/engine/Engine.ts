@@ -36,6 +36,7 @@ import { GrappleSystem } from '../player/GrappleSystem'
 import { AtmosphereParticles } from '../systems/AtmosphereParticles'
 import { GroundFog } from '../systems/GroundFog'
 import { WorldState } from '../systems/WorldState'
+import { RitualSystem } from '../systems/RitualSystem'
 import { RoadNetwork } from '../traversal/RoadNetwork'
 import { ZiplineRide } from '../traversal/ZiplineRide'
 import { VineSwing } from '../traversal/VineSwing'
@@ -82,6 +83,7 @@ export class Engine {
   private ziplineRide: ZiplineRide
   private vineSwing: VineSwing
   private worldState: WorldState
+  private ritualSystem: RitualSystem
 
   private lastTime = 0
   private running = false
@@ -215,6 +217,9 @@ export class Engine {
       this.worldState.registerResonanceSite(biome, pos)
     }
 
+    // Ritual system
+    this.ritualSystem = new RitualSystem()
+
     // Wire WorldState into systems that need it
     this.weatherSystem.setWorldState(this.worldState)
 
@@ -270,6 +275,8 @@ export class Engine {
         this.audioSystem.getContext(),
         this.audioSystem.getMasterGain(),
       )
+      // Wire resonance site visuals into ritual system for activation calls
+      this.ritualSystem.setResonanceSites(this.landmarkManager.resonanceSites)
       if (!this.running) this.start()
     })
 
@@ -552,6 +559,11 @@ export class Engine {
       this.audioSystem.chime?.playPickup()
     }
 
+    // Ritual system — observation tracking and activation detection
+    // Update lore count per biome in ritualObservations from collected lore stones
+    this.updateRitualLoreCounts()
+    this.ritualSystem.update(delta, this.worldState, this.creatureManager.creatures, camPos)
+
     // Journal system
     const weatherType = this.weatherSystem.currentWeather as WeatherType
     this.journalSystem.update(
@@ -726,5 +738,28 @@ export class Engine {
     this.renderer.render(delta)
     this.perfOverlay.update(this.renderer.renderer)
     requestAnimationFrame((t) => this.loop(t))
+  }
+
+  /**
+   * Count collected lore stones per biome and write into worldState.ritualObservations.
+   * Uses biomeMap to determine which biome each stone belongs to.
+   */
+  private updateRitualLoreCounts(): void {
+    // Reset counts
+    for (const obs of this.worldState.ritualObservations.values()) {
+      obs.loreCount = 0
+    }
+
+    // Count collected stones by biome
+    for (const stone of this.loreStones.getAllStones()) {
+      if (!stone.collected) continue
+      const biome = this.biomeMap.getBiomeAt(stone.position.x, stone.position.z)
+      let obs = this.worldState.ritualObservations.get(biome)
+      if (!obs) {
+        obs = { creatureBehavior: false, weatherReveal: false, loreCount: 0 }
+        this.worldState.ritualObservations.set(biome, obs)
+      }
+      obs.loreCount++
+    }
   }
 }
