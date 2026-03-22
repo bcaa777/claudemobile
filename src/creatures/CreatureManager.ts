@@ -10,6 +10,7 @@ import { BiomeType } from '../biomes/types'
 import { WORLD_CONFIG, CREATURE_CONFIG, RENDER_CONFIG } from '../config'
 import { WorldState } from '../systems/WorldState'
 import { applyWeatherResponse, getWeatherHuntRangeMultiplier } from './WeatherResponse'
+import { applyEcologyBehavior } from './EcologyBehavior'
 
 const VIEW_RADIUS = WORLD_CONFIG.viewRadius
 const MAX_POPULATION = 500
@@ -150,6 +151,11 @@ export class CreatureManager {
       if (i >= start && i < end && this.worldState) {
         const shelterPositions = this.getShelterPositions()
         applyWeatherResponse(c, this.worldState, shelterPositions)
+      }
+
+      // Ecology behavior — after weather response, before state machine
+      if (i >= start && i < end) {
+        applyEcologyBehavior(c, this.grid, this._frameCounter)
       }
 
       // State machine — batched
