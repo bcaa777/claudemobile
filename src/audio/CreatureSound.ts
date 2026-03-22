@@ -3,9 +3,13 @@ import { Creature } from '../creatures/Creature'
 import { SPECIES, SpeciesId } from '../creatures/Species'
 import { EnvironmentReverb } from './EnvironmentReverb'
 import { createSpatialPanner } from './SpatialAudioHelper'
+import { WorldState } from '../systems/WorldState'
 
 const MAX_CREATURES = 3
 const MAX_RANGE_SQ = 625 // 25 units
+
+/** Interval (seconds) for rhythmic calls near Resonance Sites */
+const SITE_CALL_INTERVAL = 2.0
 
 export class CreatureSound {
   private ctx: AudioContext
@@ -14,13 +18,17 @@ export class CreatureSound {
   private callTimer = 0
   private callInterval = 4 + Math.random() * 4
 
+  /** Elapsed time accumulator for global sync clock */
+  private elapsedTime = 0
+
   constructor(ctx: AudioContext, master: GainNode, reverb?: EnvironmentReverb) {
     this.ctx = ctx
     this.master = master
     this.reverb = reverb ?? null
   }
 
-  update(delta: number, playerPos: THREE.Vector3, creatures: Map<string, Creature>) {
+  update(delta: number, playerPos: THREE.Vector3, creatures: Map<string, Creature>, worldState?: WorldState) {
+    this.elapsedTime += delta
     this.callTimer -= delta
     if (this.callTimer > 0) return
 
@@ -43,16 +51,63 @@ export class CreatureSound {
     candidates.sort((a, b) => a.distSq - b.distSq)
     const count = Math.min(candidates.length, MAX_CREATURES)
 
+    // Determine current biome stability from player's biome (creatures near player share similar biome)
+    const playerBiome = worldState?.playerBiome
+    const biomeStability = playerBiome !== undefined
+      ? (worldState?.biomeStability.get(playerBiome) ?? 1.0)
+      : 1.0
+    const isUnstable = biomeStability < 0.5
+
     for (let i = 0; i < count; i++) {
       const { creature, distSq } = candidates[i]
       const volume = Math.max(0.01, 0.07 * (1 - distSq / MAX_RANGE_SQ))
 
+      const isNearSite = creature.state === 'reverence' || creature.state === 'resonating'
+      const sp = SPECIES[creature.species]
+      const isPredator = sp.role === 'predator'
+
+      // Predators go silent near Resonance Sites (truce zone)
+      if (isNearSite && isPredator && creature.state === 'idle') continue
+
+      // Compute frequency multiplier and timing
+      let freqMultiplier = 1.0
+      let extraDelay = 0
+
+      if (isNearSite) {
+        // Pitch shifts up slightly near sites
+        freqMultiplier = 1.15
+
+        // Synchronize herbivore calls to global clock (rhythm every SITE_CALL_INTERVAL seconds)
+        if (!isPredator) {
+          const syncPhase = this.elapsedTime % SITE_CALL_INTERVAL
+          // Align next fire to the nearest sync boundary with a small per-creature offset
+          const syncOffset = (i * 0.15) % SITE_CALL_INTERVAL
+          extraDelay = ((SITE_CALL_INTERVAL - syncPhase + syncOffset) % SITE_CALL_INTERVAL)
+          // Cap delay so it doesn't push too far out
+          if (extraDelay > SITE_CALL_INTERVAL) extraDelay = 0
+          // Next interval should also be rhythmic
+          if (i === 0) {
+            this.callInterval = SITE_CALL_INTERVAL
+          }
+        }
+      } else if (isUnstable) {
+        // Destabilization zone: pitch jitter ±20%
+        freqMultiplier = 0.8 + Math.random() * 0.4
+        // Random timing delays 0-1 seconds
+        extraDelay = Math.random()
+      }
+
       // Stagger calls slightly so they don't all play at the exact same instant
-      const delay = i * (0.3 + Math.random() * 0.5)
-      if (delay > 0) {
-        setTimeout(() => this.playCall(creature.species, volume, creature.position), delay * 1000)
+      const staggerDelay = i * (0.3 + Math.random() * 0.5)
+      const totalDelay = staggerDelay + extraDelay
+
+      if (totalDelay > 0) {
+        setTimeout(
+          () => this.playCall(creature.species, volume, creature.position, freqMultiplier),
+          totalDelay * 1000,
+        )
       } else {
-        this.playCall(creature.species, volume, creature.position)
+        this.playCall(creature.species, volume, creature.position, freqMultiplier)
       }
     }
   }
@@ -67,26 +122,26 @@ export class CreatureSound {
     }
   }
 
-  private playCall(species: SpeciesId, volume: number, position: THREE.Vector3) {
+  private playCall(species: SpeciesId, volume: number, position: THREE.Vector3, freqMultiplier = 1.0) {
     const sp = SPECIES[species]
     const { output, cleanup } = this.createOutput(position)
 
     if (sp.mobility === 'air' && sp.role === 'herbivore') {
-      this.playBirdSong(volume, species, output, cleanup)
+      this.playBirdSong(volume, species, output, cleanup, freqMultiplier)
     } else if (species === 'wolf' || species === 'hellhound') {
-      this.playWolfHowl(volume, species === 'hellhound', output, cleanup)
+      this.playWolfHowl(volume, species === 'hellhound', output, cleanup, freqMultiplier)
     } else if (species === 'toad') {
-      this.playToadCroak(volume, output, cleanup)
+      this.playToadCroak(volume, output, cleanup, freqMultiplier)
     } else if (species === 'bear') {
-      this.playBearGrowl(volume, output, cleanup)
+      this.playBearGrowl(volume, output, cleanup, freqMultiplier)
     } else if (species === 'lion') {
-      this.playLionRumble(volume, output, cleanup)
+      this.playLionRumble(volume, output, cleanup, freqMultiplier)
     } else if (species === 'deer' || species === 'goat' || species === 'mammoth') {
-      this.playHerbivoreCall(volume, output, cleanup)
+      this.playHerbivoreCall(volume, output, cleanup, freqMultiplier)
     } else if (species === 'dragon') {
-      this.playDragonRoar(volume, output, cleanup)
+      this.playDragonRoar(volume, output, cleanup, freqMultiplier)
     } else if (species === 'crab' || species === 'scorpion') {
-      this.playChittering(volume, output, cleanup)
+      this.playChittering(volume, output, cleanup, freqMultiplier)
     } else if (sp.role === 'predator') {
       this.playPredatorGrowl(volume, output, cleanup)
     } else {
@@ -95,11 +150,11 @@ export class CreatureSound {
   }
 
   /** Bird song — FM synthesis with rapid pitch sweeps */
-  private playBirdSong(volume: number, species: SpeciesId, output: AudioNode, cleanupPanner: () => void) {
+  private playBirdSong(volume: number, species: SpeciesId, output: AudioNode, cleanupPanner: () => void, freqMult = 1.0) {
     const now = this.ctx.currentTime
     const isParrot = species === 'parrot'
     const noteCount = 2 + Math.floor(Math.random() * 3)
-    const baseFreq = isParrot ? 1600 + Math.random() * 600 : 2200 + Math.random() * 800
+    const baseFreq = (isParrot ? 1600 + Math.random() * 600 : 2200 + Math.random() * 800) * freqMult
     let lastStopTime = now
 
     for (let n = 0; n < noteCount; n++) {
@@ -141,10 +196,10 @@ export class CreatureSound {
   }
 
   /** Wolf howl — rich harmonic sweep with breathy noise layer */
-  private playWolfHowl(volume: number, isHellhound: boolean, output: AudioNode, cleanupPanner: () => void) {
+  private playWolfHowl(volume: number, isHellhound: boolean, output: AudioNode, cleanupPanner: () => void, freqMult = 1.0) {
     const now = this.ctx.currentTime
     const dur = 1.2 + Math.random() * 0.8
-    const baseFreq = isHellhound ? 90 : 150
+    const baseFreq = (isHellhound ? 90 : 150) * freqMult
 
     for (let i = 0; i < 2; i++) {
       const osc = this.ctx.createOscillator()
@@ -177,17 +232,17 @@ export class CreatureSound {
   }
 
   /** Toad croak — FM-synthesized resonant burst */
-  private playToadCroak(volume: number, output: AudioNode, cleanupPanner: () => void) {
+  private playToadCroak(volume: number, output: AudioNode, cleanupPanner: () => void, freqMult = 1.0) {
     const now = this.ctx.currentTime
     const dur = 0.15 + Math.random() * 0.1
 
     const carrier = this.ctx.createOscillator()
     carrier.type = 'sine'
-    carrier.frequency.value = 120 + Math.random() * 40
+    carrier.frequency.value = (120 + Math.random() * 40) * freqMult
 
     const mod = this.ctx.createOscillator()
     mod.type = 'sine'
-    mod.frequency.value = 60 + Math.random() * 20
+    mod.frequency.value = (60 + Math.random() * 20) * freqMult
     const modGain = this.ctx.createGain()
     modGain.gain.value = 80
     mod.connect(modGain).connect(carrier.frequency)
@@ -211,10 +266,10 @@ export class CreatureSound {
       setTimeout(() => {
         const c2 = this.ctx.createOscillator()
         c2.type = 'sine'
-        c2.frequency.value = 120 + Math.random() * 40
+        c2.frequency.value = (120 + Math.random() * 40) * freqMult
         const m2 = this.ctx.createOscillator()
         m2.type = 'sine'
-        m2.frequency.value = 60 + Math.random() * 20
+        m2.frequency.value = (60 + Math.random() * 20) * freqMult
         const mg2 = this.ctx.createGain()
         mg2.gain.value = 80
         m2.connect(mg2).connect(c2.frequency)
@@ -237,14 +292,14 @@ export class CreatureSound {
   }
 
   /** Bear growl — low noise through resonant filter */
-  private playBearGrowl(volume: number, output: AudioNode, cleanupPanner: () => void) {
+  private playBearGrowl(volume: number, output: AudioNode, cleanupPanner: () => void, freqMult = 1.0) {
     const now = this.ctx.currentTime
     const dur = 0.6 + Math.random() * 0.4
     this.playBreathLayer(now, dur, volume, 200, output)
 
     const osc = this.ctx.createOscillator()
     osc.type = 'sawtooth'
-    osc.frequency.value = 60 + Math.random() * 20
+    osc.frequency.value = (60 + Math.random() * 20) * freqMult
 
     const filter = this.ctx.createBiquadFilter()
     filter.type = 'lowpass'
@@ -265,14 +320,14 @@ export class CreatureSound {
   }
 
   /** Lion rumble — chest-deep resonance */
-  private playLionRumble(volume: number, output: AudioNode, cleanupPanner: () => void) {
+  private playLionRumble(volume: number, output: AudioNode, cleanupPanner: () => void, freqMult = 1.0) {
     const now = this.ctx.currentTime
     const dur = 0.8 + Math.random() * 0.5
 
     for (let i = 0; i < 2; i++) {
       const osc = this.ctx.createOscillator()
       osc.type = i === 0 ? 'sawtooth' : 'triangle'
-      osc.frequency.value = 70 + i * 5 + Math.random() * 10
+      osc.frequency.value = (70 + i * 5 + Math.random() * 10) * freqMult
 
       const filter = this.ctx.createBiquadFilter()
       filter.type = 'lowpass'
@@ -296,15 +351,15 @@ export class CreatureSound {
   }
 
   /** Dragon roar — distorted low sweep with noise burst */
-  private playDragonRoar(volume: number, output: AudioNode, cleanupPanner: () => void) {
+  private playDragonRoar(volume: number, output: AudioNode, cleanupPanner: () => void, freqMult = 1.0) {
     const now = this.ctx.currentTime
     const dur = 0.8 + Math.random() * 0.6
 
     const osc = this.ctx.createOscillator()
     osc.type = 'sawtooth'
-    osc.frequency.setValueAtTime(50, now)
-    osc.frequency.linearRampToValueAtTime(120, now + dur * 0.2)
-    osc.frequency.linearRampToValueAtTime(40, now + dur)
+    osc.frequency.setValueAtTime(50 * freqMult, now)
+    osc.frequency.linearRampToValueAtTime(120 * freqMult, now + dur * 0.2)
+    osc.frequency.linearRampToValueAtTime(40 * freqMult, now + dur)
 
     const shaper = this.ctx.createWaveShaper()
     const curve = new Float32Array(256)
@@ -334,13 +389,13 @@ export class CreatureSound {
   }
 
   /** Herbivore call — gentle bleat/huff */
-  private playHerbivoreCall(volume: number, output: AudioNode, cleanupPanner: () => void) {
+  private playHerbivoreCall(volume: number, output: AudioNode, cleanupPanner: () => void, freqMult = 1.0) {
     const now = this.ctx.currentTime
     const dur = 0.2 + Math.random() * 0.15
 
     const carrier = this.ctx.createOscillator()
     carrier.type = 'triangle'
-    const freq = 300 + Math.random() * 150
+    const freq = (300 + Math.random() * 150) * freqMult
     carrier.frequency.setValueAtTime(freq, now)
     carrier.frequency.linearRampToValueAtTime(freq * 0.8, now + dur)
 
@@ -372,7 +427,7 @@ export class CreatureSound {
   }
 
   /** Chittering (insects, crabs) — rapid noise-based clicks */
-  private playChittering(volume: number, output: AudioNode, cleanupPanner: () => void) {
+  private playChittering(volume: number, output: AudioNode, cleanupPanner: () => void, freqMult = 1.0) {
     const now = this.ctx.currentTime
     const clicks = 3 + Math.floor(Math.random() * 4)
     const sr = this.ctx.sampleRate
@@ -391,7 +446,7 @@ export class CreatureSound {
         const attack = Math.min(1, s / 0.001)
         const white = Math.random() * 2 - 1
         prev = prev * 0.3 + white * 0.7
-        const tone = Math.sin(s * (1200 + Math.random() * 800) * Math.PI * 2) * 0.3
+        const tone = Math.sin(s * (1200 + Math.random() * 800) * freqMult * Math.PI * 2) * 0.3
         data[j] = (prev * 0.7 + tone) * Math.exp(-s * 60) * attack
       }
 
@@ -400,7 +455,7 @@ export class CreatureSound {
 
       const filter = this.ctx.createBiquadFilter()
       filter.type = 'bandpass'
-      filter.frequency.value = 2000 + Math.random() * 2000
+      filter.frequency.value = (2000 + Math.random() * 2000) * freqMult
       filter.Q.value = 1.5
 
       const env = this.ctx.createGain()

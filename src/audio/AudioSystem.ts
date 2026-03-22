@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import { BiomeType } from '../biomes/types'
 import { WeatherType } from '../systems/WeatherSystem'
 import { Creature } from '../creatures/Creature'
+import { WorldState } from '../systems/WorldState'
 import { WindSound } from './WindSound'
 import { FootstepSound } from './FootstepSound'
 import { WeatherSound } from './WeatherSound'
@@ -97,6 +98,7 @@ export class AudioSystem {
     verticalVelocity: number,
     landmarks?: Map<BiomeType, THREE.Vector3>,
     runePositions?: THREE.Vector3[],
+    worldState?: WorldState,
   ) {
     if (!this.initialized || !this.ctx) return
     if (this.ctx.state === 'suspended') {
@@ -123,7 +125,7 @@ export class AudioSystem {
     this.wind?.update(altitude, weatherIntensity, isBlizzard)
     this.footstep?.update(delta, speed, grounded, verticalVelocity, biome)
     this.weather?.update(delta, weatherType)
-    this.creatureSound?.update(delta, playerPos, creatures)
+    this.creatureSound?.update(delta, playerPos, creatures, worldState)
     const musicContext: MusicContext = {
       weatherSeverity: weatherIntensity,
       playerSpeed: speed,

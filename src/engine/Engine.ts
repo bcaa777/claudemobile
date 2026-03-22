@@ -582,6 +582,7 @@ export class Engine {
       this.controller.verticalVelocity,
       this.landmarkManager.positions,
       this.runeSystem.getMapMarkers().map(m => m.pos),
+      this.worldState,
     )
 
     // Debug map markers
