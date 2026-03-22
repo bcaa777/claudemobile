@@ -366,7 +366,7 @@ export class Engine {
     this.hazardSystem.update(
       delta, camPos.x, camPos.y, camPos.z,
       currentBiome, dayFactor, this.playerState, this.elapsedTime,
-      terrainH
+      terrainH, this.worldState
     )
 
     // Apply ice friction

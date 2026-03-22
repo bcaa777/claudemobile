@@ -41,6 +41,14 @@ export class WorldState {
   // Companion
   companionSpecies: string | null = null
 
+  // Hazard zones (repopulated each update by HazardSystem — used for journal/mystery tracking)
+  hazardZones: Array<{
+    type: string        // 'lava', 'toxic_gas', 'crystal_shards', 'ice'
+    position: THREE.Vector3
+    radius: number
+    biome: BiomeType
+  }> = []
+
   // Derived modifiers (recalculated each frame)
   creatureAggressionModifier: number = 1.0
   weatherIntensityModifier: number = 1.0
