@@ -8,6 +8,7 @@ export type CreatureState =
   | 'hunt' | 'chase' | 'attack'
   | 'sleep' | 'dead'
   | 'sheltering' | 'migrating'
+  | 'reverence' | 'resonating'
 
 let _nextId = 0
 
@@ -31,6 +32,8 @@ export class Creature {
   hasMesh: boolean
   deathTimer: number
   isCompanion: boolean
+  glowing: boolean
+  glowColor: number
 
   constructor(species: SpeciesId, position: THREE.Vector3, startScale: number) {
     this.id = `c${_nextId++}`
@@ -52,5 +55,7 @@ export class Creature {
     this.hasMesh = false
     this.deathTimer = 0
     this.isCompanion = false
+    this.glowing = false
+    this.glowColor = 0x000000
   }
 }

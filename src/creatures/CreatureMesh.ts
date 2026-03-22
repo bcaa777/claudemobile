@@ -595,6 +595,9 @@ export class CreatureMesh {
 
   private collar: THREE.Mesh | null = null
   private hasCollar = false
+  private glowMat: THREE.MeshLambertMaterial | null = null
+  private originalMat: THREE.Material | null = null
+  private isGlowing = false
 
   update(creature: Creature, delta: number) {
     this.group.position.copy(creature.position)
@@ -610,6 +613,35 @@ export class CreatureMesh {
       this.collar.position.set(0, sp.bodyH * 0.35, sp.bodyD * 0.4)
       this.group.add(this.collar)
       this.hasCollar = true
+    }
+
+    // Attuned glow: emissive pulse when creature.glowing is set
+    if (creature.glowing && this.bodyMesh) {
+      if (!this.isGlowing) {
+        // Save original material and create a glow material (non-cached, per creature)
+        this.originalMat = this.bodyMesh.material as THREE.Material
+        const sp2 = SPECIES[creature.species]
+        this.glowMat = new THREE.MeshLambertMaterial({
+          color: sp2.bodyColor,
+          emissive: creature.glowColor,
+          emissiveIntensity: 0.3,
+        })
+        this.bodyMesh.material = this.glowMat
+        this.isGlowing = true
+      }
+      // Gentle pulsing: sine wave at 0.5 Hz
+      if (this.glowMat) {
+        const pulse = 0.2 + Math.sin(this.animTime * Math.PI) * 0.15 // range 0.05 to 0.35
+        this.glowMat.emissiveIntensity = pulse
+        this.glowMat.emissive.setHex(creature.glowColor)
+      }
+    } else if (this.isGlowing && this.bodyMesh && this.originalMat) {
+      // Restore original material
+      this.bodyMesh.material = this.originalMat
+      this.glowMat?.dispose()
+      this.glowMat = null
+      this.originalMat = null
+      this.isGlowing = false
     }
 
     // Simple LOD — no animation needed

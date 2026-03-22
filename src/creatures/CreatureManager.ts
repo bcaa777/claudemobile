@@ -11,6 +11,7 @@ import { WORLD_CONFIG, CREATURE_CONFIG, RENDER_CONFIG } from '../config'
 import { WorldState } from '../systems/WorldState'
 import { applyWeatherResponse, getWeatherHuntRangeMultiplier } from './WeatherResponse'
 import { applyEcologyBehavior } from './EcologyBehavior'
+import { applySiteAwareness } from './SiteAwareness'
 
 const VIEW_RADIUS = WORLD_CONFIG.viewRadius
 const MAX_POPULATION = 500
@@ -20,7 +21,7 @@ const BATCH_SIZE = 30     // max state-machine ticks per frame
 const PLAYER_ID = '__player__'
 
 // Hoisted constant set to avoid per-frame allocation (Phase 5b)
-const ACTIVE_STATES = new Set(['flee', 'chase', 'hunt', 'wander', 'seek_food', 'seek_water', 'seek_mate', 'courtship', 'attack', 'migrating'])
+const ACTIVE_STATES = new Set(['flee', 'chase', 'hunt', 'wander', 'seek_food', 'seek_water', 'seek_mate', 'courtship', 'attack', 'migrating', 'resonating'])
 
 // Species that can spawn per biome
 // Merged spawn tables: absorbed biomes folded into parents
@@ -147,14 +148,20 @@ export class CreatureManager {
       // Skip AI for companion creatures
       if (c.isCompanion) continue
 
-      // Weather response — before state machine so weather can override idle/wander
+      // Site awareness — HIGHEST priority, overrides weather and ecology when near a site
+      let siteOverride = false
       if (i >= start && i < end && this.worldState) {
+        siteOverride = applySiteAwareness(c, this.worldState)
+      }
+
+      // Weather response — before state machine so weather can override idle/wander
+      if (!siteOverride && i >= start && i < end && this.worldState) {
         const shelterPositions = this.getShelterPositions()
         applyWeatherResponse(c, this.worldState, shelterPositions)
       }
 
       // Ecology behavior — after weather response, before state machine
-      if (i >= start && i < end) {
+      if (!siteOverride && i >= start && i < end) {
         applyEcologyBehavior(c, this.grid, this._frameCounter)
       }
 
@@ -536,6 +543,19 @@ export class CreatureManager {
         } else {
           this.steerToTarget(c, sp.maxSpeed * 0.6)
         }
+        break
+
+      case 'reverence':
+        // Reverence: minimal movement, facing site — handled by SiteAwareness
+        // If we reach the state machine, site awareness is no longer active, revert
+        c.state = 'idle'; c.stateTimer = 0; c.velocity.set(0, 0, 0)
+        break
+
+      case 'resonating':
+        // Resonating: circular ritual path — handled by SiteAwareness
+        // If we reach the state machine, site awareness is no longer active, revert
+        c.state = 'idle'; c.stateTimer = 0; c.velocity.set(0, 0, 0)
+        c.glowing = false
         break
     }
   }
