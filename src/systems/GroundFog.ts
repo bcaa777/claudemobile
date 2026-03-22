@@ -82,6 +82,8 @@ export class GroundFog {
   private mesh: THREE.Mesh
   private material: THREE.ShaderMaterial
   private elapsed = 0
+  /** When >= 0, overrides biome-computed density (debug panel) */
+  public densityOverride = -1
 
   constructor(scene: THREE.Scene) {
     const geo = new THREE.PlaneGeometry(PLANE_SIZE, PLANE_SIZE, 1, 1)
@@ -128,8 +130,8 @@ export class GroundFog {
     const dayPeak = Math.max(0, 1 - Math.abs(dayTime - 0.5) / 0.08)
     const todFactor = Math.max(0.1, Math.max(dawn, dusk) - dayPeak * 0.9)
 
-    // Final density = biome density × time-of-day factor
-    const density = visual.groundFogDensity * todFactor
+    // Final density = biome density × time-of-day factor (or debug override)
+    const density = this.densityOverride >= 0 ? this.densityOverride : visual.groundFogDensity * todFactor
 
     this.material.uniforms.uTime.value     = this.elapsed
     this.material.uniforms.uDensity.value  = density

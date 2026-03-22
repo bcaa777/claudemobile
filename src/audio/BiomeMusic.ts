@@ -233,6 +233,9 @@ export class BiomeMusic {
     this.phraseGain.connect(this.master)
   }
 
+  /** Scale master output volume (0–1 multiplier applied on top of base 0.55) */
+  setVolume(v: number) { this.master.gain.value = 0.55 * v }
+
   // ── Update (called every frame) ──
 
   update(delta: number, biome: BiomeType, context?: MusicContext) {

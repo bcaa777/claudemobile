@@ -3,7 +3,12 @@ import { DayNightCycle } from '../lighting/DayNightCycle'
 import { ColorGradePass } from '../postprocessing/ColorGradePass'
 import { CRTPass } from '../postprocessing/CRTPass'
 import { RetroPass } from '../postprocessing/RetroPass'
+import { GodRayPass } from '../postprocessing/GodRayPass'
+import { HeatDistortionPass } from '../postprocessing/HeatDistortionPass'
 import { PerfOverlay } from './PerfOverlay'
+import { AtmosphereParticles } from '../systems/AtmosphereParticles'
+import { GroundFog } from '../systems/GroundFog'
+import { AudioSystem } from '../audio/AudioSystem'
 import {
   PLAYER_CONFIG, POST_CONFIG, SPRITE_CONFIG,
   WORLD_CONFIG, TIME_CONFIG, BIOME_CONFIG, CREATURE_CONFIG,
@@ -34,6 +39,11 @@ export class DebugPanel {
   private crt: CRTPass
   private retro: RetroPass
   private perfOverlay: PerfOverlay
+  private godRayPass: GodRayPass
+  private heatDistortionPass: HeatDistortionPass
+  private atmosphereParticles: AtmosphereParticles
+  private groundFog: GroundFog
+  private audioSystem: AudioSystem
   public isOpen = false
 
   constructor(
@@ -43,6 +53,11 @@ export class DebugPanel {
     crt: CRTPass,
     retro: RetroPass,
     perfOverlay: PerfOverlay,
+    godRayPass: GodRayPass,
+    heatDistortionPass: HeatDistortionPass,
+    atmosphereParticles: AtmosphereParticles,
+    groundFog: GroundFog,
+    audioSystem: AudioSystem,
   ) {
     this.dayNight = dayNight
     this.flashlight = flashlight
@@ -50,6 +65,11 @@ export class DebugPanel {
     this.crt = crt
     this.retro = retro
     this.perfOverlay = perfOverlay
+    this.godRayPass = godRayPass
+    this.heatDistortionPass = heatDistortionPass
+    this.atmosphereParticles = atmosphereParticles
+    this.groundFog = groundFog
+    this.audioSystem = audioSystem
 
     // Restore saved debug state (lighting mults, playerLight)
     const saved = readLS()
@@ -294,6 +314,24 @@ export class DebugPanel {
       v => { WORLD_CONFIG.seed = Math.round(v) }, true))
     panel.appendChild(slider('Biome size',  60, 400, 10, BIOME_CONFIG.seedSpacing,
       v => { BIOME_CONFIG.seedSpacing = v }, true))
+
+    // ── VISUAL EFFECTS ──────────────────────────────────────────────────────
+    panel.appendChild(section('VISUAL EFFECTS'))
+    panel.appendChild(slider('God rays',    -0.01, 1, 0.01, -0.01,
+      v => { this.godRayPass.intensityOverride = v < 0 ? -1 : v }))
+    panel.appendChild(slider('Particles',   -1, 300, 1, -1,
+      v => { this.atmosphereParticles.countOverride = v < 0 ? -1 : v }))
+    panel.appendChild(slider('Ground fog',  -0.01, 1, 0.01, -0.01,
+      v => { this.groundFog.densityOverride = v < 0 ? -1 : v }))
+    panel.appendChild(slider('Heat dist',   -0.01, 1, 0.01, -0.01,
+      v => { this.heatDistortionPass.intensityOverride = v < 0 ? -1 : v }))
+
+    // ── AUDIO ──────────────────────────────────────────────────────────────
+    panel.appendChild(section('AUDIO'))
+    panel.appendChild(slider('Music vol',   0, 1, 0.01, 1,
+      v => { this.audioSystem.musicVolume = v }))
+    panel.appendChild(slider('Ambient vol', 0, 1, 0.01, 1,
+      v => { this.audioSystem.ambientVolume = v }))
 
     // ── SAVE & RELOAD ─────────────────────────────────────────────────────────
     const saveBtn = btn('SAVE & RELOAD', '#1a3a1a', '#2a5a2a', '#6f6', '#3a6a3a')

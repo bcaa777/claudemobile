@@ -60,6 +60,9 @@ const GodRayShader = {
 }
 
 export class GodRayPass extends ShaderPass {
+  /** When >= 0, overrides biome-computed intensity (debug panel) */
+  public intensityOverride = -1
+
   constructor() {
     super(GodRayShader)
   }

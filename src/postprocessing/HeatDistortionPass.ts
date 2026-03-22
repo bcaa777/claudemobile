@@ -43,6 +43,9 @@ const HeatDistortionShader = {
 }
 
 export class HeatDistortionPass extends ShaderPass {
+  /** When >= 0, overrides biome-computed intensity (debug panel) */
+  public intensityOverride = -1
+
   constructor() {
     super(HeatDistortionShader)
   }

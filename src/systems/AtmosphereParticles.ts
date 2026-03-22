@@ -28,6 +28,8 @@ export class AtmosphereParticles {
   private particleSize = 0.15
   private particleSpeed = 1.0
   private elapsed = 0
+  /** When >= 0, overrides biome particle count (debug panel) */
+  public countOverride = -1
 
   constructor(scene: THREE.Scene) {
     const geo = new THREE.PlaneGeometry(1, 1)
@@ -60,7 +62,8 @@ export class AtmosphereParticles {
 
     const atmo = visual.atmosphere
     const type = atmo.particleType
-    this.targetCount = type === 'none' ? 0 : Math.round(Math.min(MAX_PARTICLES, atmo.particleCount))
+    const rawCount = this.countOverride >= 0 ? this.countOverride : atmo.particleCount
+    this.targetCount = type === 'none' && this.countOverride < 0 ? 0 : Math.round(Math.min(MAX_PARTICLES, rawCount))
     this.particleSize = atmo.particleSize
     this.particleSpeed = atmo.particleSpeed
 

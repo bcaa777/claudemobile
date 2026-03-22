@@ -221,6 +221,11 @@ export class Engine {
       this.renderer.crtPass,
       this.renderer.retroPass,
       this.perfOverlay,
+      this.renderer.godRayPass,
+      this.renderer.heatDistortionPass,
+      this.atmosphereParticles,
+      this.groundFog,
+      this.audioSystem,
     )
 
     this.biomeHud = document.getElementById('biome-hud')
@@ -282,23 +287,10 @@ export class Engine {
     this.biomeTransition.setDayFactor(dayFactor)
     this.biomeTransition.update(this.renderer.camera.position, delta)
 
-    // Ground fog — low-lying biome-specific fog layer
-    this.groundFog.update(
-      delta, this.renderer.camera.position,
-      this.biomeTransition.getCurrentVisual(),
-      t,
-    )
-
-    // Atmosphere particles — ambient per-biome particles (after biome transition, before rendering)
-    this.atmosphereParticles.update(
-      delta, this.renderer.camera.position, this.renderer.camera,
-      this.biomeTransition.getCurrentVisual()
-    )
-
     const camPos = this.renderer.camera.position
     const currentBiome = this.biomeTransition.getCurrentBiome()
 
-    // Weather system — particles + weather state
+    // Weather system — particles + weather state (before fog so fog can read weather)
     this.weatherSystem.update(delta, currentBiome, camPos)
 
     // Compose weather fog with biome fog.
@@ -319,6 +311,19 @@ export class Engine {
         fog.color.lerp(weatherFog.color, colorBlend * Math.min(1, delta * 2))
       }
     }
+
+    // Ground fog — low-lying biome-specific fog layer (after weather fog composition)
+    this.groundFog.update(
+      delta, camPos,
+      this.biomeTransition.getCurrentVisual(),
+      t,
+    )
+
+    // Atmosphere particles — ambient per-biome particles (after biome transition + weather, before rendering)
+    this.atmosphereParticles.update(
+      delta, camPos, this.renderer.camera,
+      this.biomeTransition.getCurrentVisual()
+    )
 
     // Weather speed effects (blizzard slows movement)
     this.controller.speedMultiplier = this.weatherSystem.getSpeedMultiplier()
@@ -648,8 +653,9 @@ export class Engine {
 
     // God ray pass — project sun to screen space, fade at night
     {
+      const grOverride = this.renderer.godRayPass.intensityOverride
       const godRayBiomeIntensity = this.biomeTransition.getCurrentVisual().godRayIntensity
-      const godRayIntensity = godRayBiomeIntensity * dayFactor
+      const godRayIntensity = grOverride >= 0 ? grOverride : godRayBiomeIntensity * dayFactor
       this.renderer.godRayPass.setIntensity(godRayIntensity)
       if (godRayIntensity > 0.001) {
         // Place sun far away along sun direction, project to NDC then to 0–1 UV
@@ -665,7 +671,8 @@ export class Engine {
 
     // Heat distortion pass — shimmer in Desert and Volcanic biomes, no effect at night
     {
-      const heatIntensity = this.biomeTransition.getCurrentVisual().heatDistortion * dayFactor
+      const hdOverride = this.renderer.heatDistortionPass.intensityOverride
+      const heatIntensity = hdOverride >= 0 ? hdOverride : this.biomeTransition.getCurrentVisual().heatDistortion * dayFactor
       this.renderer.heatDistortionPass.setIntensity(heatIntensity)
       this.renderer.heatDistortionPass.setTime(this.elapsedTime)
     }

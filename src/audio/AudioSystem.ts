@@ -31,6 +31,10 @@ export class AudioSystem {
   private muted = false
   private muteEl: HTMLElement | null
 
+  /** Debug volume multipliers (0–1, default 1) */
+  public musicVolume = 1
+  public ambientVolume = 1
+
   constructor() {
     this.muteEl = document.getElementById('mute-hud')
     this.muted = localStorage.getItem(MUTE_KEY) === '1'
@@ -126,7 +130,9 @@ export class AudioSystem {
       playerPos,
       creatures,
     }
+    this.music?.setVolume(this.musicVolume)
     this.music?.update(delta, biome, musicContext)
+    this.ambience?.setVolume(this.ambientVolume)
     this.ambience?.update(delta, biome)
     if (landmarks) {
       this.spatialMelody?.update(delta, playerPos, landmarks, runePositions ?? [])

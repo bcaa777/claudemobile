@@ -41,6 +41,9 @@ export class AmbienceSound {
     this.output.connect(reverb.getSendNode())
   }
 
+  /** Scale master output volume (0–1 multiplier) */
+  setVolume(v: number) { this.output.gain.value = v }
+
   update(delta: number, biome: BiomeType) {
     // Biome changed — crossfade to new layers
     if (biome !== this.currentBiome) {
