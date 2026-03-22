@@ -35,6 +35,7 @@ import { WeatherType } from '../systems/WeatherSystem'
 import { GrappleSystem } from '../player/GrappleSystem'
 import { AtmosphereParticles } from '../systems/AtmosphereParticles'
 import { GroundFog } from '../systems/GroundFog'
+import { WorldState } from '../systems/WorldState'
 import { RoadNetwork } from '../traversal/RoadNetwork'
 import { ZiplineRide } from '../traversal/ZiplineRide'
 import { VineSwing } from '../traversal/VineSwing'
@@ -80,6 +81,7 @@ export class Engine {
   private roadNetwork: RoadNetwork
   private ziplineRide: ZiplineRide
   private vineSwing: VineSwing
+  private worldState: WorldState
 
   private lastTime = 0
   private running = false
@@ -204,6 +206,15 @@ export class Engine {
     this.vineSwing = new VineSwing(this.renderer.scene)
     this.runeSystem = new RuneSystem(this.renderer.scene, this.biomeMap, this.landmarkManager.positions)
 
+    // --- WorldState: central shared state ---
+    this.worldState = new WorldState()
+    this.worldState.loadFromStorage()
+
+    // Register landmark positions as resonance sites
+    for (const [biome, pos] of this.landmarkManager.positions) {
+      this.worldState.registerResonanceSite(biome, pos)
+    }
+
     this.debugMap = new DebugMap(this.castle.position, this.landmarkManager.positions, stairPos, hellStairPos)
     this.debugMap.setRoadEdges(this.roadNetwork.edges)
 
@@ -272,10 +283,18 @@ export class Engine {
     this.lastTime = time
     this.elapsedTime += delta
 
+    // WorldState: recalculate derived state at start of frame
+    this.worldState.update()
+
     this.controller.update(delta)
     this.collision.update(this.renderer.camera, this.controller, delta)
     this.world.update(this.renderer.camera.position)
     this.dayNight.update(delta)
+
+    // Write time of day to WorldState
+    this.worldState.timeOfDay = this.dayNight.getTime()
+    this.worldState.isDawn = this.worldState.timeOfDay >= 0.23 && this.worldState.timeOfDay <= 0.27
+    this.worldState.isDusk = this.worldState.timeOfDay >= 0.73 && this.worldState.timeOfDay <= 0.77
 
     // Update sky dome with sun position and day/night factor
     const t = this.dayNight.getTime()
@@ -290,8 +309,16 @@ export class Engine {
     const camPos = this.renderer.camera.position
     const currentBiome = this.biomeTransition.getCurrentBiome()
 
+    // Write player position and biome to WorldState
+    this.worldState.playerPosition.copy(camPos)
+    this.worldState.playerBiome = currentBiome
+
     // Weather system — particles + weather state (before fog so fog can read weather)
     this.weatherSystem.update(delta, currentBiome, camPos)
+
+    // Write weather state to WorldState
+    this.worldState.currentWeather = this.weatherSystem.getCurrentWeatherName() || 'clear'
+    this.worldState.weatherSeverity = this.weatherSystem.getFogCompositeParams().intensity
 
     // Compose weather fog with biome fog.
     // BiomeTransition sets scene.fog each frame; we then layer weather on top.
