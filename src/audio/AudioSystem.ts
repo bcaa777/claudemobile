@@ -7,7 +7,7 @@ import { FootstepSound } from './FootstepSound'
 import { WeatherSound } from './WeatherSound'
 import { CreatureSound } from './CreatureSound'
 import { ChimeSound } from './ChimeSound'
-import { BiomeMusic } from './BiomeMusic'
+import { BiomeMusic, MusicContext } from './BiomeMusic'
 import { SpatialMelody } from './SpatialMelody'
 import { EnvironmentReverb } from './EnvironmentReverb'
 import { AmbienceSound } from './AmbienceSound'
@@ -120,7 +120,13 @@ export class AudioSystem {
     this.footstep?.update(delta, speed, grounded, verticalVelocity, biome)
     this.weather?.update(delta, weatherType)
     this.creatureSound?.update(delta, playerPos, creatures)
-    this.music?.update(delta, biome)
+    const musicContext: MusicContext = {
+      weatherSeverity: weatherIntensity,
+      playerSpeed: speed,
+      playerPos,
+      creatures,
+    }
+    this.music?.update(delta, biome, musicContext)
     this.ambience?.update(delta, biome)
     if (landmarks) {
       this.spatialMelody?.update(delta, playerPos, landmarks, runePositions ?? [])
