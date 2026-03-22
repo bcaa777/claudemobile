@@ -5,6 +5,7 @@ import { BiomeType } from '../biomes/types'
 import { WeatherType } from '../systems/WeatherSystem'
 import { Creature } from '../creatures/Creature'
 import { SPECIES } from '../creatures/Species'
+import { NarrativeProgression, NarrativeLogEntry } from '../lore/NarrativeProgression'
 
 export class JournalSystem {
   readonly state: JournalState
@@ -12,6 +13,12 @@ export class JournalSystem {
   private popupEl: HTMLElement | null
   private popupTimer = 0
   private lastBiome: BiomeType | null = null
+
+  /** Auto-logged narrative observations (shown in the journal overlay). */
+  readonly narrativeLogs: NarrativeLogEntry[] = []
+
+  /** Per-biome hypotheses available (populated each frame by NarrativeProgression). */
+  readonly hypotheses: Map<BiomeType, string> = new Map()
 
   constructor() {
     this.state = new JournalState()
@@ -100,6 +107,26 @@ export class JournalSystem {
       return true
     }
     return false
+  }
+
+  /** Consume pending auto-log entries from NarrativeProgression and update hypotheses. */
+  consumeNarrativeUpdates(narrative: NarrativeProgression): void {
+    // Consume pending auto-log entries
+    for (const entry of narrative.pendingLogs) {
+      this.narrativeLogs.push(entry)
+      // Also register as a journal discovery so it counts toward total
+      const key = `narrative_${entry.type}_${entry.biome}`
+      if (this.state.discover(key)) {
+        this.showPopup(entry.text)
+      }
+    }
+
+    // Refresh hypotheses map
+    this.hypotheses.clear()
+    const allH = narrative.getAllHypotheses()
+    for (const [biome, text] of allH) {
+      this.hypotheses.set(biome, text)
+    }
   }
 
   discoverRune(biome: BiomeType): boolean {

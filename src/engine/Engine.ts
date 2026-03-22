@@ -37,6 +37,7 @@ import { AtmosphereParticles } from '../systems/AtmosphereParticles'
 import { GroundFog } from '../systems/GroundFog'
 import { WorldState } from '../systems/WorldState'
 import { RitualSystem } from '../systems/RitualSystem'
+import { NarrativeProgression } from '../lore/NarrativeProgression'
 import { RoadNetwork } from '../traversal/RoadNetwork'
 import { ZiplineRide } from '../traversal/ZiplineRide'
 import { VineSwing } from '../traversal/VineSwing'
@@ -84,6 +85,8 @@ export class Engine {
   private vineSwing: VineSwing
   private worldState: WorldState
   private ritualSystem: RitualSystem
+  private narrativeProgression: NarrativeProgression
+  private narrativeTimer = 0
 
   private lastTime = 0
   private running = false
@@ -219,6 +222,9 @@ export class Engine {
 
     // Ritual system
     this.ritualSystem = new RitualSystem()
+
+    // Narrative progression — glue between observations and story
+    this.narrativeProgression = new NarrativeProgression()
 
     // Wire WorldState into systems that need it
     this.weatherSystem.setWorldState(this.worldState)
@@ -567,6 +573,14 @@ export class Engine {
     // Update lore count per biome in ritualObservations from collected lore stones
     this.updateRitualLoreCounts()
     this.ritualSystem.update(delta, this.worldState, this.creatureManager.creatures, camPos)
+
+    // Narrative progression — update every 2 seconds to avoid overhead
+    this.narrativeTimer += delta
+    if (this.narrativeTimer >= 2.0) {
+      this.narrativeTimer = 0
+      this.narrativeProgression.updateFromWorldState(this.worldState)
+      this.journalSystem.consumeNarrativeUpdates(this.narrativeProgression)
+    }
 
     // Journal system
     const weatherType = this.weatherSystem.currentWeather as WeatherType
