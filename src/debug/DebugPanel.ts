@@ -68,7 +68,7 @@ export class DebugPanel {
     colorGrade.uniforms['saturation'].value        = POST_CONFIG.saturation
     crt.uniforms['scanlineIntensity'].value        = POST_CONFIG.scanlineIntensity
     crt.uniforms['vignetteStrength'].value         = POST_CONFIG.vignetteStrength
-    crt.uniforms['barrelStrength'].value           = POST_CONFIG.barrelStrength
+    crt.uniforms['barrelDistortion'].value         = POST_CONFIG.barrelDistortion
     retro.uniforms['chromaStrength'].value         = POST_CONFIG.chromaStrength
     retro.uniforms['grainStrength'].value          = POST_CONFIG.grainStrength
 
@@ -229,8 +229,8 @@ export class DebugPanel {
       v => { POST_CONFIG.scanlineIntensity = v; crt.uniforms['scanlineIntensity'].value = v }))
     panel.appendChild(slider('Vignette',   0.0, 1.0,  0.05, POST_CONFIG.vignetteStrength,
       v => { POST_CONFIG.vignetteStrength = v; crt.uniforms['vignetteStrength'].value = v }))
-    panel.appendChild(slider('Barrel',     0.0, 0.3,  0.005, POST_CONFIG.barrelStrength,
-      v => { POST_CONFIG.barrelStrength = v; crt.uniforms['barrelStrength'].value = v }))
+    panel.appendChild(slider('Barrel',     0.0, 0.3,  0.005, POST_CONFIG.barrelDistortion,
+      v => { POST_CONFIG.barrelDistortion = v; crt.uniforms['barrelDistortion'].value = v }))
     panel.appendChild(slider('Chroma',     0.0, 0.02, 0.001, POST_CONFIG.chromaStrength,
       v => { POST_CONFIG.chromaStrength = v; retro.uniforms['chromaStrength'].value = v }))
     panel.appendChild(slider('Film grain', 0.0, 0.4,  0.01,  POST_CONFIG.grainStrength,

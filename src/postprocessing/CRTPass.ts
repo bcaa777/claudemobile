@@ -6,8 +6,8 @@ const CRTShader = {
   uniforms: {
     tDiffuse:      { value: null as THREE.Texture | null },
     resolution:    { value: new THREE.Vector2(320, 240) },
-    scanlineIntensity: { value: 0.12 },
-    barrelStrength: { value: 0.06 },
+    scanlineIntensity: { value: 0.05 },
+    barrelDistortion: { value: 0 },
     vignetteStrength: { value: 0.35 },
   },
   vertexShader: /* glsl */`
@@ -21,7 +21,7 @@ const CRTShader = {
     uniform sampler2D tDiffuse;
     uniform vec2 resolution;
     uniform float scanlineIntensity;
-    uniform float barrelStrength;
+    uniform float barrelDistortion;
     uniform float vignetteStrength;
     varying vec2 vUv;
 
@@ -32,8 +32,8 @@ const CRTShader = {
     }
 
     void main() {
-      // Barrel distortion
-      vec2 uv = barrelDistort(vUv, barrelStrength);
+      // Barrel distortion — skipped when barrelDistortion is 0
+      vec2 uv = barrelDistortion > 0.0 ? barrelDistort(vUv, barrelDistortion) : vUv;
 
       // Clamp — areas outside become black (CRT edge)
       if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) {

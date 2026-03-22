@@ -195,8 +195,8 @@ export const POST_CONFIG = {
   contrast:          1.0, // 1.0 = neutral, >1 crushes shadows, <1 lifts blacks
   saturation:        0.80,
   chromaStrength:    0.004, // chromatic aberration radius
-  grainStrength:     0.06,  // film grain intensity
-  scanlineIntensity: 0.12,  // CRT scanline darkness
+  grainStrength:     0.035, // film grain intensity
+  scanlineIntensity: 0.05,  // CRT scanline darkness
   vignetteStrength:  0.35,  // CRT edge darkening
-  barrelStrength:    0.06,  // CRT lens warp
+  barrelDistortion:  0,     // CRT lens warp (0 = disabled)
 }
