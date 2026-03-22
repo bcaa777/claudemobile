@@ -91,6 +91,7 @@ export class Engine {
   private _lookDir = new THREE.Vector3()
   private _sunDir = new THREE.Vector3()
   private _sunCol = new THREE.Color()
+  private _sunWorld = new THREE.Vector3()
 
   private biomeHud: HTMLElement | null
   private timeHud: HTMLElement | null
@@ -644,6 +645,23 @@ export class Engine {
     this.landmarkManager.update(delta, this.lastTime / 1000, camPos)
     this.castleBreeze.update(delta, camPos)
     this.debugMap.update(camPos, this.controller.heading)
+
+    // God ray pass — project sun to screen space, fade at night
+    {
+      const godRayBiomeIntensity = this.biomeTransition.getCurrentVisual().godRayIntensity
+      const godRayIntensity = godRayBiomeIntensity * dayFactor
+      this.renderer.godRayPass.setIntensity(godRayIntensity)
+      if (godRayIntensity > 0.001) {
+        // Place sun far away along sun direction, project to NDC then to 0–1 UV
+        this.dayNight.getSunDirection(this._sunDir)
+        this._sunWorld.copy(this.renderer.camera.position).addScaledVector(this._sunDir, 1000)
+        this._sunWorld.project(this.renderer.camera)
+        // NDC is -1..1; convert to 0..1 UV (Y is flipped between NDC and UV)
+        const sx = (this._sunWorld.x + 1) * 0.5
+        const sy = (-this._sunWorld.y + 1) * 0.5
+        this.renderer.godRayPass.setSunPosition(sx, sy)
+      }
+    }
 
     this.renderer.render(delta)
     this.perfOverlay.update(this.renderer.renderer)

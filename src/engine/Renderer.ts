@@ -3,6 +3,7 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
 import { PixelatePass } from '../postprocessing/PixelatePass'
 import { ColorGradePass } from '../postprocessing/ColorGradePass'
+import { GodRayPass } from '../postprocessing/GodRayPass'
 import { CRTPass } from '../postprocessing/CRTPass'
 import { UnderwaterPass } from '../postprocessing/UnderwaterPass'
 import { DamagePass } from '../postprocessing/DamagePass'
@@ -17,6 +18,7 @@ export class Renderer {
   public composer: EffectComposer
 
   public colorGradePass!: ColorGradePass
+  public godRayPass!: GodRayPass
   public crtPass!: CRTPass
   public underwaterPass!: UnderwaterPass
   public damagePass!: DamagePass
@@ -65,6 +67,9 @@ export class Renderer {
 
     this.colorGradePass = new ColorGradePass()
     this.composer.addPass(this.colorGradePass)
+
+    this.godRayPass = new GodRayPass()
+    this.composer.addPass(this.godRayPass)
 
     this.crtPass = new CRTPass()
     this.composer.addPass(this.crtPass)
