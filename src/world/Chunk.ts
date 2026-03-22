@@ -813,22 +813,6 @@ export class Chunk {
     foliage.position.y = canopyY + canopyR * 0.6
     g.add(foliage)
 
-    // For mushroom biome: glowing spots on canopy
-    if (false) { // Mushroom biome merged into Swamp
-      const spotMat = this.matCache.getLambert(0xff80ff, { emissive: 0x440044, map: texGen.getTexture('mushroomGlow', 0xff80ff).map })
-      for (let i = 0; i < 6; i++) {
-        const angle = rng.range(0, Math.PI * 2)
-        const r = rng.range(0, canopyR * 0.8)
-        const spot = new THREE.Mesh(new THREE.SphereGeometry(0.6, 5, 4), spotMat)
-        spot.position.set(
-          Math.cos(angle) * r,
-          canopyY + 0.5,
-          Math.sin(angle) * r,
-        )
-        g.add(spot)
-      }
-    }
-
     this.group.add(g)
     this.extras.push(g)
   }

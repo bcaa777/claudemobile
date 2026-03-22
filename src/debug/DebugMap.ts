@@ -23,7 +23,7 @@ const LANDMARK_INFO: Partial<Record<BiomeType, { color: string; label: string }>
   [BiomeType.Crystal]:   { color: '#4466ee', label: 'CR' },
   [BiomeType.Jungle]:    { color: '#226622', label: 'JG' },
   [BiomeType.Mesa]:      { color: '#cc6633', label: 'ME' },
-  [BiomeType.CoralReef]: { color: '#ff88aa', label: 'CR' },
+  [BiomeType.CoralReef]: { color: '#ff88aa', label: 'CO' },
   [BiomeType.Heaven]:    { color: '#ffdd44', label: 'HV' },
   [BiomeType.Hell]:      { color: '#ff3300', label: 'HL' },
 }

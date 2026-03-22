@@ -28,7 +28,7 @@ const BIOME_SPAWN_TABLE: Partial<Record<BiomeType, SpeciesId[]>> = {
   [BiomeType.Desert]:    ['camel', 'camel', 'rabbit', 'bird', 'scorpion', 'wurm', 'deer', 'lion', 'fox', 'titan', 'parrot', 'toad'],
   [BiomeType.Swamp]:     ['rabbit', 'deer', 'bird', 'fish', 'fish', 'croc', 'toad', 'toad', 'titan', 'bat', 'wurm', 'crab', 'fox'],
   [BiomeType.Snow]:      ['rabbit', 'deer', 'bird', 'fish', 'wolf', 'mammoth', 'bear', 'titan', 'fox', 'goat', 'eagle', 'bat'],
-  [BiomeType.Volcanic]:  ['dragon', 'dragon', 'bat', 'wolf', 'wurm'],
+  [BiomeType.Volcanic]:  ['dragon', 'bat', 'wolf', 'wurm'],
   [BiomeType.Crystal]:   ['dragon', 'bird', 'deer', 'skywhale'],
   [BiomeType.Jungle]:    ['parrot', 'parrot', 'toad', 'toad', 'fox'],
   [BiomeType.Mesa]:      ['goat', 'scorpion', 'eagle', 'scorpion'],
