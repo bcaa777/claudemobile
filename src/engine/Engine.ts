@@ -41,6 +41,7 @@ import { NarrativeProgression } from '../lore/NarrativeProgression'
 import { RoadNetwork } from '../traversal/RoadNetwork'
 import { ZiplineRide } from '../traversal/ZiplineRide'
 import { VineSwing } from '../traversal/VineSwing'
+import { HUD } from '../ui/HUD'
 
 export class Engine {
   private renderer: Renderer
@@ -87,6 +88,7 @@ export class Engine {
   private ritualSystem: RitualSystem
   private narrativeProgression: NarrativeProgression
   private narrativeTimer = 0
+  private hud: HUD
 
   private lastTime = 0
   private running = false
@@ -253,6 +255,9 @@ export class Engine {
       this.groundFog,
       this.audioSystem,
     )
+
+    // Minimal HUD overlay (compass, companion indicator, health, prompts)
+    this.hud = new HUD()
 
     this.biomeHud = document.getElementById('biome-hud')
     this.timeHud = document.getElementById('time-hud')
@@ -655,6 +660,33 @@ export class Engine {
     // Damage pass
     const deathFade = this.playerState.isDead ? 1.0 : 0
     this.renderer.damagePass.setStrength(this.playerState.damageFlashStrength, deathFade)
+
+    // Minimal HUD update (compass, companion, health, interaction, activation message)
+    {
+      // Camera yaw — extract from camera quaternion
+      const camDir = this._fwd.set(0, 0, -1).applyQuaternion(this.renderer.camera.quaternion)
+      const cameraYaw = Math.atan2(camDir.x, camDir.z)
+
+      // Check if near an interactable (NPC handles its own prompt; we skip if dialogue active)
+      const nearInteractable = false // NPC system manages #interact-prompt directly
+
+      this.hud.update({
+        playerHealth: this.playerState.health,
+        maxHealth: this.playerState.maxHealth,
+        cameraYaw,
+        companionData: {
+          bonded: this.companionSystem.companionId !== null,
+          species: this.companionSystem.companionSpecies,
+          mood: this.companionSystem.mood,
+          name: this.companionSystem.companionName,
+        },
+        nearInteractable,
+        playerPos: camPos,
+        resonanceSites: this.worldState.resonanceSites,
+        activationMessage: this.worldState.activationMessage,
+        time: this.elapsedTime,
+      })
+    }
 
     // Update HUD
     if (this.biomeHud) {
