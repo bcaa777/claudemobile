@@ -153,7 +153,7 @@ export const CREATURE_CONFIG = {
 
 // ─── BIOME MAP ────────────────────────────────────────────────────────────────
 export const BIOME_CONFIG = {
-  seedSpacing: 180,       // distance between biome centres (higher = larger biomes)
+  seedSpacing: 280,       // distance between biome centres (higher = larger biomes)
 }
 
 // ─── SPRITE SPAWNING ─────────────────────────────────────────────────────────
