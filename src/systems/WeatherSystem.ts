@@ -81,6 +81,17 @@ const FOG_OVERRIDES: Partial<Record<WeatherType, number>> = {
   [WeatherType.HeavyRain]: 70,
 }
 
+// Fog color tints per weather type (RGB 0-1). Blended with biome fog color.
+const FOG_COLORS: Partial<Record<WeatherType, THREE.Color>> = {
+  [WeatherType.Blizzard]:  new THREE.Color(0.88, 0.92, 1.0),   // icy blue-white
+  [WeatherType.Sandstorm]: new THREE.Color(0.82, 0.72, 0.48),  // dusty amber
+  [WeatherType.Fog]:       new THREE.Color(0.75, 0.80, 0.82),  // cool grey
+  [WeatherType.HeavyRain]: new THREE.Color(0.55, 0.60, 0.70),  // stormy blue-grey
+  [WeatherType.Rain]:      new THREE.Color(0.60, 0.65, 0.75),  // light rain grey
+  [WeatherType.AshFall]:   new THREE.Color(0.30, 0.28, 0.26),  // dark ash
+  [WeatherType.Snow]:      new THREE.Color(0.92, 0.94, 1.0),   // soft white
+}
+
 const MAX_PARTICLES = 300
 
 export class WeatherSystem {
@@ -105,6 +116,7 @@ export class WeatherSystem {
 
   // Fog
   fogFarOverride = -1  // -1 means no override
+  private weatherFogIntensity = 0  // 0–1, how strongly weather fog applies
 
   constructor(scene: THREE.Scene) {
     this.scene = scene
@@ -172,6 +184,7 @@ export class WeatherSystem {
     // Update fog override
     const fogOverride = FOG_OVERRIDES[effectiveWeather]
     this.fogFarOverride = fogOverride !== undefined ? fogOverride : -1
+    this.weatherFogIntensity = fogOverride !== undefined ? intensity : 0
 
     // Update particles
     this.updateParticles(delta, effectiveWeather, intensity, playerPos)
@@ -287,5 +300,22 @@ export class WeatherSystem {
     const w = this.blendProgress >= 1 ? this.currentWeather : this.targetWeather
     if (w === WeatherType.Sandstorm) return 2.0
     return 0
+  }
+
+  /**
+   * Returns weather fog composition parameters for blending with biome fog.
+   * intensity = 0 means no weather fog override active.
+   * When intensity > 0, caller should:
+   *   - use min(biomeFar, farOverride) as the fog far
+   *   - blend biome fog color toward weatherColor by intensity * colorBlend
+   */
+  getFogCompositeParams(): { farOverride: number; color: THREE.Color; intensity: number } {
+    const w = this.blendProgress >= 1 ? this.currentWeather : this.targetWeather
+    const color = FOG_COLORS[w] ?? new THREE.Color(0.75, 0.80, 0.82)
+    return {
+      farOverride: this.fogFarOverride,
+      color,
+      intensity: this.weatherFogIntensity,
+    }
   }
 }

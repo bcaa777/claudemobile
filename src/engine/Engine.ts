@@ -281,13 +281,22 @@ export class Engine {
     // Weather system — particles + weather state
     this.weatherSystem.update(delta, currentBiome, camPos)
 
-    // Apply weather fog override: lerp fog.far down, never slam it
+    // Compose weather fog with biome fog.
+    // BiomeTransition sets scene.fog each frame; we then layer weather on top.
+    // Rules: use the closer/denser of the two far distances; blend fog color.
     const fog = this.renderer.scene.fog as THREE.Fog | null
-    if (fog && this.weatherSystem.fogFarOverride > 0) {
-      const target = this.weatherSystem.fogFarOverride
-      // Only reduce fog distance, and do it smoothly
-      if (target < fog.far) {
-        fog.far += (target - fog.far) * Math.min(1, delta * 0.5)
+    if (fog) {
+      const weatherFog = this.weatherSystem.getFogCompositeParams()
+      if (weatherFog.intensity > 0 && weatherFog.farOverride > 0) {
+        // Use the closer distance (denser fog wins)
+        const targetFar = Math.min(fog.far, weatherFog.farOverride)
+        // Smoothly approach the target (never slam)
+        fog.far += (targetFar - fog.far) * Math.min(1, delta * 0.5)
+
+        // Blend weather fog color into biome fog color proportional to intensity
+        // Cap color blend at 0.5 so biome color always has visible influence
+        const colorBlend = weatherFog.intensity * 0.5
+        fog.color.lerp(weatherFog.color, colorBlend * Math.min(1, delta * 2))
       }
     }
 
