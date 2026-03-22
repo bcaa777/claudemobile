@@ -334,6 +334,9 @@ export class Engine {
     // Hell shrinkage — each activated site reduces Hell radius by 15 (min 135)
     this.biomeMap.setHellRadius(300 - this.worldState.activatedSites.size * 15)
 
+    // Ritual cinematic lock — disable input during 3-second activation moment
+    this.controller.inputLocked = this.worldState.ritualCinematicActive
+
     this.controller.update(delta)
     this.collision.update(this.renderer.camera, this.controller, delta)
     this.world.update(this.renderer.camera.position)
@@ -450,6 +453,12 @@ export class Engine {
     this.npcManager.update(delta, camPos, this.elapsedTime, this.input, this.worldState.timeOfDay, this.worldState, this.companionSystem.companionSpecies, this.loreStones.collectedCount)
     if (this.npcManager.isDialogueActive()) {
       this.controller.speedMultiplier = 0
+    }
+
+    // NPC first-meeting moment: warm chime + floating name label (2 seconds)
+    if (this.npcManager.pendingFirstMeetingName) {
+      this.audioSystem.chime?.playNPCChime()
+      this.showFloatingText(this.npcManager.pendingFirstMeetingName, 2000, 'npc')
     }
     this.debugMap.setNPCMarkers(this.npcManager.getMapMarkers())
 
@@ -599,7 +608,11 @@ export class Engine {
     const lorePickup = this.loreStones.update(camPos, this.worldState.timeOfDay)
     if (lorePickup) {
       this.journalSystem.discoverLore(lorePickup.loreIndex)
-      this.audioSystem.chime?.playPickup()
+      // Biome-keyed root frequency: biome index × 40 Hz above A3 (220 Hz)
+      const biomeRootHz = 220 + (currentBiome as number) * 40
+      this.audioSystem.chime?.playLoreChime(biomeRootHz)
+      // Floating lore text — brief 3-second overlay at screen centre
+      this.showFloatingText(lorePickup.text, 3000, 'lore')
     }
 
     // Ritual system — observation tracking and activation detection
@@ -854,5 +867,53 @@ export class Engine {
       }
       obs.loreCount++
     }
+  }
+
+  /**
+   * Show a brief floating text overlay at screen centre.
+   * @param text     The text to display.
+   * @param duration Milliseconds before fade-out begins.
+   * @param variant  'lore' (italic, stone-blue) or 'npc' (bold, warm-gold).
+   */
+  private showFloatingText(text: string, duration: number, variant: 'lore' | 'npc') {
+    const div = document.createElement('div')
+    div.textContent = text
+
+    const isLore = variant === 'lore'
+    Object.assign(div.style, {
+      position: 'fixed',
+      left: '50%',
+      top: isLore ? '40%' : '35%',
+      transform: 'translateX(-50%)',
+      padding: '8px 18px',
+      borderRadius: '6px',
+      background: isLore ? 'rgba(20,30,60,0.72)' : 'rgba(40,25,5,0.72)',
+      color: isLore ? '#aaccff' : '#ffe8a0',
+      fontFamily: 'Georgia, serif',
+      fontSize: isLore ? '15px' : '17px',
+      fontStyle: isLore ? 'italic' : 'normal',
+      fontWeight: isLore ? 'normal' : 'bold',
+      letterSpacing: '0.03em',
+      textAlign: 'center',
+      maxWidth: '460px',
+      pointerEvents: 'none',
+      zIndex: '9999',
+      opacity: '0',
+      transition: 'opacity 0.4s ease',
+    })
+
+    document.body.appendChild(div)
+
+    // Fade in
+    requestAnimationFrame(() => {
+      div.style.opacity = '1'
+    })
+
+    // Fade out and remove
+    setTimeout(() => {
+      div.style.transition = 'opacity 0.6s ease'
+      div.style.opacity = '0'
+      setTimeout(() => div.remove(), 650)
+    }, duration)
   }
 }

@@ -37,6 +37,12 @@ export class NPCManager {
   private artefactHud: HTMLElement | null
   artefactsCollected = 0
 
+  /** Set to the NPC's name when the player first enters dialogue range — consumed by Engine for intro chime. */
+  pendingFirstMeetingName: string | null = null
+  /** Screen-space position hint for floating name label (NPC world position, Engine projects it). */
+  pendingFirstMeetingPos: THREE.Vector3 | null = null
+  private metNPCs: Set<NPCId> = new Set()
+
   constructor(
     biomeMap: BiomeMap,
     scene: THREE.Scene,
@@ -111,6 +117,10 @@ export class NPCManager {
   }
 
   update(delta: number, playerPos: THREE.Vector3, time: number, input: InputManager, timeOfDay = 0.5, worldState?: WorldState, companionSpecies?: string | null, loreFound = 0) {
+    // Clear pending first-meeting from previous frame
+    this.pendingFirstMeetingName = null
+    this.pendingFirstMeetingPos = null
+
     let nearestNPC: ActiveNPC | null = null
     let nearestDistSq = Infinity
 
@@ -145,6 +155,13 @@ export class NPCManager {
       if (distSq < INTERACT_DIST_SQ && distSq < nearestDistSq) {
         nearestNPC = npc
         nearestDistSq = distSq
+      }
+
+      // First-meeting detection: NPC just entered interact range for the first time
+      if (distSq < INTERACT_DIST_SQ && !this.metNPCs.has(npc.def.id)) {
+        this.metNPCs.add(npc.def.id)
+        this.pendingFirstMeetingName = npc.def.name
+        this.pendingFirstMeetingPos = npc.worldPos.clone()
       }
 
 

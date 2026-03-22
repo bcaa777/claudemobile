@@ -379,6 +379,86 @@ export class ChimeSound {
     }
   }
 
+  /**
+   * Lore stone discovery — ascending 3-note chime rooted at a biome-keyed frequency.
+   * Plays the root, major third, and perfect fifth as short sine tones.
+   * @param rootHz Root frequency in Hz (caller picks based on biome key)
+   */
+  playLoreChime(rootHz = 440) {
+    const now = this.ctx.currentTime
+    // Major scale intervals: root, major third (+4 semitones), perfect fifth (+7 semitones)
+    const semitoneRatios = [1, Math.pow(2, 4 / 12), Math.pow(2, 7 / 12)]
+
+    for (let i = 0; i < 3; i++) {
+      const t = now + i * 0.12
+      const freq = rootHz * semitoneRatios[i]
+
+      const osc = this.ctx.createOscillator()
+      osc.type = 'sine'
+      osc.frequency.value = freq
+
+      // Slight shimmer overtone
+      const osc2 = this.ctx.createOscillator()
+      osc2.type = 'sine'
+      osc2.frequency.value = freq * 2.002
+
+      const mix = this.ctx.createGain()
+      const vol = 0.05 - i * 0.005
+      mix.gain.setValueAtTime(0.001, t)
+      mix.gain.linearRampToValueAtTime(vol, t + 0.008)
+      mix.gain.exponentialRampToValueAtTime(0.001, t + 0.45)
+
+      const ov = this.ctx.createGain()
+      ov.gain.value = 0.25
+      osc.connect(mix)
+      osc2.connect(ov)
+      ov.connect(mix)
+      this.sendToBus(mix)
+
+      osc.start(t); osc.stop(t + 0.5)
+      osc2.start(t); osc2.stop(t + 0.5)
+      osc.onended = () => { osc.disconnect(); osc2.disconnect(); ov.disconnect(); mix.disconnect() }
+    }
+
+    this.playSparkle(now, 0.018, 0.018)
+  }
+
+  /**
+   * NPC first-meeting moment — single warm triangle-wave tone, lower and softer.
+   * Friendly and gentle, like a welcoming bell.
+   */
+  playNPCChime() {
+    const now = this.ctx.currentTime
+    const freq = 293 // D4 — warm, approachable
+
+    const osc1 = this.ctx.createOscillator()
+    osc1.type = 'triangle'
+    osc1.frequency.value = freq
+
+    const osc2 = this.ctx.createOscillator()
+    osc2.type = 'sine'
+    osc2.frequency.value = freq * 1.003
+
+    const filter = this.ctx.createBiquadFilter()
+    filter.type = 'lowpass'
+    filter.frequency.value = 1200
+    filter.Q.value = 0.6
+
+    const mix = this.ctx.createGain()
+    mix.gain.setValueAtTime(0.001, now)
+    mix.gain.linearRampToValueAtTime(0.05, now + 0.025)
+    mix.gain.exponentialRampToValueAtTime(0.001, now + 0.7)
+
+    osc1.connect(filter)
+    osc2.connect(filter)
+    filter.connect(mix)
+    this.sendToBus(mix)
+
+    osc1.start(now); osc1.stop(now + 0.75)
+    osc2.start(now); osc2.stop(now + 0.75)
+    osc1.onended = () => { osc1.disconnect(); osc2.disconnect(); filter.disconnect(); mix.disconnect() }
+  }
+
   /** Short noise burst — adds sparkle/transient to tonal chimes */
   private playSparkle(time: number, volume: number, duration: number) {
     const sr = this.ctx.sampleRate

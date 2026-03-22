@@ -354,6 +354,10 @@ export class RitualSystem {
     worldState.activationMessage = `The ${biomeName} resonates once more.`
     worldState.activationMessageTimer = 5.0 // display for 5 seconds
 
+    // Brief cinematic camera lock — 3 seconds
+    worldState.ritualCinematicActive = true
+    worldState.ritualCinematicTimer = 3.0
+
     // Persist
     worldState.saveToStorage()
 
@@ -446,13 +450,21 @@ export class RitualSystem {
     requestAnimationFrame(animate)
   }
 
-  /** Tick down activation message timer */
+  /** Tick down activation message timer and cinematic lock */
   updateActivationMessage(dt: number, worldState: WorldState): void {
     if (worldState.activationMessageTimer > 0) {
       worldState.activationMessageTimer -= dt
       if (worldState.activationMessageTimer <= 0) {
         worldState.activationMessage = null
         worldState.activationMessageTimer = 0
+      }
+    }
+
+    if (worldState.ritualCinematicActive) {
+      worldState.ritualCinematicTimer -= dt
+      if (worldState.ritualCinematicTimer <= 0) {
+        worldState.ritualCinematicActive = false
+        worldState.ritualCinematicTimer = 0
       }
     }
   }

@@ -48,6 +48,10 @@ export class WorldState {
   activationMessage: string | null = null
   activationMessageTimer: number = 0
 
+  // Brief camera lock after ritual activation (3 seconds)
+  ritualCinematicActive: boolean = false
+  ritualCinematicTimer: number = 0
+
   // Endgame state
   chordComplete: boolean = false
 

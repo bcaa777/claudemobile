@@ -16,6 +16,8 @@ export class FirstPersonController {
   public targetY = 0
   public frictionMultiplier = 1.0
   public speedMultiplier = 1.0
+  /** When true, movement and look input are suppressed (e.g. ritual cinematic) */
+  public inputLocked = false
   public get heading(): number { return this.yaw }
 
   constructor(camera: THREE.Camera, input: InputManager) {
@@ -28,6 +30,9 @@ export class FirstPersonController {
 
   update(delta: number) {
     this.prevPos.copy(this.camera.position)
+
+    // During ritual cinematics, suppress all input (camera stays still)
+    if (this.inputLocked) return
 
     // Poll gamepad
     this.input.pollGamepad()
