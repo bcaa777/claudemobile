@@ -408,6 +408,9 @@ export class Engine {
     // Update campfire positions for creature awareness
     this.creatureManager.campfirePositions = this.campfireSystem.positions
 
+    // Pass WorldState to creature manager for weather response
+    this.creatureManager.worldState = this.worldState
+
     this.creatureManager.update(delta, camPos, this.world, this.dayNight.getTime())
 
     // --- Engagement system updates ---

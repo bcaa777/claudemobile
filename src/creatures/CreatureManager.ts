@@ -8,6 +8,8 @@ import { World } from '../world/World'
 import { CHUNK_SIZE, WATER_LEVEL } from '../world/TerrainGenerator'
 import { BiomeType } from '../biomes/types'
 import { WORLD_CONFIG, CREATURE_CONFIG, RENDER_CONFIG } from '../config'
+import { WorldState } from '../systems/WorldState'
+import { applyWeatherResponse, getWeatherHuntRangeMultiplier } from './WeatherResponse'
 
 const VIEW_RADIUS = WORLD_CONFIG.viewRadius
 const MAX_POPULATION = 500
@@ -17,7 +19,7 @@ const BATCH_SIZE = 30     // max state-machine ticks per frame
 const PLAYER_ID = '__player__'
 
 // Hoisted constant set to avoid per-frame allocation (Phase 5b)
-const ACTIVE_STATES = new Set(['flee', 'chase', 'hunt', 'wander', 'seek_food', 'seek_water', 'seek_mate', 'courtship', 'attack'])
+const ACTIVE_STATES = new Set(['flee', 'chase', 'hunt', 'wander', 'seek_food', 'seek_water', 'seek_mate', 'courtship', 'attack', 'migrating'])
 
 // Species that can spawn per biome
 // Merged spawn tables: absorbed biomes folded into parents
@@ -49,6 +51,9 @@ export class CreatureManager {
 
   // Accumulated knockback for Engine to consume
   pendingKnockback = 0
+
+  // WorldState reference for weather response
+  worldState: WorldState | null = null
 
   constructor(worldSeed: number, scene: THREE.Scene) {
     this.rng = new SeededRandom(worldSeed + 1)
@@ -108,6 +113,7 @@ export class CreatureManager {
   }
 
   update(delta: number, playerPos: THREE.Vector3, world: World, dayTime: number): void {
+    this._frameCounter++
     // Rebuild spatial grid (Phase 4)
     this.grid.clear()
     this.grid.insertAll(this.creatures.values())
@@ -139,6 +145,12 @@ export class CreatureManager {
 
       // Skip AI for companion creatures
       if (c.isCompanion) continue
+
+      // Weather response — before state machine so weather can override idle/wander
+      if (i >= start && i < end && this.worldState) {
+        const shelterPositions = this.getShelterPositions()
+        applyWeatherResponse(c, this.worldState, shelterPositions)
+      }
 
       // State machine — batched
       if (i >= start && i < end) {
@@ -230,6 +242,30 @@ export class CreatureManager {
   }
 
   // ─── Internal helpers ────────────────────────────────────────────────────────
+
+  /** Collect shelter positions from worldState resonance sites + campfires */
+  private _shelterCache: THREE.Vector3[] = []
+  private _shelterCacheFrame = -1
+  private _frameCounter = 0
+
+  private getShelterPositions(): THREE.Vector3[] {
+    // Cache per frame to avoid rebuilding for every creature
+    if (this._shelterCacheFrame === this._frameCounter) return this._shelterCache
+    this._shelterCacheFrame = this._frameCounter
+
+    this._shelterCache.length = 0
+    // Resonance sites as shelter
+    if (this.worldState) {
+      for (const site of this.worldState.resonanceSites.values()) {
+        this._shelterCache.push(site.position)
+      }
+    }
+    // Campfires as shelter
+    for (const pos of this.campfirePositions) {
+      this._shelterCache.push(pos)
+    }
+    return this._shelterCache
+  }
 
   private disposeMesh(c: Creature) {
     const mesh = this.meshes.get(c.id)
@@ -480,11 +516,26 @@ export class CreatureManager {
         }
         break
       }
+
+      case 'sheltering':
+        // Sheltering: stay put, wait for weather to clear
+        // (applyWeatherResponse handles exit condition)
+        c.velocity.set(0, 0, 0)
+        break
+
+      case 'migrating':
+        // Migrating: steer toward targetPos set by weather response
+        if (this.atTarget(c, 3) || c.stateTimer > 12) {
+          c.state = 'idle'; c.stateTimer = 0; c.velocity.set(0, 0, 0)
+        } else {
+          this.steerToTarget(c, sp.maxSpeed * 0.6)
+        }
+        break
     }
   }
 
   private applyMovement(c: Creature, delta: number, world: World) {
-    if (c.state === 'dead' || c.state === 'sleep') return
+    if (c.state === 'dead' || c.state === 'sleep' || c.state === 'sheltering') return
     if (c.velocity.lengthSq() < 0.001) return
     const sp = SPECIES[c.species]
 

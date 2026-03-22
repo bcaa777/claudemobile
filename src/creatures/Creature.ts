@@ -7,6 +7,7 @@ export type CreatureState =
   | 'flee' | 'seek_mate' | 'courtship' | 'mating'
   | 'hunt' | 'chase' | 'attack'
   | 'sleep' | 'dead'
+  | 'sheltering' | 'migrating'
 
 let _nextId = 0
 
