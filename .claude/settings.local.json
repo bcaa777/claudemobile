@@ -20,7 +20,10 @@
       "Bash(grep:*)",
       "Bash(echo:*)",
       "Bash(ls -la /Users/michalplodek/Documents/Code/claudemobile/*.md)",
-      "Bash(scripts/start-server.sh --project-dir /Users/michalplodek/Documents/Code/claudemobile)"
+      "Bash(scripts/start-server.sh --project-dir /Users/michalplodek/Documents/Code/claudemobile)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(more.\"\\) stored in WorldState for HUD consumption.:*)"
     ]
   }
 }
