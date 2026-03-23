@@ -101,6 +101,7 @@ export class Engine {
   private bridgeCooldown = 0
   private combatSystem!: CombatSystem
   private enemySpawner!: EnemySpawner
+  private firstEnemyLoreLogged = false
 
   private lastTime = 0
   private running = false
@@ -575,6 +576,9 @@ export class Engine {
     // Player state update (regen, death, etc.)
     this.playerState.update(delta, this.elapsedTime)
 
+    // Max HP scaling from XP: every 100 XP = +10 max HP, capped at +100 (total max 200)
+    this.playerState.updateMaxHealthFromXP(this.worldState.playerXP)
+
     // NPC system — update before creatures, lock movement during dialogue
     this.npcManager.update(delta, camPos, this.elapsedTime, this.input, this.worldState.timeOfDay, this.worldState, this.companionSystem.companionSpecies, this.loreStones.collectedCount)
     if (this.npcManager.isDialogueActive()) {
@@ -618,6 +622,23 @@ export class Engine {
         delta, this.worldState, camPos, this._fwd,
         this.creatureManager, this.world
       )
+    }
+
+    // First-enemy lore trigger: when an enemy is within 30 units and player has no kills yet
+    if (!this.firstEnemyLoreLogged && this.worldState.totalKills === 0) {
+      const FIRST_ENEMY_DIST = 30
+      let hasNearbyEnemy = false
+      for (const c of this.creatureManager.creatures.values()) {
+        if (c.isEnemy && camPos.distanceTo(c.position) <= FIRST_ENEMY_DIST) {
+          hasNearbyEnemy = true
+          break
+        }
+      }
+      if (hasNearbyEnemy) {
+        this.firstEnemyLoreLogged = true
+        this.worldState.activationMessage = 'Something wrong has taken shape. The resonance is corrupted.'
+        this.worldState.activationMessageTimer = 5
+      }
     }
 
     // --- Engagement system updates ---
