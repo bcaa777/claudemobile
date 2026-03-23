@@ -273,4 +273,12 @@ export class CombatSystem {
   getCombatEffects(): CombatEffects {
     return this.combatEffects
   }
+
+  /** Get the magic pickup position, or null if already collected or not placed */
+  getMagicPickupPosition(): THREE.Vector3 | null {
+    if (this.magicPickup && !this.magicPickup.isCollected()) {
+      return this.magicPickup.getPosition()
+    }
+    return null
+  }
 }

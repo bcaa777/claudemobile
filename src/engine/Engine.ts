@@ -46,6 +46,7 @@ import { OnboardingSystem } from '../systems/OnboardingSystem'
 import { AwakeningSystem } from '../systems/AwakeningSystem'
 import { IntroBridge } from '../systems/IntroBridge'
 import { CombatSystem } from '../combat/CombatSystem'
+import { InteractiveBeacons, BeaconSource } from '../systems/InteractiveBeacons'
 import { EnemySpawner } from '../combat/EnemySpawner'
 
 export class Engine {
@@ -101,7 +102,14 @@ export class Engine {
   private bridgeCooldown = 0
   private combatSystem!: CombatSystem
   private enemySpawner!: EnemySpawner
+  private beacons!: InteractiveBeacons
   private firstEnemyLoreLogged = false
+
+  // Beacon colors — created once, reused every frame
+  private readonly beaconGold = new THREE.Color(0xffcc44)
+  private readonly beaconCyan = new THREE.Color(0x44ddff)
+  private readonly beaconPurple = new THREE.Color(0xaa44ff)
+  private readonly beaconWhiteGold = new THREE.Color(0xffeeaa)
 
   private lastTime = 0
   private running = false
@@ -243,6 +251,7 @@ export class Engine {
     this.enemySpawner.setWorldState(this.worldState)
     this.enemySpawner.setCreatureManager(this.creatureManager)
     this.world.setEnemySpawner(this.enemySpawner)
+    this.beacons = new InteractiveBeacons(this.renderer.scene)
 
     // Intro bridge — if intro not complete, create bridge and position player there
     console.log('[Intro] introComplete:', this.worldState.introComplete)
@@ -821,6 +830,34 @@ export class Engine {
     if (runeComplete) {
       this.audioSystem.chime?.playRuneComplete()
       this.journalSystem.discoverRune(currentBiome)
+    }
+
+    // Interactive beacons — particle columns above NPCs, lore stones, rune stones, magic pickup
+    {
+      const beaconSources: BeaconSource[] = []
+
+      for (const marker of this.npcManager.getMapMarkers()) {
+        beaconSources.push({ position: marker.pos, color: this.beaconGold, height: 8 })
+      }
+
+      for (const stone of this.loreStones.getAllStones()) {
+        if (!stone.collected) {
+          beaconSources.push({ position: stone.position, color: this.beaconCyan, height: 5 })
+        }
+      }
+
+      for (const marker of this.runeSystem.getMapMarkers()) {
+        beaconSources.push({ position: marker.pos, color: this.beaconPurple, height: 6 })
+      }
+
+      if (this.combatSystem && !this.worldState.hasGun) {
+        const pickupPos = this.combatSystem.getMagicPickupPosition()
+        if (pickupPos) {
+          beaconSources.push({ position: pickupPos, color: this.beaconWhiteGold, height: 6 })
+        }
+      }
+
+      this.beacons.update(delta, camPos, beaconSources)
     }
 
     // Audio system
