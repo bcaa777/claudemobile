@@ -21,14 +21,12 @@ export interface RitualRequirement {
 export const RITUAL_REQUIREMENTS: RitualRequirement[] = [
   {
     biome: BiomeType.Forest,
-    observations: { creatureBehaviorNearSite: true, weatherReveal: true, loreFragmentsFound: 3 },
+    observations: { creatureBehaviorNearSite: false, weatherReveal: false, loreFragmentsFound: 1 },
     activation: {
       timeOfDay: 'dusk',
-      weather: 'clear',
       creaturePresent: 'deer',
-      creatureState: 'reverence',
       playerAction: 'stand_center',
-      playerRadius: 3,
+      playerRadius: 5,
     },
   },
   {

@@ -3,10 +3,10 @@ import { BiomeConfig, BiomeType } from '../types'
 
 export const forestBiome: BiomeConfig = {
   type: BiomeType.Forest,
-  name: 'Dark Forest',
+  name: 'Ancient Forest',
   fogColor: new THREE.Color(0x1a3a1a),
-  fogNear: 20,
-  fogFar: 120,
+  fogNear: 30,
+  fogFar: 180,
   skyColor: new THREE.Color(0x0d1e0d),
   skyConfig: {
     zenithDay: new THREE.Color(0x1a3a2a),
@@ -17,7 +17,7 @@ export const forestBiome: BiomeConfig = {
     cloudDensity: 0.3,
     hazeStrength: 0.4,
   },
-  ambientDayColor: new THREE.Color(0x1a3320),
+  ambientDayColor: new THREE.Color(0x2a4430),
   ambientNightColor: new THREE.Color(0x050808),
   sunColor: new THREE.Color(0x8fb88f),
   palette: [
@@ -60,8 +60,8 @@ export const forestBiome: BiomeConfig = {
       saturation: 1.1,
     },
     fog: {
-      nearDistance: 20,
-      farDistance: 120,
+      nearDistance: 30,
+      farDistance: 180,
       color: [0.85, 0.78, 0.55],
       density: 0.4,
     },
@@ -76,7 +76,7 @@ export const forestBiome: BiomeConfig = {
       particleSize: 0.08,
       particleSpeed: 0.3,
     },
-    godRayIntensity: 0.8,
+    godRayIntensity: 1.0,
     heatDistortion: 0,
     groundFogDensity: 0.2,
   },

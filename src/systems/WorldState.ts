@@ -55,6 +55,10 @@ export class WorldState {
   // Endgame state
   chordComplete: boolean = false
 
+  // Awakening system (early game hook)
+  awakeningStage: number = 0  // 0=not started, 1=castle stone found, 2=threshold complete
+  forestFogBoost: number = 0  // extra fog far distance after threshold activation
+
   // Hazard zones (repopulated each update by HazardSystem — used for journal/mystery tracking)
   hazardZones: Array<{
     type: string        // 'lava', 'toxic_gas', 'crystal_shards', 'ice'
@@ -132,6 +136,8 @@ export class WorldState {
       weatherReveals: revealsArray,
       ritualObservations: obsArray,
       chordComplete: this.chordComplete,
+      awakeningStage: this.awakeningStage,
+      forestFogBoost: this.forestFogBoost,
     })
   }
 
@@ -155,6 +161,12 @@ export class WorldState {
       }
       if (parsed.chordComplete) {
         this.chordComplete = true
+      }
+      if (typeof parsed.awakeningStage === 'number') {
+        this.awakeningStage = parsed.awakeningStage
+      }
+      if (typeof parsed.forestFogBoost === 'number') {
+        this.forestFogBoost = parsed.forestFogBoost
       }
     } catch {
       // Ignore corrupt data
