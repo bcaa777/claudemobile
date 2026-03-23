@@ -95,7 +95,7 @@ export class SpatialMelody {
     this.reverb = reverb ?? null
 
     this.master = ctx.createGain()
-    this.master.gain.value = 0.25
+    this.master.gain.value = 0.5
     this.master.connect(master)
 
     // Spatial lowpass — opens up as you get closer
@@ -282,7 +282,7 @@ export class SpatialMelody {
     filter.Q.value = 0.5
 
     const gain = this.ctx.createGain()
-    const vol = mood === 'dark' ? 0.022 : 0.028
+    const vol = mood === 'dark' ? 0.044 : 0.056
     const attackTime = mood === 'ethereal' || mood === 'mystical' ? 0.6 : 0.4
     gain.gain.setValueAtTime(0.001, time)
     gain.gain.linearRampToValueAtTime(vol, time + attackTime)
@@ -330,8 +330,8 @@ export class SpatialMelody {
 
     const gain = this.ctx.createGain()
     gain.gain.setValueAtTime(0.001, time)
-    gain.gain.linearRampToValueAtTime(0.015, time + 1.5)
-    gain.gain.setValueAtTime(0.012, time + duration * 0.6)
+    gain.gain.linearRampToValueAtTime(0.03, time + 1.5)
+    gain.gain.setValueAtTime(0.024, time + duration * 0.6)
     gain.gain.exponentialRampToValueAtTime(0.001, time + duration)
 
     osc1.connect(filter)

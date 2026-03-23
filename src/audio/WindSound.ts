@@ -73,7 +73,7 @@ export class WindSound {
 
   update(altitude: number, weatherIntensity: number, isBlizzard: boolean) {
     const altFactor = Math.min(1, Math.max(0, altitude / 80))
-    const volume = Math.min(0.08, altFactor * 0.03 + weatherIntensity * 0.06)
+    const volume = Math.min(0.25, altFactor * 0.08 + weatherIntensity * 0.15)
     this.gain.gain.value += (volume - this.gain.gain.value) * 0.02
 
     // Blizzard: deeper, more intense, faster LFO modulation

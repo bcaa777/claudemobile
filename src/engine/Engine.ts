@@ -96,6 +96,7 @@ export class Engine {
   private awakeningSystem: AwakeningSystem | null = null
   private introBridge: IntroBridge | null = null
   private npcDialogueSeen = false
+  private bridgeCooldown = 0
 
   private lastTime = 0
   private running = false
@@ -404,9 +405,13 @@ export class Engine {
 
       const bridgeComplete = this.introBridge.update(delta, this.renderer.camera.position, this.elapsedTime, this.worldState)
       if (bridgeComplete) {
-        // Teleport to castle
-        this.renderer.camera.position.set(this.castlePos.x, this.castlePos.y + 2, this.castlePos.z)
+        // Teleport to castle gate (south entrance), facing north into castle
+        this.renderer.camera.position.set(this.castlePos.x, this.castlePos.y + 2, this.castlePos.z + 44)
+        this.controller.yaw = Math.PI  // face north (into castle)
+        this.controller.pitch = 0
         this.controller.verticalVelocity = 0
+        this.controller.isGrounded = true
+        this.bridgeCooldown = 30
         this.worldState.introComplete = true
         this.worldState.saveToStorage()
         this.introBridge.dispose()
@@ -422,6 +427,13 @@ export class Engine {
       this.renderer.scene.background = savedBg
       requestAnimationFrame((t) => this.loop(t))
       return
+    }
+
+    // Bridge cooldown — force grounded state for 30 frames after teleport to let chunks load
+    if (this.bridgeCooldown > 0) {
+      this.bridgeCooldown--
+      this.controller.isGrounded = true
+      this.controller.verticalVelocity = 0
     }
 
     // WorldState: recalculate derived state at start of frame

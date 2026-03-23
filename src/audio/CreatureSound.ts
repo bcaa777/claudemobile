@@ -69,7 +69,7 @@ export class CreatureSound {
       const attenuated = dist <= FULL_VOLUME_RANGE
         ? 1.0
         : 1.0 - (dist - FULL_VOLUME_RANGE) / (MAX_RANGE - FULL_VOLUME_RANGE)
-      const volume = Math.max(0, 0.07 * attenuated)
+      const volume = Math.max(0, 0.15 * attenuated)
 
       const isNearSite = creature.state === 'reverence' || creature.state === 'resonating'
       const sp = SPECIES[creature.species]
