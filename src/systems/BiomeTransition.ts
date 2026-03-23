@@ -241,7 +241,14 @@ export class BiomeTransition {
   /** Returns the current smoothly-interpolated visual identity parameters.
    *  If the current biome is activated, applies subtle visual improvements. */
   getCurrentVisual(): InterpolatedVisual {
-    if (!this.worldState || !this.worldState.activatedSites.has(this.currentBiome)) {
+    if (!this.worldState) return this.currentVisual
+
+    // Forest fog boost from awakening system
+    if (this.worldState.forestFogBoost > 0 && this.currentBiome === BiomeType.Forest) {
+      this.currentVisual.fog.farDistance += this.worldState.forestFogBoost
+    }
+
+    if (!this.worldState.activatedSites.has(this.currentBiome)) {
       return this.currentVisual
     }
 

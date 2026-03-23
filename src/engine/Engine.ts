@@ -43,6 +43,7 @@ import { ZiplineRide } from '../traversal/ZiplineRide'
 import { VineSwing } from '../traversal/VineSwing'
 import { HUD } from '../ui/HUD'
 import { OnboardingSystem } from '../systems/OnboardingSystem'
+import { AwakeningSystem } from '../systems/AwakeningSystem'
 
 export class Engine {
   private renderer: Renderer
@@ -91,6 +92,7 @@ export class Engine {
   private narrativeTimer = 0
   private hud: HUD
   private onboarding: OnboardingSystem
+  private awakeningSystem: AwakeningSystem | null = null
   private npcDialogueSeen = false
 
   private lastTime = 0
@@ -231,6 +233,15 @@ export class Engine {
     // Narrative progression — glue between observations and story
     this.narrativeProgression = new NarrativeProgression()
 
+    // Awakening system — early game breadcrumb trail from castle to forest temple
+    const forestPos = this.landmarkManager.positions.get(BiomeType.Forest)
+    if (forestPos) {
+      this.awakeningSystem = new AwakeningSystem(
+        this.castle.position, forestPos, this.renderer.scene,
+        this.biomeMap, this.audioSystem, this.loreStones, this.worldState
+      )
+    }
+
     // Wire WorldState into systems that need it
     this.weatherSystem.setWorldState(this.worldState)
     this.biomeTransition.setWorldState(this.worldState)
@@ -334,6 +345,9 @@ export class Engine {
 
     // WorldState: recalculate derived state at start of frame
     this.worldState.update()
+
+    // Awakening system — early game progression
+    this.awakeningSystem?.update(delta, this.renderer.camera.position, this.elapsedTime)
 
     // Hell shrinkage — each activated site reduces Hell radius by 15 (min 135)
     this.biomeMap.setHellRadius(300 - this.worldState.activatedSites.size * 15)

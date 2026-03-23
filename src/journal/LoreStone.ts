@@ -251,6 +251,32 @@ export class LoreStoneManager {
     } catch { /* ignore */ }
   }
 
+  /** Place a guaranteed lore stone at an exact position (used by AwakeningSystem). */
+  placeGuaranteedStone(position: THREE.Vector3, biome: BiomeType, fragmentIndex: number): void {
+    const fragments = LORE_CONTENT.get(biome)
+    if (!fragments || fragments.length === 0) return
+
+    const frag = fragments[Math.min(fragmentIndex, fragments.length - 1)]
+    const loreIndex = this.fragmentIdToIndex(frag.id)
+    const collected = this.collectedSet.has(loreIndex) || this.collectedFragmentIds.has(frag.id)
+
+    // Use a special chunk key so it won't collide with natural chunk spawns
+    const key = `guaranteed_${Math.round(position.x)}_${Math.round(position.z)}`
+    if (this.stones.has(key)) return // already placed
+
+    const instance: LoreStoneInstance = {
+      position: position.clone(),
+      loreIndex,
+      collected,
+      mesh: null,
+      nightOnly: false,
+      biome,
+      fragmentId: frag.id,
+    }
+
+    this.stones.set(key, [instance])
+  }
+
   private loadCollected() {
     try {
       const raw = localStorage.getItem('lore_collected')
