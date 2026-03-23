@@ -4,6 +4,7 @@ export type SpeciesId = 'deer' | 'rabbit' | 'bird' | 'dragon' | 'fish' | 'wolf' 
   | 'bear' | 'camel' | 'fox' | 'bat' | 'scorpion' | 'lion' | 'mammoth' | 'toad'
   | 'titan' | 'skywhale' | 'wurm' | 'imp' | 'hellhound' | 'infernal'
   | 'eagle' | 'parrot' | 'crab' | 'goat'
+  | 'hollow_shambler' | 'hollow_spitter' | 'hollow_stalker' | 'hollow_warden'
 
 export interface SpeciesDef {
   id: SpeciesId
@@ -620,6 +621,100 @@ export const SPECIES: Record<SpeciesId, SpeciesDef> = {
     adultScale: 1.0,
     babyScale: 0.5,
   },
+
+// ── Hollow enemies — corrupted manifestations ──────────────────────────────
+
+  hollow_shambler: {
+    id: 'hollow_shambler',
+    mobility: 'ground',
+    role: 'predator',
+    bodyColor: 0x2a1030,
+    headColor: 0x3a1840,
+    legColor: 0x1a0820,
+    bodyW: 0.7, bodyH: 0.6, bodyD: 1.0,
+    maxSpeed: 2.5,
+    fleeSpeed: 2.5,
+    maxHunger: 9999,
+    maxThirst: 9999,
+    maxEnergy: 200,
+    maxAge: 99999,
+    sightRange: 12,
+    attackRange: 2.5,
+    attackDamage: 8,
+    preferredBiomes: [BiomeType.Hell, BiomeType.Volcanic],
+    spawnWeight: 0,
+    adultScale: 1.0,
+    babyScale: 1.0,
+  },
+
+  hollow_spitter: {
+    id: 'hollow_spitter',
+    mobility: 'ground',
+    role: 'predator',
+    bodyColor: 0x1a0a30,
+    headColor: 0x2a1240,
+    legColor: 0x100620,
+    bodyW: 0.8, bodyH: 0.7, bodyD: 1.2,
+    maxSpeed: 4,
+    fleeSpeed: 4,
+    maxHunger: 9999,
+    maxThirst: 9999,
+    maxEnergy: 200,
+    maxAge: 99999,
+    sightRange: 20,
+    attackRange: 30,
+    attackDamage: 12,
+    preferredBiomes: [BiomeType.Hell, BiomeType.Volcanic],
+    spawnWeight: 0,
+    adultScale: 1.2,
+    babyScale: 1.2,
+  },
+
+  hollow_stalker: {
+    id: 'hollow_stalker',
+    mobility: 'ground',
+    role: 'predator',
+    bodyColor: 0x150820,
+    headColor: 0x251030,
+    legColor: 0x0a0410,
+    bodyW: 0.5, bodyH: 0.5, bodyD: 0.9,
+    maxSpeed: 10,
+    fleeSpeed: 10,
+    maxHunger: 9999,
+    maxThirst: 9999,
+    maxEnergy: 200,
+    maxAge: 99999,
+    sightRange: 20,
+    attackRange: 3,
+    attackDamage: 15,
+    preferredBiomes: [BiomeType.Hell, BiomeType.Volcanic],
+    spawnWeight: 0,
+    adultScale: 0.9,
+    babyScale: 0.9,
+  },
+
+  hollow_warden: {
+    id: 'hollow_warden',
+    mobility: 'ground',
+    role: 'predator',
+    bodyColor: 0x0a0510,
+    headColor: 0x1a0a20,
+    legColor: 0x050208,
+    bodyW: 3.0, bodyH: 2.5, bodyD: 4.0,
+    maxSpeed: 3,
+    fleeSpeed: 3,
+    maxHunger: 9999,
+    maxThirst: 9999,
+    maxEnergy: 200,
+    maxAge: 99999,
+    sightRange: 25,
+    attackRange: 4,
+    attackDamage: 25,
+    preferredBiomes: [BiomeType.Hell, BiomeType.Volcanic],
+    spawnWeight: 0,
+    adultScale: 3.0,
+    babyScale: 3.0,
+  },
 }
 
-export const ALL_SPECIES: SpeciesId[] = ['deer', 'rabbit', 'bird', 'dragon', 'fish', 'wolf', 'croc', 'bear', 'camel', 'fox', 'bat', 'scorpion', 'lion', 'mammoth', 'toad', 'titan', 'skywhale', 'wurm', 'imp', 'hellhound', 'infernal', 'eagle', 'parrot', 'crab', 'goat']
+export const ALL_SPECIES: SpeciesId[] = ['deer', 'rabbit', 'bird', 'dragon', 'fish', 'wolf', 'croc', 'bear', 'camel', 'fox', 'bat', 'scorpion', 'lion', 'mammoth', 'toad', 'titan', 'skywhale', 'wurm', 'imp', 'hellhound', 'infernal', 'eagle', 'parrot', 'crab', 'goat', 'hollow_shambler', 'hollow_spitter', 'hollow_stalker', 'hollow_warden']

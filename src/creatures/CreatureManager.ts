@@ -4,6 +4,7 @@ import { CreatureMesh } from './CreatureMesh'
 import { SpatialGrid } from './SpatialGrid'
 import { SPECIES, SpeciesId } from './Species'
 import { SeededRandom, chunkSeed } from '../utils/SeededRandom'
+import { HollowType, ENEMY_DEFS } from '../combat/EnemyTypes'
 import { World } from '../world/World'
 import { CHUNK_SIZE, WATER_LEVEL } from '../world/TerrainGenerator'
 import { BiomeType } from '../biomes/types'
@@ -46,7 +47,7 @@ export class CreatureManager {
   campfirePositions: THREE.Vector3[] = []
   private meshes: Map<string, CreatureMesh> = new Map()
   private initializedChunks: Set<string> = new Set()
-  private grid: SpatialGrid<Creature> = new SpatialGrid(32)
+  grid: SpatialGrid<Creature> = new SpatialGrid(32)
   private rng: SeededRandom
   private scene: THREE.Scene
   private batchOffset = 0
@@ -252,6 +253,37 @@ export class CreatureManager {
 
   getCount(): number {
     return this.creatures.size
+  }
+
+  /** Spawn an enemy creature (Hollow) at the given position */
+  spawnEnemy(type: HollowType, position: THREE.Vector3): Creature {
+    const speciesId = `hollow_${type}` as SpeciesId
+    const def = ENEMY_DEFS[type]
+    const sp = SPECIES[speciesId]
+    const creature = new Creature(speciesId, position, sp.adultScale)
+    creature.scale = def.scale
+    creature.isEnemy = true
+    creature.enemyType = type
+    creature.health = def.hp
+    creature.hunger = 0
+    creature.thirst = 0
+    creature.energy = 200
+    creature.age = 0
+    creature.reproductionCooldown = 99999
+    this.creatures.set(creature.id, creature)
+    return creature
+  }
+
+  /** Damage a creature by amount; triggers death state if health <= 0 */
+  damageCreature(creatureId: string, amount: number): void {
+    const c = this.creatures.get(creatureId)
+    if (!c || c.state === 'dead') return
+    c.health -= amount
+    if (c.health <= 0) {
+      c.health = 0
+      c.state = 'dead'
+      c.velocity.set(0, 0, 0)
+    }
   }
 
   // ─── Internal helpers ────────────────────────────────────────────────────────

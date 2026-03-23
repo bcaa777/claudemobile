@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { SpeciesId } from './Species'
+import type { HollowType } from '../combat/EnemyTypes'
 
 export type CreatureState =
   | 'idle' | 'wander' | 'seek_food' | 'eating'
@@ -32,6 +33,8 @@ export class Creature {
   hasMesh: boolean
   deathTimer: number
   isCompanion: boolean
+  isEnemy: boolean
+  enemyType: HollowType | null
   glowing: boolean
   glowColor: number
 
@@ -55,6 +58,8 @@ export class Creature {
     this.hasMesh = false
     this.deathTimer = 0
     this.isCompanion = false
+    this.isEnemy = false
+    this.enemyType = null
     this.glowing = false
     this.glowColor = 0x000000
   }

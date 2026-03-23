@@ -151,6 +151,13 @@ export const CREATURE_CONFIG = {
   speedMultiplier: 1.0,  // multiplier on all creature movement speeds
 }
 
+// ─── COMBAT ─────────────────────────────────────────────────────────────────
+export const COMBAT_CONFIG = {
+  enemySpawnMultiplier: 1.0,
+  damageMultiplier: 1.0,
+  xpMultiplier: 1.0,
+}
+
 // ─── BIOME MAP ────────────────────────────────────────────────────────────────
 export const BIOME_CONFIG = {
   seedSpacing: 280,       // distance between biome centres (higher = larger biomes)

@@ -41,6 +41,13 @@ export class WorldState {
   // Companion
   companionSpecies: string | null = null
 
+  // Combat state
+  playerXP: number = 0
+  gunTier: number = 0
+  hasGun: boolean = false
+  totalKills: number = 0
+  wardenKills: Set<BiomeType> = new Set()
+
   // Ritual observation tracking per biome (populated by RitualSystem)
   ritualObservations: Map<BiomeType, { creatureBehavior: boolean; weatherReveal: boolean; loreCount: number }> = new Map()
 
@@ -142,6 +149,11 @@ export class WorldState {
       introComplete: this.introComplete,
       awakeningStage: this.awakeningStage,
       forestFogBoost: this.forestFogBoost,
+      playerXP: this.playerXP,
+      gunTier: this.gunTier,
+      hasGun: this.hasGun,
+      totalKills: this.totalKills,
+      wardenKills: Array.from(this.wardenKills),
     })
   }
 
@@ -174,6 +186,21 @@ export class WorldState {
       }
       if (typeof parsed.forestFogBoost === 'number') {
         this.forestFogBoost = parsed.forestFogBoost
+      }
+      if (typeof parsed.playerXP === 'number') {
+        this.playerXP = parsed.playerXP
+      }
+      if (typeof parsed.gunTier === 'number') {
+        this.gunTier = parsed.gunTier
+      }
+      if (typeof parsed.hasGun === 'boolean') {
+        this.hasGun = parsed.hasGun
+      }
+      if (typeof parsed.totalKills === 'number') {
+        this.totalKills = parsed.totalKills
+      }
+      if (Array.isArray(parsed.wardenKills)) {
+        this.wardenKills = new Set(parsed.wardenKills)
       }
     } catch {
       // Ignore corrupt data
