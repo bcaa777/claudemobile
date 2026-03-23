@@ -4,8 +4,8 @@ import { FirstPersonController } from './FirstPersonController'
 
 const PLAYER_HEIGHT   = 1.8
 const TERRAIN_OFFSET  = 0.05
-const AUTO_STEP_HEIGHT = 0.6          // bumps up to this height are auto-stepped
-const MAX_SLOPE_TAN    = Math.tan(50 * Math.PI / 180)  // tan(50°) ≈ 1.19
+const AUTO_STEP_HEIGHT = 0.8          // bumps up to this height are auto-stepped
+const MAX_SLOPE_TAN    = Math.tan(70 * Math.PI / 180)  // tan(70°) ≈ 2.75 — only block near-vertical walls
 
 const _tmpVec = new THREE.Vector3()
 
@@ -13,6 +13,7 @@ export class CollisionSystem {
   private world: World
   private smoothY = -Infinity
   private prevGroundY = -Infinity
+  private groundedFrames = 0  // count frames on ground to avoid slope-blocking on landing
 
   constructor(world: World) {
     this.world = world
@@ -36,7 +37,7 @@ export class CollisionSystem {
   }
 
   update(camera: THREE.Camera, controller: FirstPersonController, delta: number) {
-    if (controller.isFlying) return
+    // Fly mode removed — multi-jump + glide replaces it
 
     const pos     = camera.position
     const prevPos = controller.prevPos
@@ -45,9 +46,14 @@ export class CollisionSystem {
     const groundYAtPrev = this.getGroundY(prevPos, pos.y)
 
     // ── Slope blocking with sliding ──────────────────────────────────────────
-    // Only block when grounded (not jumping/falling) and the step is large enough
-    // to be a steep slope rather than a small bump.
-    if (controller.verticalVelocity <= 0 && groundYAtNew > -Infinity && groundYAtPrev > -Infinity) {
+    // Only block when walking on ground for several frames (not mid-jump/landing).
+    // This prevents the "invisible wall" feel when jumping near slopes.
+    if (controller.isGrounded) {
+      this.groundedFrames++
+    } else {
+      this.groundedFrames = 0
+    }
+    if (this.groundedFrames > 5 && controller.verticalVelocity <= 0 && groundYAtNew > -Infinity && groundYAtPrev > -Infinity) {
       const stepUp = groundYAtNew - groundYAtPrev
       if (stepUp > AUTO_STEP_HEIGHT) {
         const dx = pos.x - prevPos.x

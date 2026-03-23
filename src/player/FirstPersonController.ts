@@ -60,12 +60,10 @@ export class FirstPersonController {
     const euler = new THREE.Euler(this.pitch, this.yaw, 0, 'YXZ')
     this.camera.quaternion.setFromEuler(euler)
 
-    if (this.input.consumeFlyToggle()) {
-      this.isFlying = !this.isFlying
-      if (this.isFlying) this.verticalVelocity = 0
-    }
+    // Fly mode removed — multi-jump + glide replaces it
+    this.input.consumeFlyToggle() // consume input but do nothing
 
-    if (this.isFlying) {
+    if (false) { // fly mode disabled
       const flyForward = new THREE.Vector3(0, 0, -1).applyEuler(euler)
       const flyRight = new THREE.Vector3(1, 0, 0).applyEuler(new THREE.Euler(0, this.yaw, 0))
       const move = new THREE.Vector3()
@@ -75,13 +73,11 @@ export class FirstPersonController {
       if (this.input.isDown('KeyD') || this.input.isDown('ArrowRight')) move.add(flyRight)
       if (this.input.isDown('KeyA') || this.input.isDown('ArrowLeft')) move.sub(flyRight)
 
-      // Gamepad
       if (this.input.gamepadLeftX !== 0 || this.input.gamepadLeftY !== 0) {
         move.addScaledVector(flyRight, this.input.gamepadLeftX)
         move.addScaledVector(flyForward, -this.input.gamepadLeftY)
       }
 
-      // Vertical
       if (this.input.isDown('Space') || this.input.gamepadAscend) move.y += 1
       if (this.input.isDown('ShiftLeft') || this.input.isDown('ShiftRight') || this.input.gamepadDescend) move.y -= 1
 
