@@ -95,7 +95,7 @@ export class SpatialMelody {
     this.reverb = reverb ?? null
 
     this.master = ctx.createGain()
-    this.master.gain.value = 0.7
+    this.master.gain.value = 0.15
     this.master.connect(master)
 
     // Spatial lowpass — opens up as you get closer

@@ -63,16 +63,21 @@ export class AmbienceSound {
   private updateChain(chain: LayerChain, delta: number) {
     const def = chain.def
 
-    // Detail layers: subtle random pitch drift
+    // Detail layers: brief chirps with silence between
     if (def.type === 'detail') {
       chain.pitchDriftTimer -= delta
       if (chain.pitchDriftTimer <= 0) {
-        chain.pitchDriftTimer = 0.5 + Math.random() * 1.5
+        // Random interval 3-8 seconds between chirps
+        chain.pitchDriftTimer = 3 + Math.random() * 5
         const newFreq = def.baseFrequency + (Math.random() - 0.5) * def.frequencyRange
         const t = this.ctx.currentTime
-        chain.oscillator.frequency.linearRampToValueAtTime(
-          Math.max(20, newFreq), t + 0.3,
-        )
+        chain.oscillator.frequency.setValueAtTime(Math.max(20, newFreq), t)
+        // Brief chirp: fade in quickly, sustain briefly, fade out
+        chain.gain.gain.cancelScheduledValues(t)
+        chain.gain.gain.setValueAtTime(0, t)
+        chain.gain.gain.linearRampToValueAtTime(def.gain, t + 0.05)
+        chain.gain.gain.setValueAtTime(def.gain, t + 0.15)
+        chain.gain.gain.linearRampToValueAtTime(0, t + 0.4)
       }
     }
 
@@ -144,11 +149,11 @@ export class AmbienceSound {
     // Gain envelope
     const gain = ctx.createGain()
 
-    // For occasional layers, start silent and let the burst timer trigger them
-    if (def.type === 'occasional') {
+    // Occasional and detail layers start silent — they trigger in bursts/chirps
+    if (def.type === 'occasional' || def.type === 'detail') {
       gain.gain.setValueAtTime(0, startTime)
     } else {
-      // Fade in over crossfade time
+      // Drone and texture: fade in over crossfade time
       gain.gain.setValueAtTime(0, startTime)
       gain.gain.linearRampToValueAtTime(def.gain, startTime + CROSSFADE_TIME)
     }
