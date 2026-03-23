@@ -45,10 +45,10 @@ const GodRayShader = {
 
       for (int i = 0; i < NUM_SAMPLES; i++) {
         uv += delta;
-        vec3 sample = texture2D(tDiffuse, uv).rgb;
+        vec3 samp = texture2D(tDiffuse, uv).rgb;
         // Weight by luminance so bright sky contributes more than dark terrain
-        float lum = dot(sample, vec3(0.299, 0.587, 0.114));
-        accum += sample * lum * illuminationDecay * WEIGHT;
+        float lum = dot(samp, vec3(0.299, 0.587, 0.114));
+        accum += samp * lum * illuminationDecay * WEIGHT;
         illuminationDecay *= DECAY;
       }
 
