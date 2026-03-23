@@ -80,12 +80,12 @@ export class AudioSystem {
         node.connect(this.masterGain!)
         return node
       }
-      this.ambienceGain  = makeLayer(0.6)
-      this.musicGain     = makeLayer(0.35)
-      this.creaturesGain = makeLayer(0.4)
-      this.sfxGain       = makeLayer(0.5)
-      this.harmonicGain  = makeLayer(0.15)
-      this.uiChimesGain  = makeLayer(0.6)
+      this.ambienceGain  = makeLayer(1.0)
+      this.musicGain     = makeLayer(0.7)
+      this.creaturesGain = makeLayer(0.8)
+      this.sfxGain       = makeLayer(0.8)
+      this.harmonicGain  = makeLayer(0.3)
+      this.uiChimesGain  = makeLayer(0.8)
 
       // Environment reverb routes through master directly (it's a send bus)
       this.environmentReverb = new EnvironmentReverb(this.ctx, this.masterGain)
@@ -180,8 +180,8 @@ export class AudioSystem {
       creatures,
     }
     // Apply debug volume multipliers to layer gain nodes
-    if (this.musicGain) this.musicGain.gain.value = 0.35 * this.musicVolume
-    if (this.ambienceGain) this.ambienceGain.gain.value = 0.6 * this.ambientVolume
+    if (this.musicGain) this.musicGain.gain.value = 0.7 * this.musicVolume
+    if (this.ambienceGain) this.ambienceGain.gain.value = 1.0 * this.ambientVolume
     this.music?.update(delta, biome, musicContext)
     this.ambience?.update(delta, biome)
     if (landmarks) {

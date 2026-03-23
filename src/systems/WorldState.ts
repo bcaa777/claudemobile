@@ -55,6 +55,9 @@ export class WorldState {
   // Endgame state
   chordComplete: boolean = false
 
+  // Intro bridge
+  introComplete: boolean = false
+
   // Awakening system (early game hook)
   awakeningStage: number = 0  // 0=not started, 1=castle stone found, 2=threshold complete
   forestFogBoost: number = 0  // extra fog far distance after threshold activation
@@ -136,6 +139,7 @@ export class WorldState {
       weatherReveals: revealsArray,
       ritualObservations: obsArray,
       chordComplete: this.chordComplete,
+      introComplete: this.introComplete,
       awakeningStage: this.awakeningStage,
       forestFogBoost: this.forestFogBoost,
     })
@@ -161,6 +165,9 @@ export class WorldState {
       }
       if (parsed.chordComplete) {
         this.chordComplete = true
+      }
+      if (parsed.introComplete) {
+        this.introComplete = true
       }
       if (typeof parsed.awakeningStage === 'number') {
         this.awakeningStage = parsed.awakeningStage

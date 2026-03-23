@@ -44,6 +44,7 @@ import { VineSwing } from '../traversal/VineSwing'
 import { HUD } from '../ui/HUD'
 import { OnboardingSystem } from '../systems/OnboardingSystem'
 import { AwakeningSystem } from '../systems/AwakeningSystem'
+import { IntroBridge } from '../systems/IntroBridge'
 
 export class Engine {
   private renderer: Renderer
@@ -93,6 +94,7 @@ export class Engine {
   private hud: HUD
   private onboarding: OnboardingSystem
   private awakeningSystem: AwakeningSystem | null = null
+  private introBridge: IntroBridge | null = null
   private npcDialogueSeen = false
 
   private lastTime = 0
@@ -222,6 +224,22 @@ export class Engine {
     this.worldState = new WorldState()
     this.worldState.loadFromStorage()
 
+    // Intro bridge — if intro not complete, create bridge and position player there
+    if (!this.worldState.introComplete) {
+      this.introBridge = new IntroBridge(this.castle.position, this.renderer.scene, this.audioSystem)
+      const spawnPos = this.introBridge.getSpawnPosition()
+      this.renderer.camera.position.copy(spawnPos)
+      // Face toward the bridge direction (positive Z = yaw of PI)
+      // The controller reads yaw from its internal state, but we can set camera quaternion
+      // which the controller will pick up from mouse delta adjustments
+      const spawnDir = this.introBridge.getSpawnDirection()
+      const yaw = Math.atan2(spawnDir.x, spawnDir.z)
+      this.renderer.camera.quaternion.setFromEuler(new THREE.Euler(0, yaw, 0, 'YXZ'))
+    } else {
+      // Normal spawn: at castle
+      this.renderer.camera.position.set(this.castlePos.x, this.castlePos.y + 5, this.castlePos.z)
+    }
+
     // Register landmark positions as resonance sites
     for (const [biome, pos] of this.landmarkManager.positions) {
       this.worldState.registerResonanceSite(biome, pos)
@@ -311,6 +329,10 @@ export class Engine {
       overlay.classList.add('hidden')
       setTimeout(() => overlay.remove(), 600)
       this.audioSystem.init()
+      // Start intro bridge audio (drone) now that AudioContext is available
+      if (this.introBridge) {
+        this.introBridge.initAudio()
+      }
       // Create resonance site visuals now that audio is available
       this.landmarkManager.createResonanceSites(
         this.renderer.scene,
@@ -342,6 +364,34 @@ export class Engine {
     const delta = Math.min((time - this.lastTime) / 1000, 0.05)
     this.lastTime = time
     this.elapsedTime += delta
+
+    // -- Intro bridge: if active, only update controller + bridge, skip world --
+    if (this.introBridge) {
+      this.controller.update(delta)
+      // Keep player at bridge height (simple Y collision)
+      const bridgeY = this.introBridge.getSpawnPosition().y
+      if (this.renderer.camera.position.y < bridgeY) {
+        this.renderer.camera.position.y = bridgeY
+        this.controller.verticalVelocity = 0
+        this.controller.isGrounded = true
+      }
+
+      const bridgeComplete = this.introBridge.update(delta, this.renderer.camera.position, this.elapsedTime, this.worldState)
+      if (bridgeComplete) {
+        // Teleport to castle
+        this.renderer.camera.position.set(this.castlePos.x, this.castlePos.y + 2, this.castlePos.z)
+        this.controller.verticalVelocity = 0
+        this.worldState.introComplete = true
+        this.worldState.saveToStorage()
+        this.introBridge.dispose()
+        this.introBridge = null
+      }
+
+      // Still render, but skip world/creature/weather updates
+      this.renderer.render(delta)
+      requestAnimationFrame((t) => this.loop(t))
+      return
+    }
 
     // WorldState: recalculate derived state at start of frame
     this.worldState.update()
