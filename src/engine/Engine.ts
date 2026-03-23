@@ -365,17 +365,34 @@ export class Engine {
     this.lastTime = time
     this.elapsedTime += delta
 
-    // -- Intro bridge: if active, only update controller + bridge, skip world --
+    // -- Intro bridge: if active, handle movement manually (no gravity/collision) --
     if (this.introBridge) {
-      // Force grounded state BEFORE controller update to prevent gravity
       const bridgeY = this.introBridge.getSpawnPosition().y
-      this.controller.isGrounded = true
-      this.controller.verticalVelocity = 0
-      this.renderer.camera.position.y = bridgeY
 
-      this.controller.update(delta)
+      // Mouse look
+      this.input.pollGamepad()
+      const { dx, dy } = this.input.consumeMouseDelta()
+      if (this.input.isPointerLocked()) {
+        this.controller.yaw -= dx * 0.002
+        this.controller.pitch -= dy * 0.002
+        this.controller.pitch = Math.max(-Math.PI * 0.45, Math.min(Math.PI * 0.45, this.controller.pitch))
+      }
+      const euler = new THREE.Euler(this.controller.pitch, this.controller.yaw, 0, 'YXZ')
+      this.renderer.camera.quaternion.setFromEuler(euler)
 
-      // Clamp Y again after controller (prevents jump from leaving bridge)
+      // Horizontal movement only (WASD, no gravity, no jump)
+      const forward = new THREE.Vector3(0, 0, -1).applyEuler(new THREE.Euler(0, this.controller.yaw, 0))
+      const right = new THREE.Vector3(1, 0, 0).applyEuler(new THREE.Euler(0, this.controller.yaw, 0))
+      const move = new THREE.Vector3()
+      if (this.input.isDown('KeyW') || this.input.isDown('ArrowUp')) move.add(forward)
+      if (this.input.isDown('KeyS') || this.input.isDown('ArrowDown')) move.sub(forward)
+      if (this.input.isDown('KeyD') || this.input.isDown('ArrowRight')) move.add(right)
+      if (this.input.isDown('KeyA') || this.input.isDown('ArrowLeft')) move.sub(right)
+      if (move.lengthSq() > 0) move.normalize()
+      const speed = 6 // gentle walk speed for the bridge
+      this.renderer.camera.position.addScaledVector(move, speed * delta)
+
+      // Lock Y to bridge height
       this.renderer.camera.position.y = bridgeY
 
       // Disable scene fog and set dark background during bridge

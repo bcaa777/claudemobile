@@ -5,8 +5,8 @@ import { PLAYER_CONFIG } from '../config'
 export class FirstPersonController {
   private camera: THREE.Camera
   private input: InputManager
-  private yaw = 0
-  private pitch = 0
+  public yaw = 0
+  public pitch = 0
   private velocity = new THREE.Vector3()
 
   public verticalVelocity = 0
