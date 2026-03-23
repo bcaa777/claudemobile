@@ -469,10 +469,7 @@ export class Engine {
 
     this.controller.update(delta, this.playerState)
 
-    // Sprint stamina drain
-    if (this.controller.isSprinting && !this.controller.isFlying) {
-      this.playerState.drainStaminaContinuous(STAMINA_CONFIG.sprintDrain, delta)
-    }
+    // Stamina: no sprint drain — only jumps and gliding cost stamina
 
     this.collision.update(this.renderer.camera, this.controller, delta)
     this.world.update(this.renderer.camera.position)
