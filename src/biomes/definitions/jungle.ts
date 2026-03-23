@@ -73,7 +73,7 @@ export const jungleBiome: BiomeConfig = {
       particleType: 'rain',
       particleCount: 250,
       particleColor: [0.7, 0.75, 0.8],
-      particleSize: 0.04,
+      particleSize: 0.2,
       particleSpeed: 1.2,
     },
     godRayIntensity: 0.4,

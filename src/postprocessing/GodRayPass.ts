@@ -21,10 +21,10 @@ const GodRayShader = {
     uniform float intensity;
     varying vec2 vUv;
 
-    const int NUM_SAMPLES = 8;
-    const float DECAY    = 0.93;
-    const float WEIGHT   = 0.012;
-    const float EXPOSURE = 0.6;
+    const int NUM_SAMPLES = 12;
+    const float DECAY    = 0.95;
+    const float WEIGHT   = 0.06;
+    const float EXPOSURE = 1.2;
 
     void main() {
       vec4 base = texture2D(tDiffuse, vUv);

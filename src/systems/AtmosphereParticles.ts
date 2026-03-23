@@ -39,7 +39,7 @@ export class AtmosphereParticles {
       opacity: 0.6,
       depthWrite: false,
       side: THREE.DoubleSide,
-      fog: true,
+      fog: false,  // don't let fog fade particles — they should always be visible
     })
 
     this.mesh = new THREE.InstancedMesh(geo, this.material, MAX_PARTICLES)

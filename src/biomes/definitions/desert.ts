@@ -78,7 +78,7 @@ export const desertBiome: BiomeConfig = {
       particleType: 'sand',
       particleCount: 150,
       particleColor: [0.83, 0.63, 0.31],
-      particleSize: 0.06,
+      particleSize: 0.3,
       particleSpeed: 0.8,
     },
     godRayIntensity: 0.6,

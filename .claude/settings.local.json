@@ -23,7 +23,12 @@
       "Bash(scripts/start-server.sh --project-dir /Users/michalplodek/Documents/Code/claudemobile)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(more.\"\\) stored in WorldState for HUD consumption.:*)"
+      "Bash(more.\"\\) stored in WorldState for HUD consumption.:*)",
+      "Bash(for f:*)",
+      "Bash(do sed:*)",
+      "Bash(sed -i '' 's/particleSize: 0.05/particleSize: 0.25/' \"$f\")",
+      "Bash(sed -i '' 's/particleSize: 0.06/particleSize: 0.3/' \"$f\")",
+      "Bash(sed -i '' 's/particleSize: 0.07/particleSize: 0.35/' \"$f\")"
     ]
   }
 }

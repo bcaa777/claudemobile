@@ -78,7 +78,7 @@ export const volcanicBiome: BiomeConfig = {
       particleType: 'embers',
       particleCount: 180,
       particleColor: [1.0, 0.4, 0.1],
-      particleSize: 0.12,
+      particleSize: 0.52,
       particleSpeed: 0.6,
     },
     godRayIntensity: 0.3,

@@ -71,7 +71,7 @@ export const hellBiome: BiomeConfig = {
       particleType: 'ash',
       particleCount: 200,
       particleColor: [0.6, 0.3, 0.15],
-      particleSize: 0.1,
+      particleSize: 0.5,
       particleSpeed: 0.4,
     },
     godRayIntensity: 0,

@@ -79,7 +79,7 @@ export const swampBiome: BiomeConfig = {
       particleType: 'fireflies',
       particleCount: 120,
       particleColor: [0.67, 1.0, 0.27],
-      particleSize: 0.1,
+      particleSize: 0.5,
       particleSpeed: 0.15,
     },
     godRayIntensity: 0.2,

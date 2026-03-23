@@ -78,7 +78,7 @@ export const heavenBiome: BiomeConfig = {
       particleType: 'motes',
       particleCount: 150,
       particleColor: [1.0, 0.98, 0.9],
-      particleSize: 0.08,
+      particleSize: 0.4,
       particleSpeed: 0.15,
     },
     godRayIntensity: 1.0,

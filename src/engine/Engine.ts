@@ -531,11 +531,10 @@ export class Engine {
     )
 
     // Atmosphere particles — ambient per-biome particles (after biome transition + weather, before rendering)
-    const _vis = this.biomeTransition.getCurrentVisual()
-    if (this.elapsedTime < 2) {
-      console.log('[Visual]', _vis.atmosphere.particleType, 'count:', _vis.atmosphere.particleCount, 'godRay:', _vis.godRayIntensity, 'groundFog:', _vis.groundFogDensity)
-    }
-    this.atmosphereParticles.update(delta, camPos, this.renderer.camera, _vis)
+    this.atmosphereParticles.update(
+      delta, camPos, this.renderer.camera,
+      this.biomeTransition.getCurrentVisual()
+    )
 
     // Weather speed effects (blizzard slows movement)
     this.controller.speedMultiplier = this.weatherSystem.getSpeedMultiplier()

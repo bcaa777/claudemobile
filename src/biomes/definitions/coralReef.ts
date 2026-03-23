@@ -73,7 +73,7 @@ export const coralReefBiome: BiomeConfig = {
       particleType: 'spray',
       particleCount: 100,
       particleColor: [0.85, 0.92, 0.95],
-      particleSize: 0.06,
+      particleSize: 0.3,
       particleSpeed: 0.4,
     },
     godRayIntensity: 0.5,

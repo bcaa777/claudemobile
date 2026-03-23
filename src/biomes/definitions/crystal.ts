@@ -73,7 +73,7 @@ export const crystalBiome: BiomeConfig = {
       particleType: 'motes',
       particleCount: 80,
       particleColor: [0.5, 0.82, 1.0],
-      particleSize: 0.05,
+      particleSize: 0.25,
       particleSpeed: 0.2,
     },
     godRayIntensity: 0,

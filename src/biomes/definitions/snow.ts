@@ -78,7 +78,7 @@ export const snowBiome: BiomeConfig = {
       particleType: 'snow',
       particleCount: 200,
       particleColor: [0.87, 0.93, 1.0],
-      particleSize: 0.1,
+      particleSize: 0.5,
       particleSpeed: 0.5,
     },
     godRayIntensity: 0.5,

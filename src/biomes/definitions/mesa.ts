@@ -78,7 +78,7 @@ export const mesaBiome: BiomeConfig = {
       particleType: 'dust',
       particleCount: 120,
       particleColor: [0.8, 0.67, 0.53],
-      particleSize: 0.07,
+      particleSize: 0.35,
       particleSpeed: 0.5,
     },
     godRayIntensity: 0.7,

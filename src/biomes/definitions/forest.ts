@@ -73,7 +73,7 @@ export const forestBiome: BiomeConfig = {
       particleType: 'dust',
       particleCount: 100,
       particleColor: [0.9, 0.85, 0.6],
-      particleSize: 0.08,
+      particleSize: 0.4,
       particleSpeed: 0.3,
     },
     godRayIntensity: 1.0,
