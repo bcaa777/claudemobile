@@ -12,20 +12,46 @@ const MAX_ENEMIES = 15
 export class EnemySpawner {
   private nightSpawnTimer = 0
   private nightSpawnInterval = 60 // seconds
+  private worldState: WorldState | null = null
+  private creatureManager: CreatureManager | null = null
+
+  setWorldState(ws: WorldState) { this.worldState = ws }
+  setCreatureManager(cm: CreatureManager) { this.creatureManager = cm }
 
   /**
    * Chunk-based spawning — called when a new chunk loads.
    * Checks ENEMY_SPAWN_TABLE for the biome, and if random < density * (1 - biomeStability),
    * spawns 1 enemy of a random type from the table.
+   * Can be called with explicit params or uses stored references.
    */
   spawnForChunk(
     chunkX: number,
     chunkZ: number,
     biome: BiomeType,
-    worldState: WorldState,
-    creatureManager: CreatureManager,
-    world: World
+    worldStateOrWorld?: WorldState | World,
+    creatureManagerOrUndef?: CreatureManager,
+    worldOrUndef?: World
   ): void {
+    // Support two call signatures:
+    // (cx, cz, biome, world) — uses stored refs
+    // (cx, cz, biome, worldState, creatureManager, world) — explicit refs
+    let worldState: WorldState | null
+    let creatureManager: CreatureManager | null
+    let world: World
+
+    if (worldStateOrWorld instanceof World) {
+      // Called as (cx, cz, biome, world)
+      worldState = this.worldState
+      creatureManager = this.creatureManager
+      world = worldStateOrWorld
+    } else {
+      // Called as (cx, cz, biome, worldState, creatureManager, world)
+      worldState = worldStateOrWorld ?? this.worldState
+      creatureManager = creatureManagerOrUndef ?? this.creatureManager
+      world = worldOrUndef!
+    }
+
+    if (!worldState || !creatureManager) return
     if (this.getEnemyCount(creatureManager) >= MAX_ENEMIES) return
 
     const entry = ENEMY_SPAWN_TABLE[biome]

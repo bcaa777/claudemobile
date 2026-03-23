@@ -10,6 +10,7 @@ import { SeededRandom } from '../utils/SeededRandom'
 import { WORLD_CONFIG } from '../config'
 import { BiomeType } from '../biomes/types'
 import type { CreatureManager } from '../creatures/CreatureManager'
+import type { EnemySpawner } from '../combat/EnemySpawner'
 import type { CastleWalkable } from '../castle/Castle'
 import type { RoadNetwork } from '../traversal/RoadNetwork'
 import type { TraversalAnchor, LavaRockState } from '../traversal/traversalTypes'
@@ -29,6 +30,7 @@ export class World {
   private explodables: ExplodableStructure[] = []
   private explodeRng = new SeededRandom(9999)
   private creatureManager: CreatureManager | null = null
+  private enemySpawner: EnemySpawner | null = null
   private pendingKnockback = 0
   private castleWalkables: CastleWalkable[] = []
   private roadNetwork: RoadNetwork | null = null
@@ -129,6 +131,10 @@ export class World {
     this.creatureManager = cm
   }
 
+  setEnemySpawner(s: EnemySpawner) {
+    this.enemySpawner = s
+  }
+
   setCastleWalkables(surfaces: CastleWalkable[]) {
     this.castleWalkables = surfaces
   }
@@ -150,6 +156,10 @@ export class World {
       this.traversalAnchors.push(anchor)
     }
     this.creatureManager?.spawnForChunk(cx, cz, this)
+    if (this.enemySpawner) {
+      const biome = this.biomeMap.getBiomeAt(cx * CHUNK_SIZE + CHUNK_SIZE / 2, cz * CHUNK_SIZE + CHUNK_SIZE / 2)
+      this.enemySpawner.spawnForChunk(cx, cz, biome, this)
+    }
   }
 
   // Get terrain height at world position

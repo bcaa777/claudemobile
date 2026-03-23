@@ -240,6 +240,9 @@ export class Engine {
     )
     this.combatSystem.placeMagicPickup(this.castle.position, this.renderer.scene)
     this.enemySpawner = new EnemySpawner()
+    this.enemySpawner.setWorldState(this.worldState)
+    this.enemySpawner.setCreatureManager(this.creatureManager)
+    this.world.setEnemySpawner(this.enemySpawner)
 
     // Intro bridge — if intro not complete, create bridge and position player there
     console.log('[Intro] introComplete:', this.worldState.introComplete)

@@ -24,8 +24,13 @@ export const ENEMY_DEFS: Record<HollowType, EnemyDef> = {
 }
 
 export const ENEMY_SPAWN_TABLE: Partial<Record<BiomeType, { types: HollowType[], density: number }>> = {
+  [BiomeType.Forest]:   { types: ['shambler'], density: 0.15 },
+  [BiomeType.Desert]:   { types: ['shambler', 'shambler'], density: 0.2 },
+  [BiomeType.Swamp]:    { types: ['shambler', 'spitter'], density: 0.25 },
+  [BiomeType.Snow]:     { types: ['shambler', 'stalker'], density: 0.2 },
+  [BiomeType.Jungle]:   { types: ['shambler', 'spitter'], density: 0.2 },
+  [BiomeType.Mesa]:     { types: ['shambler', 'stalker'], density: 0.2 },
   [BiomeType.Hell]:     { types: ['shambler', 'shambler', 'spitter', 'stalker', 'warden'], density: 0.8 },
   [BiomeType.Volcanic]: { types: ['shambler', 'shambler', 'spitter'], density: 0.4 },
   [BiomeType.Crystal]:  { types: ['spitter'], density: 0.15 },
-  // Others get night-spawns only (handled by EnemySpawner)
 }

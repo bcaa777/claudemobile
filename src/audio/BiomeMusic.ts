@@ -182,6 +182,73 @@ const MOTIFS: Record<number, BiomeMotif> = {
 }
 
 // ──────────────────────────────────────────────
+//  Pre-composed melodic phrases per biome
+// ──────────────────────────────────────────────
+
+interface MelodyPhrase {
+  /** Each number is a scale degree index (0-based into the scale array) */
+  notes: number[]
+  /** Duration multiplier per note (1 = one beat) */
+  durations: number[]
+}
+
+const BIOME_PHRASES: Record<number, MelodyPhrase[]> = {
+  [BiomeType.Forest]: [
+    { notes: [0, 2, 4, 3, 2, 0],           durations: [1, 1, 2, 1, 1, 2] },
+    { notes: [2, 4, 5, 4, 2, 3, 2],        durations: [1, 1, 1, 1, 1, 1, 2] },
+    { notes: [0, 1, 2, 4, 2, 0],           durations: [1, 0.5, 0.5, 2, 1, 2] },
+    { notes: [4, 3, 2, 0, 1, 0],           durations: [1, 1, 1, 2, 1, 2] },
+  ],
+  [BiomeType.Desert]: [
+    { notes: [0, 3, 2, 1, 0],              durations: [2, 1, 1, 1, 2] },
+    { notes: [1, 3, 4, 3, 1, 0],           durations: [1, 1, 2, 1, 1, 2] },
+    { notes: [0, 1, 3, 2, 0],              durations: [1.5, 1, 1.5, 1, 2] },
+  ],
+  [BiomeType.Swamp]: [
+    { notes: [0, 2, 3, 2, 1, 0],           durations: [2, 1, 1, 2, 1, 2] },
+    { notes: [1, 0, 2, 3, 1],              durations: [1, 2, 1, 1, 2] },
+    { notes: [3, 2, 0, 1, 2, 0],           durations: [1, 1, 2, 1, 1, 2] },
+  ],
+  [BiomeType.Snow]: [
+    { notes: [0, 2, 4, 6, 4, 2, 0],        durations: [2, 1, 1, 2, 1, 1, 2] },
+    { notes: [2, 4, 3, 2, 0],              durations: [1.5, 1.5, 1, 1, 2] },
+    { notes: [4, 2, 0, 1, 2, 4],           durations: [1, 1, 2, 1, 1, 2] },
+  ],
+  [BiomeType.Volcanic]: [
+    { notes: [0, 1, 3, 1, 0],              durations: [1, 1, 2, 1, 2] },
+    { notes: [3, 2, 0, 1, 0],              durations: [1, 1, 2, 1, 2] },
+    { notes: [0, 3, 2, 1, 3, 0],           durations: [1.5, 1, 1, 1, 1, 1.5] },
+  ],
+  [BiomeType.Crystal]: [
+    { notes: [0, 4, 2, 6, 4, 2, 0],        durations: [1, 1, 1, 2, 1, 1, 2] },
+    { notes: [2, 4, 6, 4, 0],              durations: [1, 1.5, 1.5, 1, 2] },
+    { notes: [6, 4, 2, 0, 2, 4],           durations: [1, 1, 1, 2, 1, 2] },
+  ],
+  [BiomeType.Jungle]: [
+    { notes: [0, 2, 3, 4, 2, 0],           durations: [0.5, 0.5, 1, 1, 0.5, 1.5] },
+    { notes: [3, 2, 0, 2, 4, 3],           durations: [0.5, 0.5, 1, 0.5, 0.5, 1.5] },
+    { notes: [0, 4, 3, 2, 0],              durations: [1, 0.5, 0.5, 1, 1.5] },
+  ],
+  [BiomeType.Mesa]: [
+    { notes: [0, 2, 3, 5, 3, 2, 0],        durations: [1.5, 1, 1, 2, 1, 1, 1.5] },
+    { notes: [3, 2, 0, 2, 3],              durations: [1, 1, 2, 1, 2] },
+  ],
+  [BiomeType.CoralReef]: [
+    { notes: [0, 2, 4, 3, 2, 0],           durations: [1, 1, 1.5, 1, 1, 1.5] },
+    { notes: [2, 4, 5, 4, 2, 0],           durations: [1, 1, 1, 1, 1, 2] },
+    { notes: [4, 2, 0, 1, 2, 4],           durations: [1, 1, 2, 1, 1, 2] },
+  ],
+  [BiomeType.Heaven]: [
+    { notes: [0, 4, 2, 6, 4, 0],           durations: [2, 1.5, 1.5, 2, 1.5, 2] },
+    { notes: [2, 4, 6, 4, 2, 0],           durations: [1.5, 1.5, 2, 1.5, 1.5, 2] },
+  ],
+  [BiomeType.Hell]: [
+    { notes: [0, 1, 3, 1, 0],              durations: [1, 1, 1.5, 1, 1.5] },
+    { notes: [3, 1, 0, 1, 3, 0],           durations: [0.5, 0.5, 1.5, 0.5, 0.5, 1.5] },
+  ],
+}
+
+// ──────────────────────────────────────────────
 //  Context for suppression signals
 // ──────────────────────────────────────────────
 
@@ -210,8 +277,8 @@ export class BiomeMusic {
   private state: MusicState = 'silent'
   private stateTimer = 5 // start with short silence before first phrase
   private readonly FADE_DURATION = 3
-  private readonly SILENT_MIN = 15
-  private readonly SILENT_MAX = 45
+  private readonly SILENT_MIN = 8
+  private readonly SILENT_MAX = 15
   private readonly PLAYING_MIN = 20
   private readonly PLAYING_MAX = 40
 
@@ -219,10 +286,10 @@ export class BiomeMusic {
   private phraseGain: GainNode
   private currentPhraseVolume = 0
 
-  // Melody state
+  // Melody state — phrase-based playback
   private melodyTimer = 0
-  private lastScaleDegreeIndex = 0 // index into the scale array for stepwise motion
-  private activeNotes: OscillatorNode[] = [] // track for cleanup
+  private currentPhrase: MelodyPhrase | null = null
+  private phraseNoteIndex = 0
 
   // Suppression
   private suppressed = false
@@ -262,11 +329,9 @@ export class BiomeMusic {
     // Handle biome change
     if (biome !== this.currentBiome) {
       this.currentBiome = biome
-      // Reset melody position on biome change
-      const motif = MOTIFS[biome]
-      if (motif) {
-        this.lastScaleDegreeIndex = Math.floor(motif.scale.length / 2)
-      }
+      // Reset melody phrase on biome change
+      this.currentPhrase = null
+      this.phraseNoteIndex = 0
       // If currently playing, fade out and restart
       if (this.state === 'playing' || this.state === 'fading_in') {
         this.transitionTo('fading_out')
@@ -352,9 +417,6 @@ export class BiomeMusic {
       }
     }
 
-    // Player sprinting (speed > 8 units/sec) — suppress for high-action moments
-    if (context.playerSpeed > 8) return { suppress: true, nearSite }
-
     return { suppress: false, nearSite }
   }
 
@@ -379,7 +441,7 @@ export class BiomeMusic {
     }
   }
 
-  // ── Melody generation with stepwise motion preference ──
+  // ── Phrase-based melody playback ──
 
   private tickMelody(delta: number) {
     this.melodyTimer -= delta
@@ -388,38 +450,27 @@ export class BiomeMusic {
     const motif = MOTIFS[this.currentBiome]
     if (!motif) return
 
-    // Time per note from tempo
-    const beatDuration = 60 / motif.tempo
-    // Vary timing: sometimes half beat, sometimes full, sometimes 1.5
-    const timingVariations = [0.5, 1, 1, 1, 1.5, 2]
-    const timing = timingVariations[Math.floor(Math.random() * timingVariations.length)]
-    this.melodyTimer = beatDuration * timing
+    const phrases = BIOME_PHRASES[this.currentBiome]
+    if (!phrases || phrases.length === 0) return
 
-    // Occasionally rest instead of playing a note (adds breathing room)
-    if (Math.random() < 0.2) return
-
-    // Choose next scale degree with stepwise motion preference
-    const scaleLen = motif.scale.length
-    const roll = Math.random()
-    let newIndex: number
-    if (roll < 0.45) {
-      // Step up
-      newIndex = (this.lastScaleDegreeIndex + 1) % scaleLen
-    } else if (roll < 0.9) {
-      // Step down
-      newIndex = (this.lastScaleDegreeIndex - 1 + scaleLen) % scaleLen
-    } else {
-      // Leap (2-3 steps)
-      const leap = Math.random() < 0.5 ? 2 : 3
-      newIndex = (this.lastScaleDegreeIndex + (Math.random() < 0.5 ? leap : -leap) + scaleLen * 2) % scaleLen
+    // Start a new phrase if none active
+    if (!this.currentPhrase || this.phraseNoteIndex >= this.currentPhrase.notes.length) {
+      this.currentPhrase = phrases[Math.floor(Math.random() * phrases.length)]
+      this.phraseNoteIndex = 0
     }
-    this.lastScaleDegreeIndex = newIndex
 
-    // Determine octave — melody sits 1-2 octaves above root
-    const octaveShift = Math.random() < 0.7 ? 12 : 24
-    const noteFreq = midiToFreq(motif.rootNote + motif.scale[newIndex] + octaveShift)
+    const noteIdx = this.currentPhrase.notes[this.phraseNoteIndex]
+    const durMult = this.currentPhrase.durations[this.phraseNoteIndex]
+    const beatDur = 60 / motif.tempo
 
-    this.playNote(motif, noteFreq, motif.noteDuration)
+    // Always play in octave above root (add 12 semitones)
+    const scaleNote = motif.scale[noteIdx % motif.scale.length]
+    const freq = midiToFreq(motif.rootNote + scaleNote + 12)
+
+    this.playNote(motif, freq, motif.noteDuration * durMult)
+
+    this.melodyTimer = beatDur * durMult
+    this.phraseNoteIndex++
   }
 
   private playNote(motif: BiomeMotif, freq: number, baseDuration: number) {
