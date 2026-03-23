@@ -13,6 +13,7 @@ import { WorldState } from '../systems/WorldState'
 import { applyWeatherResponse, getWeatherHuntRangeMultiplier } from './WeatherResponse'
 import { applyEcologyBehavior } from './EcologyBehavior'
 import { applySiteAwareness } from './SiteAwareness'
+import { tickEnemyAI } from '../combat/EnemyAI'
 
 const VIEW_RADIUS = WORLD_CONFIG.viewRadius
 const MAX_POPULATION = 500
@@ -365,6 +366,13 @@ export class CreatureManager {
     dayTime: number
   ) {
     if (c.state === 'dead') return
+
+    // Route enemy creatures to dedicated Enemy AI state machine
+    if (c.isEnemy && c.enemyType) {
+      tickEnemyAI(c, delta, playerPos, this)
+      return
+    }
+
     const sp = SPECIES[c.species]
     c.stateTimer += delta
 

@@ -2,6 +2,8 @@ import * as THREE from 'three'
 import { Creature } from './Creature'
 import { SPECIES } from './Species'
 import { texGen, type TexturePattern } from '../utils/PixelTextureGenerator'
+import { buildEnemyMesh } from '../combat/EnemyMesh'
+import { ENEMY_DEFS } from '../combat/EnemyTypes'
 
 // Phase 6: Shared geometry and material caches
 const _geoCache = new Map<string, THREE.BoxGeometry>()
@@ -96,6 +98,17 @@ export class CreatureMesh {
 
   /** Simple LOD: just a single colored box (1 draw call) */
   private buildSimple(creature: Creature) {
+    if (creature.isEnemy && creature.enemyType) {
+      // Enemies: use enemy body color for simple LOD box
+      const def = ENEMY_DEFS[creature.enemyType]
+      const mesh = new THREE.Mesh(
+        getCachedBox(0.6, 0.8, 0.4),
+        getCachedMat(def?.bodyColor ?? 0x2a1030)
+      )
+      this.group.add(mesh)
+      this.bodyMesh = mesh
+      return
+    }
     const sp = SPECIES[creature.species]
     const mesh = new THREE.Mesh(
       getCachedBox(sp.bodyW, sp.bodyH, sp.bodyD),
@@ -110,6 +123,22 @@ export class CreatureMesh {
   }
 
   private buildGeometry(creature: Creature) {
+    // ── Enemy creatures — delegate to EnemyMesh builder ────────────────────
+    if (creature.isEnemy && creature.enemyType) {
+      const enemyGroup = buildEnemyMesh(creature.enemyType, 1) // scale applied via group.scale
+      // Merge children into our group
+      while (enemyGroup.children.length > 0) {
+        const child = enemyGroup.children[0]
+        enemyGroup.remove(child)
+        this.group.add(child)
+      }
+      // Set bodyMesh to first child for glow support
+      if (this.group.children.length > 0) {
+        this.bodyMesh = this.group.children[0] as THREE.Mesh
+      }
+      return
+    }
+
     const sp = SPECIES[creature.species]
     const { bodyW, bodyH, bodyD, bodyColor, headColor, legColor } = sp
 
