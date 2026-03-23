@@ -367,14 +367,16 @@ export class Engine {
 
     // -- Intro bridge: if active, only update controller + bridge, skip world --
     if (this.introBridge) {
-      this.controller.update(delta)
-      // Keep player at bridge height (simple Y collision)
+      // Force grounded state BEFORE controller update to prevent gravity
       const bridgeY = this.introBridge.getSpawnPosition().y
-      if (this.renderer.camera.position.y < bridgeY) {
-        this.renderer.camera.position.y = bridgeY
-        this.controller.verticalVelocity = 0
-        this.controller.isGrounded = true
-      }
+      this.controller.isGrounded = true
+      this.controller.verticalVelocity = 0
+      this.renderer.camera.position.y = bridgeY
+
+      this.controller.update(delta)
+
+      // Clamp Y again after controller (prevents jump from leaving bridge)
+      this.renderer.camera.position.y = bridgeY
 
       // Disable scene fog and set dark background during bridge
       const savedFog = this.renderer.scene.fog
