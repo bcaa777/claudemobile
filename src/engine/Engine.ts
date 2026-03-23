@@ -1009,7 +1009,8 @@ export class Engine {
     // Heat distortion pass — shimmer in Desert and Volcanic biomes, no effect at night
     {
       const hdOverride = this.renderer.heatDistortionPass.intensityOverride
-      const heatIntensity = hdOverride >= 0 ? hdOverride : this.biomeTransition.getCurrentVisual().heatDistortion * dayMin
+      const heatDayMin = Math.max(dayFactor, 0.15)
+      const heatIntensity = hdOverride >= 0 ? hdOverride : this.biomeTransition.getCurrentVisual().heatDistortion * heatDayMin
       this.renderer.heatDistortionPass.setIntensity(heatIntensity)
       this.renderer.heatDistortionPass.setTime(this.elapsedTime)
     }
