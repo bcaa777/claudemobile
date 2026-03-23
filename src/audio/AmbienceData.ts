@@ -18,26 +18,31 @@ export interface BiomeAmbience {
   layers: AmbienceLayer[]
 }
 
+// All gains are intentionally very low (0.001–0.02) because raw oscillators
+// through Web Audio are much louder than sampled audio. Sawtooth/square
+// waveforms are kept below 0.005 gain. High frequencies are always filtered.
+// Modulation rates below 1 Hz for drones/textures, 2-5 Hz for details.
+
 export const BIOME_AMBIENCES: Record<BiomeType, BiomeAmbience> = {
   // ─── Forest: warm and alive ───
   [BiomeType.Forest]: {
     layers: [
       // Warm low hum (drone)
       { type: 'drone', waveform: 'sine', baseFrequency: 85, frequencyRange: 5,
-        filterType: 'lowpass', filterFrequency: 200, gain: 0.04,
+        filterType: 'lowpass', filterFrequency: 200, gain: 0.015,
         modulationRate: 0.05, modulationDepth: 8 },
-      // Wind through canopy (texture)
-      { type: 'texture', waveform: 'sawtooth', baseFrequency: 220, frequencyRange: 40,
-        filterType: 'bandpass', filterFrequency: 800, gain: 0.012,
-        modulationRate: 0.15, modulationDepth: 120 },
-      // Bird calls / twig snaps (detail)
-      { type: 'detail', waveform: 'sine', baseFrequency: 1800, frequencyRange: 600,
-        filterType: 'bandpass', filterFrequency: 2200, gain: 0.008,
-        modulationRate: 8, modulationDepth: 300 },
+      // Wind through canopy (texture) — filtered sawtooth, very quiet
+      { type: 'texture', waveform: 'sawtooth', baseFrequency: 180, frequencyRange: 30,
+        filterType: 'lowpass', filterFrequency: 400, gain: 0.003,
+        modulationRate: 0.15, modulationDepth: 40 },
+      // Bird-like chirps (detail) — sine, gentle modulation
+      { type: 'detail', waveform: 'sine', baseFrequency: 1200, frequencyRange: 300,
+        filterType: 'bandpass', filterFrequency: 1400, gain: 0.003,
+        modulationRate: 3, modulationDepth: 150 },
       // Distant waterfall (occasional)
-      { type: 'occasional', waveform: 'sawtooth', baseFrequency: 150, frequencyRange: 30,
-        filterType: 'lowpass', filterFrequency: 600, gain: 0.015,
-        burstInterval: 12, burstDuration: 4 },
+      { type: 'occasional', waveform: 'sine', baseFrequency: 120, frequencyRange: 20,
+        filterType: 'lowpass', filterFrequency: 300, gain: 0.008,
+        burstInterval: 14, burstDuration: 4 },
     ],
   },
 
@@ -46,20 +51,20 @@ export const BIOME_AMBIENCES: Record<BiomeType, BiomeAmbience> = {
     layers: [
       // Deep resonant void (drone)
       { type: 'drone', waveform: 'sine', baseFrequency: 55, frequencyRange: 3,
-        filterType: 'lowpass', filterFrequency: 120, gain: 0.035,
+        filterType: 'lowpass', filterFrequency: 120, gain: 0.012,
         modulationRate: 0.03, modulationDepth: 5 },
-      // Sand whisper (texture)
-      { type: 'texture', waveform: 'sawtooth', baseFrequency: 3000, frequencyRange: 500,
-        filterType: 'highpass', filterFrequency: 2500, gain: 0.006,
-        modulationRate: 0.2, modulationDepth: 400 },
+      // Sand whisper (texture) — very quiet filtered noise-like
+      { type: 'texture', waveform: 'sawtooth', baseFrequency: 400, frequencyRange: 100,
+        filterType: 'lowpass', filterFrequency: 600, gain: 0.002,
+        modulationRate: 0.2, modulationDepth: 80 },
       // Insect buzz (detail)
-      { type: 'detail', waveform: 'square', baseFrequency: 280, frequencyRange: 80,
-        filterType: 'bandpass', filterFrequency: 350, gain: 0.005,
-        modulationRate: 12, modulationDepth: 60 },
+      { type: 'detail', waveform: 'sine', baseFrequency: 280, frequencyRange: 40,
+        filterType: 'bandpass', filterFrequency: 350, gain: 0.002,
+        modulationRate: 4, modulationDepth: 30 },
       // Distant rumble (occasional)
-      { type: 'occasional', waveform: 'sawtooth', baseFrequency: 40, frequencyRange: 10,
-        filterType: 'lowpass', filterFrequency: 80, gain: 0.02,
-        burstInterval: 18, burstDuration: 3 },
+      { type: 'occasional', waveform: 'sine', baseFrequency: 40, frequencyRange: 10,
+        filterType: 'lowpass', filterFrequency: 80, gain: 0.01,
+        burstInterval: 20, burstDuration: 3 },
     ],
   },
 
@@ -68,42 +73,42 @@ export const BIOME_AMBIENCES: Record<BiomeType, BiomeAmbience> = {
     layers: [
       // Murky low throb (drone)
       { type: 'drone', waveform: 'triangle', baseFrequency: 65, frequencyRange: 8,
-        filterType: 'lowpass', filterFrequency: 180, gain: 0.04,
-        modulationRate: 0.25, modulationDepth: 15 },
-      // Bubbling / dripping (texture)
-      { type: 'texture', waveform: 'sine', baseFrequency: 350, frequencyRange: 150,
-        filterType: 'bandpass', filterFrequency: 500, gain: 0.01,
-        modulationRate: 3.5, modulationDepth: 200 },
-      // Frog chorus (detail)
-      { type: 'detail', waveform: 'square', baseFrequency: 120, frequencyRange: 40,
-        filterType: 'bandpass', filterFrequency: 180, gain: 0.007,
-        modulationRate: 6, modulationDepth: 50 },
-      // Splash / groan (occasional)
-      { type: 'occasional', waveform: 'sawtooth', baseFrequency: 80, frequencyRange: 30,
-        filterType: 'lowpass', filterFrequency: 300, gain: 0.018,
-        burstInterval: 10, burstDuration: 2.5 },
+        filterType: 'lowpass', filterFrequency: 180, gain: 0.015,
+        modulationRate: 0.25, modulationDepth: 12 },
+      // Bubbling (texture)
+      { type: 'texture', waveform: 'sine', baseFrequency: 300, frequencyRange: 80,
+        filterType: 'bandpass', filterFrequency: 400, gain: 0.004,
+        modulationRate: 2.5, modulationDepth: 100 },
+      // Frog croak (detail)
+      { type: 'detail', waveform: 'sine', baseFrequency: 120, frequencyRange: 30,
+        filterType: 'lowpass', filterFrequency: 250, gain: 0.003,
+        modulationRate: 4, modulationDepth: 30 },
+      // Splash (occasional)
+      { type: 'occasional', waveform: 'sine', baseFrequency: 80, frequencyRange: 20,
+        filterType: 'lowpass', filterFrequency: 200, gain: 0.008,
+        burstInterval: 12, burstDuration: 2 },
     ],
   },
 
   // ─── Snow: quiet and cold ───
   [BiomeType.Snow]: {
     layers: [
-      // White noise wind (drone) — triangle at high freq simulates noise-ish texture
-      { type: 'drone', waveform: 'sawtooth', baseFrequency: 2000, frequencyRange: 300,
-        filterType: 'bandpass', filterFrequency: 1500, gain: 0.008,
-        modulationRate: 0.06, modulationDepth: 200 },
+      // Wind (drone) — low sine, not sawtooth
+      { type: 'drone', waveform: 'sine', baseFrequency: 140, frequencyRange: 30,
+        filterType: 'lowpass', filterFrequency: 300, gain: 0.008,
+        modulationRate: 0.06, modulationDepth: 40 },
       // Ice creak (texture)
-      { type: 'texture', waveform: 'sawtooth', baseFrequency: 400, frequencyRange: 150,
-        filterType: 'bandpass', filterFrequency: 600, gain: 0.005,
-        modulationRate: 0.4, modulationDepth: 100 },
-      // Silence gaps (detail — very quiet)
-      { type: 'detail', waveform: 'sine', baseFrequency: 2500, frequencyRange: 500,
-        filterType: 'highpass', filterFrequency: 2000, gain: 0.002,
-        modulationRate: 0.02, modulationDepth: 200 },
-      // Crack / avalanche (occasional)
-      { type: 'occasional', waveform: 'sawtooth', baseFrequency: 100, frequencyRange: 60,
-        filterType: 'lowpass', filterFrequency: 250, gain: 0.02,
-        burstInterval: 20, burstDuration: 1.5 },
+      { type: 'texture', waveform: 'sine', baseFrequency: 350, frequencyRange: 80,
+        filterType: 'bandpass', filterFrequency: 500, gain: 0.003,
+        modulationRate: 0.3, modulationDepth: 60 },
+      // Sparse high tone (detail) — very quiet
+      { type: 'detail', waveform: 'sine', baseFrequency: 900, frequencyRange: 200,
+        filterType: 'bandpass', filterFrequency: 1000, gain: 0.001,
+        modulationRate: 0.5, modulationDepth: 100 },
+      // Crack (occasional)
+      { type: 'occasional', waveform: 'sine', baseFrequency: 100, frequencyRange: 40,
+        filterType: 'lowpass', filterFrequency: 250, gain: 0.01,
+        burstInterval: 22, burstDuration: 1.5 },
     ],
   },
 
@@ -111,21 +116,21 @@ export const BIOME_AMBIENCES: Record<BiomeType, BiomeAmbience> = {
   [BiomeType.Volcanic]: {
     layers: [
       // Rumbling bass (drone)
-      { type: 'drone', waveform: 'sawtooth', baseFrequency: 35, frequencyRange: 5,
-        filterType: 'lowpass', filterFrequency: 100, gain: 0.05,
+      { type: 'drone', waveform: 'sine', baseFrequency: 35, frequencyRange: 5,
+        filterType: 'lowpass', filterFrequency: 80, gain: 0.02,
         modulationRate: 0.08, modulationDepth: 8 },
-      // Hiss / vent steam (texture)
-      { type: 'texture', waveform: 'sawtooth', baseFrequency: 4000, frequencyRange: 1000,
-        filterType: 'highpass', filterFrequency: 3000, gain: 0.01,
-        modulationRate: 0.3, modulationDepth: 600 },
+      // Steam hiss (texture) — very quiet, filtered
+      { type: 'texture', waveform: 'sawtooth', baseFrequency: 500, frequencyRange: 100,
+        filterType: 'lowpass', filterFrequency: 800, gain: 0.002,
+        modulationRate: 0.3, modulationDepth: 80 },
       // Rock crumble (detail)
-      { type: 'detail', waveform: 'square', baseFrequency: 200, frequencyRange: 100,
-        filterType: 'bandpass', filterFrequency: 300, gain: 0.008,
-        modulationRate: 15, modulationDepth: 80 },
+      { type: 'detail', waveform: 'sine', baseFrequency: 180, frequencyRange: 60,
+        filterType: 'lowpass', filterFrequency: 300, gain: 0.003,
+        modulationRate: 3, modulationDepth: 40 },
       // Eruption boom (occasional)
-      { type: 'occasional', waveform: 'sawtooth', baseFrequency: 25, frequencyRange: 8,
-        filterType: 'lowpass', filterFrequency: 60, gain: 0.035,
-        burstInterval: 15, burstDuration: 3 },
+      { type: 'occasional', waveform: 'sine', baseFrequency: 25, frequencyRange: 8,
+        filterType: 'lowpass', filterFrequency: 60, gain: 0.015,
+        burstInterval: 18, burstDuration: 3 },
     ],
   },
 
@@ -133,43 +138,43 @@ export const BIOME_AMBIENCES: Record<BiomeType, BiomeAmbience> = {
   [BiomeType.Crystal]: {
     layers: [
       // Pure sine harmonics (drone)
-      { type: 'drone', waveform: 'sine', baseFrequency: 440, frequencyRange: 10,
-        filterType: 'bandpass', filterFrequency: 500, gain: 0.015,
-        modulationRate: 0.04, modulationDepth: 5 },
+      { type: 'drone', waveform: 'sine', baseFrequency: 220, frequencyRange: 5,
+        filterType: 'lowpass', filterFrequency: 400, gain: 0.008,
+        modulationRate: 0.04, modulationDepth: 3 },
       // Resonant shimmer (texture)
-      { type: 'texture', waveform: 'sine', baseFrequency: 880, frequencyRange: 50,
-        filterType: 'bandpass', filterFrequency: 1000, gain: 0.008,
-        modulationRate: 0.5, modulationDepth: 80 },
+      { type: 'texture', waveform: 'sine', baseFrequency: 440, frequencyRange: 20,
+        filterType: 'bandpass', filterFrequency: 500, gain: 0.004,
+        modulationRate: 0.3, modulationDepth: 30 },
       // Chime cascades (detail)
-      { type: 'detail', waveform: 'sine', baseFrequency: 2200, frequencyRange: 800,
-        filterType: 'bandpass', filterFrequency: 2500, gain: 0.006,
-        modulationRate: 4, modulationDepth: 500 },
+      { type: 'detail', waveform: 'sine', baseFrequency: 880, frequencyRange: 200,
+        filterType: 'bandpass', filterFrequency: 1000, gain: 0.003,
+        modulationRate: 2, modulationDepth: 150 },
       // Harmonic sweep (occasional)
-      { type: 'occasional', waveform: 'sine', baseFrequency: 660, frequencyRange: 200,
-        filterType: 'bandpass', filterFrequency: 800, gain: 0.012,
-        burstInterval: 14, burstDuration: 5 },
+      { type: 'occasional', waveform: 'sine', baseFrequency: 330, frequencyRange: 80,
+        filterType: 'bandpass', filterFrequency: 500, gain: 0.006,
+        burstInterval: 16, burstDuration: 5 },
     ],
   },
 
   // ─── Jungle: dense and layered ───
   [BiomeType.Jungle]: {
     layers: [
-      // Dense layered hum (drone)
+      // Dense hum (drone)
       { type: 'drone', waveform: 'triangle', baseFrequency: 95, frequencyRange: 10,
-        filterType: 'lowpass', filterFrequency: 250, gain: 0.04,
-        modulationRate: 0.07, modulationDepth: 12 },
+        filterType: 'lowpass', filterFrequency: 220, gain: 0.012,
+        modulationRate: 0.07, modulationDepth: 10 },
       // Rain drip / rustle (texture)
-      { type: 'texture', waveform: 'sawtooth', baseFrequency: 1200, frequencyRange: 400,
-        filterType: 'bandpass', filterFrequency: 1500, gain: 0.01,
-        modulationRate: 2, modulationDepth: 300 },
-      // Monkey calls / insects (detail)
-      { type: 'detail', waveform: 'sine', baseFrequency: 2500, frequencyRange: 1000,
-        filterType: 'bandpass', filterFrequency: 3000, gain: 0.007,
-        modulationRate: 10, modulationDepth: 600 },
+      { type: 'texture', waveform: 'sine', baseFrequency: 500, frequencyRange: 150,
+        filterType: 'bandpass', filterFrequency: 700, gain: 0.003,
+        modulationRate: 2, modulationDepth: 100 },
+      // Insect chirp (detail)
+      { type: 'detail', waveform: 'sine', baseFrequency: 800, frequencyRange: 300,
+        filterType: 'bandpass', filterFrequency: 1000, gain: 0.003,
+        modulationRate: 5, modulationDepth: 200 },
       // Thunder (occasional)
-      { type: 'occasional', waveform: 'sawtooth', baseFrequency: 30, frequencyRange: 10,
-        filterType: 'lowpass', filterFrequency: 80, gain: 0.03,
-        burstInterval: 25, burstDuration: 3.5 },
+      { type: 'occasional', waveform: 'sine', baseFrequency: 30, frequencyRange: 10,
+        filterType: 'lowpass', filterFrequency: 80, gain: 0.015,
+        burstInterval: 28, burstDuration: 3 },
     ],
   },
 
@@ -177,21 +182,21 @@ export const BIOME_AMBIENCES: Record<BiomeType, BiomeAmbience> = {
   [BiomeType.Mesa]: {
     layers: [
       // Hollow wind (drone)
-      { type: 'drone', waveform: 'sawtooth', baseFrequency: 130, frequencyRange: 20,
-        filterType: 'bandpass', filterFrequency: 350, gain: 0.02,
-        modulationRate: 0.1, modulationDepth: 40 },
-      // Echo effect (texture)
-      { type: 'texture', waveform: 'triangle', baseFrequency: 600, frequencyRange: 200,
-        filterType: 'bandpass', filterFrequency: 800, gain: 0.008,
-        modulationRate: 0.15, modulationDepth: 150 },
+      { type: 'drone', waveform: 'sine', baseFrequency: 110, frequencyRange: 15,
+        filterType: 'lowpass', filterFrequency: 250, gain: 0.01,
+        modulationRate: 0.1, modulationDepth: 20 },
+      // Echo (texture)
+      { type: 'texture', waveform: 'sine', baseFrequency: 330, frequencyRange: 80,
+        filterType: 'bandpass', filterFrequency: 500, gain: 0.004,
+        modulationRate: 0.15, modulationDepth: 60 },
       // Rock fall (detail)
-      { type: 'detail', waveform: 'square', baseFrequency: 300, frequencyRange: 150,
-        filterType: 'bandpass', filterFrequency: 400, gain: 0.006,
-        modulationRate: 18, modulationDepth: 100 },
+      { type: 'detail', waveform: 'sine', baseFrequency: 250, frequencyRange: 80,
+        filterType: 'lowpass', filterFrequency: 400, gain: 0.003,
+        modulationRate: 3, modulationDepth: 50 },
       // Canyon moan (occasional)
-      { type: 'occasional', waveform: 'sawtooth', baseFrequency: 70, frequencyRange: 20,
-        filterType: 'lowpass', filterFrequency: 200, gain: 0.018,
-        burstInterval: 16, burstDuration: 4 },
+      { type: 'occasional', waveform: 'sine', baseFrequency: 70, frequencyRange: 15,
+        filterType: 'lowpass', filterFrequency: 180, gain: 0.008,
+        burstInterval: 18, burstDuration: 4 },
     ],
   },
 
@@ -200,20 +205,20 @@ export const BIOME_AMBIENCES: Record<BiomeType, BiomeAmbience> = {
     layers: [
       // Wave rhythm (drone)
       { type: 'drone', waveform: 'sine', baseFrequency: 75, frequencyRange: 10,
-        filterType: 'lowpass', filterFrequency: 200, gain: 0.03,
-        modulationRate: 0.12, modulationDepth: 20 },
+        filterType: 'lowpass', filterFrequency: 200, gain: 0.012,
+        modulationRate: 0.12, modulationDepth: 15 },
       // Underwater gurgle (texture)
-      { type: 'texture', waveform: 'sine', baseFrequency: 250, frequencyRange: 100,
-        filterType: 'bandpass', filterFrequency: 400, gain: 0.01,
-        modulationRate: 4, modulationDepth: 150 },
+      { type: 'texture', waveform: 'sine', baseFrequency: 220, frequencyRange: 60,
+        filterType: 'bandpass', filterFrequency: 350, gain: 0.004,
+        modulationRate: 3, modulationDepth: 80 },
       // Seabird cries (detail)
-      { type: 'detail', waveform: 'sine', baseFrequency: 2000, frequencyRange: 700,
-        filterType: 'bandpass', filterFrequency: 2400, gain: 0.006,
-        modulationRate: 7, modulationDepth: 400 },
+      { type: 'detail', waveform: 'sine', baseFrequency: 800, frequencyRange: 200,
+        filterType: 'bandpass', filterFrequency: 1000, gain: 0.003,
+        modulationRate: 4, modulationDepth: 150 },
       // Shell wind chime (occasional)
-      { type: 'occasional', waveform: 'sine', baseFrequency: 1400, frequencyRange: 400,
-        filterType: 'bandpass', filterFrequency: 1600, gain: 0.01,
-        burstInterval: 11, burstDuration: 3 },
+      { type: 'occasional', waveform: 'sine', baseFrequency: 660, frequencyRange: 150,
+        filterType: 'bandpass', filterFrequency: 800, gain: 0.005,
+        burstInterval: 14, burstDuration: 3 },
     ],
   },
 
@@ -221,21 +226,21 @@ export const BIOME_AMBIENCES: Record<BiomeType, BiomeAmbience> = {
   [BiomeType.Heaven]: {
     layers: [
       // Ethereal choir pad (drone)
-      { type: 'drone', waveform: 'sine', baseFrequency: 260, frequencyRange: 10,
-        filterType: 'lowpass', filterFrequency: 600, gain: 0.02,
-        modulationRate: 0.03, modulationDepth: 8 },
+      { type: 'drone', waveform: 'sine', baseFrequency: 260, frequencyRange: 5,
+        filterType: 'lowpass', filterFrequency: 400, gain: 0.008,
+        modulationRate: 0.03, modulationDepth: 5 },
       // Wind harp (texture)
-      { type: 'texture', waveform: 'sine', baseFrequency: 520, frequencyRange: 60,
-        filterType: 'bandpass', filterFrequency: 700, gain: 0.008,
-        modulationRate: 0.2, modulationDepth: 50 },
+      { type: 'texture', waveform: 'sine', baseFrequency: 390, frequencyRange: 30,
+        filterType: 'bandpass', filterFrequency: 500, gain: 0.004,
+        modulationRate: 0.15, modulationDepth: 30 },
       // Bell tones (detail)
-      { type: 'detail', waveform: 'sine', baseFrequency: 1320, frequencyRange: 300,
-        filterType: 'bandpass', filterFrequency: 1500, gain: 0.005,
-        modulationRate: 0.5, modulationDepth: 100 },
+      { type: 'detail', waveform: 'sine', baseFrequency: 660, frequencyRange: 100,
+        filterType: 'bandpass', filterFrequency: 800, gain: 0.003,
+        modulationRate: 0.5, modulationDepth: 50 },
       // Silence swells (occasional)
-      { type: 'occasional', waveform: 'sine', baseFrequency: 390, frequencyRange: 40,
-        filterType: 'lowpass', filterFrequency: 500, gain: 0.01,
-        burstInterval: 18, burstDuration: 6 },
+      { type: 'occasional', waveform: 'sine', baseFrequency: 260, frequencyRange: 20,
+        filterType: 'lowpass', filterFrequency: 400, gain: 0.005,
+        burstInterval: 20, burstDuration: 6 },
     ],
   },
 
@@ -244,20 +249,20 @@ export const BIOME_AMBIENCES: Record<BiomeType, BiomeAmbience> = {
     layers: [
       // Distorted bass growl (drone)
       { type: 'drone', waveform: 'sawtooth', baseFrequency: 40, frequencyRange: 6,
-        filterType: 'lowpass', filterFrequency: 120, gain: 0.05,
-        modulationRate: 0.1, modulationDepth: 10 },
+        filterType: 'lowpass', filterFrequency: 100, gain: 0.008,
+        modulationRate: 0.1, modulationDepth: 8 },
       // Metal stress (texture)
-      { type: 'texture', waveform: 'square', baseFrequency: 500, frequencyRange: 200,
-        filterType: 'bandpass', filterFrequency: 700, gain: 0.01,
-        modulationRate: 0.6, modulationDepth: 150 },
+      { type: 'texture', waveform: 'triangle', baseFrequency: 200, frequencyRange: 60,
+        filterType: 'lowpass', filterFrequency: 400, gain: 0.003,
+        modulationRate: 0.5, modulationDepth: 40 },
       // Whispers (detail)
-      { type: 'detail', waveform: 'sawtooth', baseFrequency: 1500, frequencyRange: 500,
-        filterType: 'bandpass', filterFrequency: 1800, gain: 0.005,
-        modulationRate: 5, modulationDepth: 300 },
+      { type: 'detail', waveform: 'sine', baseFrequency: 600, frequencyRange: 200,
+        filterType: 'bandpass', filterFrequency: 800, gain: 0.002,
+        modulationRate: 3, modulationDepth: 100 },
       // Impact / collapse (occasional)
-      { type: 'occasional', waveform: 'sawtooth', baseFrequency: 28, frequencyRange: 8,
-        filterType: 'lowpass', filterFrequency: 60, gain: 0.04,
-        burstInterval: 12, burstDuration: 2 },
+      { type: 'occasional', waveform: 'sine', baseFrequency: 28, frequencyRange: 8,
+        filterType: 'lowpass', filterFrequency: 60, gain: 0.015,
+        burstInterval: 14, burstDuration: 2 },
     ],
   },
 }

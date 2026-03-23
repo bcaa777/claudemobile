@@ -238,7 +238,7 @@ export class BiomeMusic {
    * Near resonance site → reduced to NEAR_SITE_GAIN (harmonic tone takes over).
    * Exploration → 30-40% silence gaps handled by the phrase state machine.
    */
-  private readonly BASE_GAIN = 1.0
+  private readonly BASE_GAIN = 0.4
   /** Volume fraction when near a Resonance Site (harmonic tone dominates) */
   private readonly NEAR_SITE_GAIN = 0.25
 
