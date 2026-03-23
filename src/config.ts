@@ -144,6 +144,20 @@ export const TERRAIN_CONFIG = {
   enableBiomeTraversal: true,
 }
 
+// ─── STAMINA ────────────────────────────────────────────────────────────────
+export const STAMINA_CONFIG = {
+  maxStamina: 100,
+  sprintDrain: 15,      // per second
+  jumpCost: 20,          // per jump
+  glideDrain: 5,         // per second
+  regenRate: 25,          // per second
+  regenCooldown: 2,       // seconds after last drain
+  maxAirJumps: 4,         // additional jumps while airborne
+  glideGravity: 2.8,      // reduced gravity while gliding (normal is 28)
+  glideSpeedBoost: 1.2,   // horizontal speed multiplier while gliding
+  airJumpVelocities: [32, 28, 24, 20],  // velocity per successive jump
+}
+
 // ─── CREATURES ───────────────────────────────────────────────────────────────
 export const CREATURE_CONFIG = {
   spawnMultiplier: 0.8,  // scale creature count per chunk (0 = no animals, 3 = very dense)

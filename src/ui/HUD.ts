@@ -7,6 +7,8 @@ import type { BiomeType } from '../biomes/types'
 export interface HUDUpdateParams {
   playerHealth: number
   maxHealth: number
+  stamina: number
+  maxStamina: number
   cameraYaw: number
   companionData: CompanionData
   nearInteractable: boolean
@@ -27,6 +29,8 @@ export class HUD {
   private container: HTMLDivElement
   private healthBar: HTMLDivElement
   private healthBarFill: HTMLDivElement
+  private staminaBar: HTMLDivElement
+  private staminaBarFill: HTMLDivElement
   private compass: CompassWidget
   private companion: CompanionIndicator
   private interactionPrompt: HTMLDivElement
@@ -37,6 +41,7 @@ export class HUD {
   private healthShowTime = -Infinity // time when health was last shown
   private healthOpacity = 0
   private lastActivationMessage: string | null = null
+  private staminaFullTime = -Infinity // time when stamina last reached 100%
 
   constructor() {
     this.container = document.createElement('div')
@@ -85,6 +90,34 @@ export class HUD {
     })
     this.healthBar.appendChild(this.healthBarFill)
     this.container.appendChild(this.healthBar)
+
+    // --- Stamina bar (just above health bar, only when < 100%) ---
+    this.staminaBar = document.createElement('div')
+    Object.assign(this.staminaBar.style, {
+      position: 'absolute',
+      bottom: '62px',
+      left: '50%',
+      transform: 'translateX(-50%)',
+      width: '140px',
+      height: '3px',
+      background: 'rgba(0,0,0,0.3)',
+      borderRadius: '2px',
+      overflow: 'hidden',
+      opacity: '0',
+      transition: 'opacity 1s',
+      pointerEvents: 'none',
+    })
+
+    this.staminaBarFill = document.createElement('div')
+    Object.assign(this.staminaBarFill.style, {
+      width: '100%',
+      height: '100%',
+      background: 'rgba(200,180,80,0.8)',
+      borderRadius: '2px',
+      transition: 'width 0.3s',
+    })
+    this.staminaBar.appendChild(this.staminaBarFill)
+    this.container.appendChild(this.staminaBar)
 
     // --- Interaction prompt (center-bottom, small "E") ---
     this.interactionPrompt = document.createElement('div')
@@ -152,6 +185,8 @@ export class HUD {
     const {
       playerHealth,
       maxHealth,
+      stamina,
+      maxStamina,
       cameraYaw,
       companionData,
       nearInteractable,
@@ -186,6 +221,23 @@ export class HUD {
       // Fade out after 5 seconds at full health
       this.healthBar.style.transition = 'opacity 1s'
       this.healthBar.style.opacity = '0'
+    }
+
+    // --- Stamina bar ---
+    const staminaPct = maxStamina > 0 ? stamina / maxStamina : 1
+    if (staminaPct < 1) {
+      this.staminaFullTime = -Infinity
+      this.staminaBarFill.style.width = `${staminaPct * 100}%`
+      this.staminaBar.style.opacity = '1'
+      this.staminaBar.style.transition = 'opacity 0.3s'
+    } else {
+      if (this.staminaFullTime === -Infinity) {
+        this.staminaFullTime = time
+      }
+      if (time - this.staminaFullTime > 3) {
+        this.staminaBar.style.transition = 'opacity 1s'
+        this.staminaBar.style.opacity = '0'
+      }
     }
 
     // --- Interaction prompt ---

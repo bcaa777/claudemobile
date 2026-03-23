@@ -18,7 +18,7 @@ import { LandmarkManager } from '../landmarks/LandmarkManager'
 import { DebugMap } from '../debug/DebugMap'
 import { DebugPanel } from '../debug/DebugPanel'
 import { PerfOverlay } from '../debug/PerfOverlay'
-import { WORLD_CONFIG } from '../config'
+import { WORLD_CONFIG, STAMINA_CONFIG } from '../config'
 import { WATER_LEVEL, CHUNK_SIZE, sampleWorldHeight, riverMask } from '../world/TerrainGenerator'
 import { GrandStaircase } from '../landmarks/GrandStaircase'
 import { InfernalStaircase } from '../landmarks/InfernalStaircase'
@@ -467,7 +467,13 @@ export class Engine {
     // Ritual cinematic lock — disable input during 3-second activation moment
     this.controller.inputLocked = this.worldState.ritualCinematicActive
 
-    this.controller.update(delta)
+    this.controller.update(delta, this.playerState)
+
+    // Sprint stamina drain
+    if (this.controller.isSprinting && !this.controller.isFlying) {
+      this.playerState.drainStaminaContinuous(STAMINA_CONFIG.sprintDrain, delta)
+    }
+
     this.collision.update(this.renderer.camera, this.controller, delta)
     this.world.update(this.renderer.camera.position)
     this.dayNight.update(delta)
@@ -891,6 +897,8 @@ export class Engine {
       this.hud.update({
         playerHealth: this.playerState.health,
         maxHealth: this.playerState.maxHealth,
+        stamina: this.playerState.stamina,
+        maxStamina: this.playerState.maxStamina,
         cameraYaw,
         companionData: {
           bonded: this.companionSystem.companionId !== null,

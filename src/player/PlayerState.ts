@@ -1,3 +1,5 @@
+import { STAMINA_CONFIG } from '../config'
+
 export class PlayerState {
   health = 100
   maxHealthBonus: number = 0
@@ -5,6 +7,11 @@ export class PlayerState {
   speedMultiplier = 1.0
   lastDamageTime = -Infinity
   isDead = false
+
+  // Stamina
+  stamina: number = STAMINA_CONFIG.maxStamina
+  maxStamina: number = STAMINA_CONFIG.maxStamina
+  staminaRegenDelay: number = 0
 
   private deathCallback: (() => void) | null = null
   private respawnTimer = 0
@@ -75,5 +82,33 @@ export class PlayerState {
 
     // Reset speed multiplier each frame (hazards re-apply)
     this.speedMultiplier = 1.0
+
+    // Stamina regeneration
+    this.updateStamina(delta)
+  }
+
+  /** Drain a fixed amount of stamina (e.g. per jump). Returns false if not enough. */
+  drainStamina(amount: number): boolean {
+    if (this.stamina < amount) return false
+    this.stamina = Math.max(0, this.stamina - amount)
+    this.staminaRegenDelay = STAMINA_CONFIG.regenCooldown
+    return true
+  }
+
+  /** Drain stamina continuously (e.g. sprint/glide). Returns false when empty. */
+  drainStaminaContinuous(rate: number, dt: number): boolean {
+    if (this.stamina <= 0) return false
+    this.stamina = Math.max(0, this.stamina - rate * dt)
+    this.staminaRegenDelay = STAMINA_CONFIG.regenCooldown
+    return this.stamina > 0
+  }
+
+  /** Regenerate stamina after cooldown. Called each frame from update(). */
+  private updateStamina(dt: number): void {
+    if (this.staminaRegenDelay > 0) {
+      this.staminaRegenDelay -= dt
+    } else if (this.stamina < this.maxStamina) {
+      this.stamina = Math.min(this.maxStamina, this.stamina + STAMINA_CONFIG.regenRate * dt)
+    }
   }
 }
