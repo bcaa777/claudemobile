@@ -45,6 +45,8 @@ import { HUD } from '../ui/HUD'
 import { OnboardingSystem } from '../systems/OnboardingSystem'
 import { AwakeningSystem } from '../systems/AwakeningSystem'
 import { IntroBridge } from '../systems/IntroBridge'
+import { CombatSystem } from '../combat/CombatSystem'
+import { EnemySpawner } from '../combat/EnemySpawner'
 
 export class Engine {
   private renderer: Renderer
@@ -97,6 +99,8 @@ export class Engine {
   private introBridge: IntroBridge | null = null
   private npcDialogueSeen = false
   private bridgeCooldown = 0
+  private combatSystem!: CombatSystem
+  private enemySpawner!: EnemySpawner
 
   private lastTime = 0
   private running = false
@@ -224,6 +228,17 @@ export class Engine {
     // --- WorldState: central shared state ---
     this.worldState = new WorldState()
     this.worldState.loadFromStorage()
+
+    // --- Combat system ---
+    this.combatSystem = new CombatSystem(
+      this.renderer.camera,
+      this.renderer.scene,
+      this.creatureManager,
+      this.worldState,
+      this.playerState,
+    )
+    this.combatSystem.placeMagicPickup(this.castle.position, this.renderer.scene)
+    this.enemySpawner = new EnemySpawner()
 
     // Intro bridge — if intro not complete, create bridge and position player there
     console.log('[Intro] introComplete:', this.worldState.introComplete)
@@ -592,6 +607,18 @@ export class Engine {
     this.creatureManager.worldState = this.worldState
 
     this.creatureManager.update(delta, camPos, this.world, this.dayNight.getTime())
+
+    // --- Combat system ---
+    this.combatSystem.update(delta, this.input, camPos, this.elapsedTime)
+
+    // Enemy spawner — chunk-based + night spawns
+    {
+      this.renderer.camera.getWorldDirection(this._fwd)
+      this.enemySpawner.updateNightSpawns(
+        delta, this.worldState, camPos, this._fwd,
+        this.creatureManager, this.world
+      )
+    }
 
     // --- Engagement system updates ---
 
