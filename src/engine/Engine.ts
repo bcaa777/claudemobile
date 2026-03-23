@@ -376,6 +376,10 @@ export class Engine {
         this.controller.isGrounded = true
       }
 
+      // Disable scene fog during bridge (it obscures the void)
+      const savedFog = this.renderer.scene.fog
+      this.renderer.scene.fog = null
+
       const bridgeComplete = this.introBridge.update(delta, this.renderer.camera.position, this.elapsedTime, this.worldState)
       if (bridgeComplete) {
         // Teleport to castle
@@ -385,10 +389,15 @@ export class Engine {
         this.worldState.saveToStorage()
         this.introBridge.dispose()
         this.introBridge = null
+        // Restore fog
+        this.renderer.scene.fog = savedFog
       }
 
-      // Still render, but skip world/creature/weather updates
+      // Render without fog, then restore
       this.renderer.render(delta)
+      if (this.renderer.scene.fog === null && savedFog) {
+        this.renderer.scene.fog = savedFog
+      }
       requestAnimationFrame((t) => this.loop(t))
       return
     }

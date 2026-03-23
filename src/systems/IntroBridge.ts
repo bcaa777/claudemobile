@@ -143,9 +143,26 @@ export class IntroBridge {
       [c27b, c27c], // crystal 2 (platform 27): c27b, c27c are extras
     ]
 
-    // Add an ambient light so platforms are slightly visible in the void
-    const ambientLight = new THREE.AmbientLight(0x222244, 0.3)
+    // Ambient light for the void — needs to be strong enough to see platforms
+    const ambientLight = new THREE.AmbientLight(0x556688, 1.0)
     this.group.add(ambientLight)
+
+    // Directional light for shape definition
+    const dirLight = new THREE.DirectionalLight(0x8899bb, 0.5)
+    dirLight.position.set(0, 20, 0)
+    this.group.add(dirLight)
+
+    // Pre-light the first 2 platforms so the player isn't in total darkness
+    for (let i = 0; i < 2; i++) {
+      const plat = this.platforms[i]
+      plat.lit = true
+      plat.material.emissive.setHex(0x886622)
+      const light = new THREE.PointLight(0xffcc66, 0.5, 8)
+      light.position.copy(plat.mesh.position)
+      light.position.y += 0.5
+      this.group.add(light)
+      this.platformLights.push(light)
+    }
 
     scene.add(this.group)
   }
