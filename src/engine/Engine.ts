@@ -376,9 +376,11 @@ export class Engine {
         this.controller.isGrounded = true
       }
 
-      // Disable scene fog during bridge (it obscures the void)
+      // Disable scene fog and set dark background during bridge
       const savedFog = this.renderer.scene.fog
+      const savedBg = this.renderer.scene.background
       this.renderer.scene.fog = null
+      this.renderer.scene.background = new THREE.Color(0x050510)
 
       const bridgeComplete = this.introBridge.update(delta, this.renderer.camera.position, this.elapsedTime, this.worldState)
       if (bridgeComplete) {
@@ -389,15 +391,15 @@ export class Engine {
         this.worldState.saveToStorage()
         this.introBridge.dispose()
         this.introBridge = null
-        // Restore fog
+        // Restore fog and background
         this.renderer.scene.fog = savedFog
+        this.renderer.scene.background = savedBg
       }
 
       // Render without fog, then restore
       this.renderer.render(delta)
-      if (this.renderer.scene.fog === null && savedFog) {
-        this.renderer.scene.fog = savedFog
-      }
+      this.renderer.scene.fog = savedFog
+      this.renderer.scene.background = savedBg
       requestAnimationFrame((t) => this.loop(t))
       return
     }

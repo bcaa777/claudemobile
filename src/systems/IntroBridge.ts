@@ -23,8 +23,7 @@ export class IntroBridge {
   private audioInitialized = false
   private audioStartTime = 0
 
-  // Enclosure to block the outside world
-  private enclosure: THREE.Mesh
+
 
   // Text display tracking
   private textTimers: Map<number, number> = new Map() // platform index -> remaining time
@@ -54,25 +53,17 @@ export class IntroBridge {
     // Bridge extends toward castle (positive Z direction)
     this.bridgeDirection = new THREE.Vector3(0, 0, 1)
 
-    // -- Enclosure: large black box to block outside world --
-    const enclosureGeo = new THREE.BoxGeometry(200, 60, 120)
-    const enclosureMat = new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.BackSide })
-    this.enclosure = new THREE.Mesh(enclosureGeo, enclosureMat)
-    // Center enclosure on the bridge midpoint
-    const bridgeMid = this.bridgeStart.clone().addScaledVector(this.bridgeDirection, 45)
-    this.enclosure.position.copy(bridgeMid)
-    this.enclosure.position.y = castlePosition.y + 2 // center vertically around bridge
-    this.group.add(this.enclosure)
+    // No enclosure — scene background set to near-black during bridge by Engine
 
     // -- 30 Platforms --
     const platformGeo = new THREE.BoxGeometry(2.5, 0.3, 2.5)
     for (let i = 0; i < 30; i++) {
-      const mat = new THREE.MeshLambertMaterial({ color: 0x334455, emissive: 0x000000 })
+      const mat = new THREE.MeshBasicMaterial({ color: 0x1a2233 })
       const mesh = new THREE.Mesh(platformGeo, mat)
       const pos = this.bridgeStart.clone().addScaledVector(this.bridgeDirection, i * 3)
       mesh.position.copy(pos)
       this.group.add(mesh)
-      this.platforms.push({ mesh, lit: false, material: mat })
+      this.platforms.push({ mesh, lit: false, material: mat as any })
     }
 
     // -- Portal ring at the end (after platform 30) --
@@ -152,14 +143,14 @@ export class IntroBridge {
     dirLight.position.set(0, 20, 0)
     this.group.add(dirLight)
 
-    // Pre-light the first 2 platforms so the player isn't in total darkness
-    for (let i = 0; i < 2; i++) {
+    // Pre-light the first 3 platforms so the player can see
+    for (let i = 0; i < 3; i++) {
       const plat = this.platforms[i]
       plat.lit = true
-      plat.material.emissive.setHex(0x886622)
-      const light = new THREE.PointLight(0xffcc66, 0.5, 8)
+      ;(plat.mesh.material as THREE.MeshBasicMaterial).color.setHex(0xccaa55)
+      const light = new THREE.PointLight(0xffcc66, 0.8, 10)
       light.position.copy(plat.mesh.position)
-      light.position.y += 0.5
+      light.position.y += 1
       this.group.add(light)
       this.platformLights.push(light)
     }
@@ -225,7 +216,7 @@ export class IntroBridge {
 
       if (horizDist < 2.5) {
         plat.lit = true
-        plat.material.emissive.setHex(0x886622)
+        ;(plat.mesh.material as THREE.MeshBasicMaterial).color.setHex(0xccaa55)
 
         // Add point light
         const light = new THREE.PointLight(0xffcc66, 0.5, 8)
