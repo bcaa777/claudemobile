@@ -225,6 +225,7 @@ export class Engine {
     this.worldState.loadFromStorage()
 
     // Intro bridge — if intro not complete, create bridge and position player there
+    console.log('[Intro] introComplete:', this.worldState.introComplete)
     if (!this.worldState.introComplete) {
       this.introBridge = new IntroBridge(this.castle.position, this.renderer.scene, this.audioSystem)
       const spawnPos = this.introBridge.getSpawnPosition()
