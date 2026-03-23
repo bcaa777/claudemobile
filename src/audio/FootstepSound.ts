@@ -303,7 +303,7 @@ export class FootstepSound {
     source.playbackRate.value = 0.9 + Math.random() * 0.2
 
     const gain = this.ctx.createGain()
-    gain.gain.value = 0.04
+    gain.gain.value = 0.012
 
     source.connect(gain)
     gain.connect(this.master)
@@ -322,7 +322,7 @@ export class FootstepSound {
 
     // Scale volume by impact strength (normalized to jump speed)
     const intensity = Math.min(1, impactSpeed / JUMP_SPEED)
-    const vol = 0.02 + intensity * 0.10 // 0.02 - 0.12 range
+    const vol = 0.008 + intensity * 0.03 // 0.008 - 0.038 range
 
     const gain = this.ctx.createGain()
     gain.gain.value = vol * (volume / 0.07) // scale relative to surface base volume
@@ -356,17 +356,17 @@ export class FootstepSound {
     switch (biome) {
       case BiomeType.Swamp:
       case BiomeType.CoralReef:
-        return { buffers: this.wetBuffers, volume: 0.09 }
+        return { buffers: this.wetBuffers, volume: 0.025 }
       case BiomeType.Snow:
-        return { buffers: this.snowBuffers, volume: 0.06 }
+        return { buffers: this.snowBuffers, volume: 0.018 }
       case BiomeType.Desert:
-        return { buffers: this.sandBuffers, volume: 0.05 }
+        return { buffers: this.sandBuffers, volume: 0.015 }
       case BiomeType.Volcanic:
       case BiomeType.Mesa:
       case BiomeType.Crystal:
-        return { buffers: this.stoneBuffers, volume: 0.06 }
+        return { buffers: this.stoneBuffers, volume: 0.02 }
       default:
-        return { buffers: this.dirtBuffers, volume: 0.07 }
+        return { buffers: this.dirtBuffers, volume: 0.02 }
     }
   }
 
@@ -374,17 +374,17 @@ export class FootstepSound {
     switch (biome) {
       case BiomeType.Swamp:
       case BiomeType.CoralReef:
-        return { landBuffers: this.wetLandBuffers, volume: 0.09 }
+        return { landBuffers: this.wetLandBuffers, volume: 0.025 }
       case BiomeType.Snow:
-        return { landBuffers: this.snowLandBuffers, volume: 0.06 }
+        return { landBuffers: this.snowLandBuffers, volume: 0.018 }
       case BiomeType.Desert:
-        return { landBuffers: this.sandLandBuffers, volume: 0.05 }
+        return { landBuffers: this.sandLandBuffers, volume: 0.015 }
       case BiomeType.Volcanic:
       case BiomeType.Mesa:
       case BiomeType.Crystal:
-        return { landBuffers: this.stoneLandBuffers, volume: 0.06 }
+        return { landBuffers: this.stoneLandBuffers, volume: 0.02 }
       default:
-        return { landBuffers: this.dirtLandBuffers, volume: 0.07 }
+        return { landBuffers: this.dirtLandBuffers, volume: 0.02 }
     }
   }
 }

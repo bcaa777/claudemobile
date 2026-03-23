@@ -24,47 +24,47 @@ interface BiomeMelody {
 const MELODIES: Record<number, BiomeMelody> = {
   [BiomeType.Forest]: {
     root: 64, intervals: [0, 3, 5, 7, 10, 12, 15],
-    tempo: 1.2, noteCount: 5, noteDuration: 2.5, mood: 'serene', phraseGap: 12,
+    tempo: 1.2, noteCount: 6, noteDuration: 2.5, mood: 'serene', phraseGap: 6,
   },
   [BiomeType.Desert]: {
     root: 62, intervals: [0, 1, 5, 7, 8, 12, 13],
-    tempo: 1.8, noteCount: 4, noteDuration: 3.0, mood: 'ancient', phraseGap: 15,
+    tempo: 1.8, noteCount: 5, noteDuration: 3.0, mood: 'ancient', phraseGap: 8,
   },
   [BiomeType.Volcanic]: {
     root: 48, intervals: [0, 1, 3, 6, 7, 12],
-    tempo: 1.5, noteCount: 3, noteDuration: 3.5, mood: 'dark', phraseGap: 18,
+    tempo: 1.5, noteCount: 4, noteDuration: 3.5, mood: 'dark', phraseGap: 10,
   },
   [BiomeType.Snow]: {
     root: 69, intervals: [0, 2, 4, 7, 9, 12, 14],
-    tempo: 2.0, noteCount: 4, noteDuration: 3.0, mood: 'ethereal', phraseGap: 14,
+    tempo: 2.0, noteCount: 5, noteDuration: 3.0, mood: 'ethereal', phraseGap: 7,
   },
   [BiomeType.Swamp]: {
     root: 55, intervals: [0, 3, 5, 6, 7, 10, 12],
-    tempo: 1.6, noteCount: 4, noteDuration: 2.8, mood: 'haunting', phraseGap: 16,
+    tempo: 1.6, noteCount: 5, noteDuration: 2.8, mood: 'haunting', phraseGap: 8,
   },
   [BiomeType.Crystal]: {
     root: 72, intervals: [0, 4, 7, 11, 12, 16, 19],
-    tempo: 1.3, noteCount: 5, noteDuration: 2.5, mood: 'ethereal', phraseGap: 12,
+    tempo: 1.3, noteCount: 6, noteDuration: 2.5, mood: 'ethereal', phraseGap: 5,
   },
   [BiomeType.Heaven]: {
     root: 72, intervals: [0, 4, 7, 12, 16, 19, 24],
-    tempo: 2.0, noteCount: 4, noteDuration: 4.0, mood: 'ethereal', phraseGap: 15,
+    tempo: 2.0, noteCount: 5, noteDuration: 4.0, mood: 'ethereal', phraseGap: 7,
   },
   [BiomeType.Hell]: {
     root: 45, intervals: [0, 1, 3, 6, 7, 12, 13],
-    tempo: 1.8, noteCount: 3, noteDuration: 3.5, mood: 'dark', phraseGap: 20,
+    tempo: 1.8, noteCount: 4, noteDuration: 3.5, mood: 'dark', phraseGap: 10,
   },
   [BiomeType.Jungle]: {
     root: 55, intervals: [0, 3, 5, 7, 10, 12, 15],
-    tempo: 1.2, noteCount: 5, noteDuration: 2.0, mood: 'mystical', phraseGap: 12,
+    tempo: 1.2, noteCount: 6, noteDuration: 2.0, mood: 'mystical', phraseGap: 5,
   },
   [BiomeType.Mesa]: {
     root: 60, intervals: [0, 2, 3, 5, 7, 10, 12],
-    tempo: 2.0, noteCount: 4, noteDuration: 3.0, mood: 'ancient', phraseGap: 16,
+    tempo: 2.0, noteCount: 5, noteDuration: 3.0, mood: 'ancient', phraseGap: 8,
   },
   [BiomeType.CoralReef]: {
     root: 64, intervals: [0, 4, 5, 7, 11, 12, 16],
-    tempo: 1.5, noteCount: 5, noteDuration: 2.5, mood: 'ethereal', phraseGap: 13,
+    tempo: 1.5, noteCount: 6, noteDuration: 2.5, mood: 'ethereal', phraseGap: 6,
   },
 }
 
@@ -87,15 +87,15 @@ export class SpatialMelody {
   private nearestBiome: BiomeType = BiomeType.Forest
   private nearestPos: THREE.Vector3 | null = null
 
-  private readonly maxDist = 80
-  private readonly fullDist = 15
+  private readonly maxDist = 120
+  private readonly fullDist = 20
 
   constructor(ctx: AudioContext, master: GainNode, reverb?: EnvironmentReverb) {
     this.ctx = ctx
     this.reverb = reverb ?? null
 
     this.master = ctx.createGain()
-    this.master.gain.value = 0.15
+    this.master.gain.value = 0.25
     this.master.connect(master)
 
     // Spatial lowpass — opens up as you get closer
