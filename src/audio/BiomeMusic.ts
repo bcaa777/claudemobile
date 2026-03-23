@@ -305,9 +305,15 @@ export class BiomeMusic {
    * Near resonance site → reduced to NEAR_SITE_GAIN (harmonic tone takes over).
    * Exploration → 30-40% silence gaps handled by the phrase state machine.
    */
-  private readonly BASE_GAIN = 1.0
+  private readonly BASE_GAIN = 0.5
   /** Volume fraction when near a Resonance Site (harmonic tone dominates) */
-  private readonly NEAR_SITE_GAIN = 0.25
+  private readonly NEAR_SITE_GAIN = 0.15
+
+  // Shared effects chain
+  private lpFilter: BiquadFilterNode
+  private delay: DelayNode
+  private delayFeedback: GainNode
+  private delayWet: GainNode
 
   constructor(ctx: AudioContext, master: GainNode) {
     this.ctx = ctx
@@ -315,9 +321,32 @@ export class BiomeMusic {
     this.master.gain.value = this.BASE_GAIN
     this.master.connect(master)
 
+    // Lowpass filter — softens all melodies, cozy/mysterious feel
+    this.lpFilter = ctx.createBiquadFilter()
+    this.lpFilter.type = 'lowpass'
+    this.lpFilter.frequency.value = 1800
+    this.lpFilter.Q.value = 0.5
+
+    // Delay — adds space and depth
+    this.delay = ctx.createDelay(1.0)
+    this.delay.delayTime.value = 0.35  // 350ms delay
+    this.delayFeedback = ctx.createGain()
+    this.delayFeedback.gain.value = 0.3  // 30% feedback
+    this.delayWet = ctx.createGain()
+    this.delayWet.gain.value = 0.25  // 25% wet mix
+
+    // Delay feedback loop
+    this.delay.connect(this.delayFeedback)
+    this.delayFeedback.connect(this.delay)
+    this.delay.connect(this.delayWet)
+    this.delayWet.connect(this.master)
+
+    // phraseGain → lpFilter → master (dry) + delay (wet)
     this.phraseGain = ctx.createGain()
     this.phraseGain.gain.value = 0
-    this.phraseGain.connect(this.master)
+    this.phraseGain.connect(this.lpFilter)
+    this.lpFilter.connect(this.master)   // dry signal
+    this.lpFilter.connect(this.delay)    // feed delay too
   }
 
   /** Scale master output volume (0–1 multiplier) — kept for external debug controls */
@@ -501,7 +530,7 @@ export class BiomeMusic {
     osc2.frequency.value = freq * 1.003
 
     const gain = this.ctx.createGain()
-    const vol = 0.5 + Math.random() * 0.3 // relative to phraseGain
+    const vol = 0.3 + Math.random() * 0.15 // relative to phraseGain
     const attack = 0.1 + motif.legato * 0.3
     const release = 0.2 + motif.legato * 0.5
 
@@ -567,7 +596,7 @@ export class BiomeMusic {
     const gains: GainNode[] = []
 
     const masterNoteGain = this.ctx.createGain()
-    const vol = 0.4 + Math.random() * 0.2
+    const vol = 0.25 + Math.random() * 0.1
     const attack = 0.15 + motif.legato * 0.4
     const release = 0.3 + motif.legato * 0.6
 
