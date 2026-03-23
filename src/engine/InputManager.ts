@@ -21,6 +21,9 @@ export class InputManager {
   private campfireQueued = false
   private fastTravelQueued = false
   private muteToggleQueued = false
+  private attackQueued = false
+  private swapWeaponQueued = false
+  private upgradeMenuQueued = false
   crouchHeld = false
 
   // Gamepad state
@@ -48,6 +51,8 @@ export class InputManager {
       if (e.code === 'KeyC') this.campfireQueued = true
       if (e.code === 'KeyT') this.fastTravelQueued = true
       if (e.code === 'KeyV') this.muteToggleQueued = true
+      if (e.code === 'KeyR') this.swapWeaponQueued = true
+      if (e.code === 'KeyU') this.upgradeMenuQueued = true
     })
     document.addEventListener('keyup', (e) => this.keys.delete(e.code))
     document.addEventListener('keydown', (e) => { if (e.code === 'ControlLeft' || e.code === 'ControlRight') this.crouchHeld = true })
@@ -57,6 +62,9 @@ export class InputManager {
         this.mouseDeltaX += e.movementX
         this.mouseDeltaY += e.movementY
       }
+    })
+    document.addEventListener('mousedown', (e) => {
+      if (this.locked && e.button === 0) this.attackQueued = true
     })
     document.addEventListener('pointerlockchange', () => {
       this.locked = !!document.pointerLockElement
@@ -182,6 +190,24 @@ export class InputManager {
   consumeMuteToggle(): boolean {
     const v = this.muteToggleQueued
     this.muteToggleQueued = false
+    return v
+  }
+
+  consumeAttack(): boolean {
+    const v = this.attackQueued
+    this.attackQueued = false
+    return v
+  }
+
+  consumeSwapWeapon(): boolean {
+    const v = this.swapWeaponQueued
+    this.swapWeaponQueued = false
+    return v
+  }
+
+  consumeUpgradeMenu(): boolean {
+    const v = this.upgradeMenuQueued
+    this.upgradeMenuQueued = false
     return v
   }
 }
