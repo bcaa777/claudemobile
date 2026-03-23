@@ -531,10 +531,11 @@ export class Engine {
     )
 
     // Atmosphere particles — ambient per-biome particles (after biome transition + weather, before rendering)
-    this.atmosphereParticles.update(
-      delta, camPos, this.renderer.camera,
-      this.biomeTransition.getCurrentVisual()
-    )
+    const _vis = this.biomeTransition.getCurrentVisual()
+    if (this.elapsedTime < 2) {
+      console.log('[Visual]', _vis.atmosphere.particleType, 'count:', _vis.atmosphere.particleCount, 'godRay:', _vis.godRayIntensity, 'groundFog:', _vis.groundFogDensity)
+    }
+    this.atmosphereParticles.update(delta, camPos, this.renderer.camera, _vis)
 
     // Weather speed effects (blizzard slows movement)
     this.controller.speedMultiplier = this.weatherSystem.getSpeedMultiplier()
@@ -989,7 +990,9 @@ export class Engine {
       const godRayBiomeIntensity = this.biomeTransition.getCurrentVisual().godRayIntensity
       // Thin times (dawn/dusk): god rays intensify by 50%
       const thinTimeMult = (this.worldState.isDawn || this.worldState.isDusk) ? 1.5 : 1.0
-      const godRayIntensity = grOverride >= 0 ? grOverride : godRayBiomeIntensity * thinTimeMult * dayFactor
+      // God rays scale with dayFactor but keep a minimum so they're visible at dusk
+      const dayMin = Math.max(dayFactor, 0.15)
+      const godRayIntensity = grOverride >= 0 ? grOverride : godRayBiomeIntensity * thinTimeMult * dayMin
       this.renderer.godRayPass.setIntensity(godRayIntensity)
       if (godRayIntensity > 0.001) {
         // Place sun far away along sun direction, project to NDC then to 0–1 UV
@@ -1006,7 +1009,7 @@ export class Engine {
     // Heat distortion pass — shimmer in Desert and Volcanic biomes, no effect at night
     {
       const hdOverride = this.renderer.heatDistortionPass.intensityOverride
-      const heatIntensity = hdOverride >= 0 ? hdOverride : this.biomeTransition.getCurrentVisual().heatDistortion * dayFactor
+      const heatIntensity = hdOverride >= 0 ? hdOverride : this.biomeTransition.getCurrentVisual().heatDistortion * dayMin
       this.renderer.heatDistortionPass.setIntensity(heatIntensity)
       this.renderer.heatDistortionPass.setTime(this.elapsedTime)
     }
