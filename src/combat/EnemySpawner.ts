@@ -7,11 +7,11 @@ import { CHUNK_SIZE } from '../world/TerrainGenerator'
 import { World } from '../world/World'
 import { SeededRandom, chunkSeed } from '../utils/SeededRandom'
 
-const MAX_ENEMIES = 15
+const MAX_ENEMIES = 30
 
 export class EnemySpawner {
   private nightSpawnTimer = 0
-  private nightSpawnInterval = 60 // seconds
+  private nightSpawnInterval = 30 // seconds (was 60 — more frequent)
   private worldState: WorldState | null = null
   private creatureManager: CreatureManager | null = null
 
@@ -57,11 +57,14 @@ export class EnemySpawner {
     const entry = ENEMY_SPAWN_TABLE[biome]
     if (!entry) return
 
-    const stability = worldState.biomeStability.get(biome) ?? 1.0
+    // Enemies spawn based on density, reduced by global harmony (more rituals = fewer enemies)
+    // Activated biomes get zero spawns
+    if (worldState.activatedSites.has(biome)) return
+    const harmonyReduction = worldState.globalHarmony * 0.5 // 0-50% reduction based on progress
     const rng = new SeededRandom(chunkSeed(chunkX, chunkZ, 9999))
     const roll = rng.next()
 
-    if (roll >= entry.density * (1 - stability)) return
+    if (roll >= entry.density * (1 - harmonyReduction)) return
 
     // Pick a random enemy type from the table
     const typeIdx = Math.floor(rng.next() * entry.types.length)
@@ -103,8 +106,8 @@ export class EnemySpawner {
     if (this.nightSpawnTimer < this.nightSpawnInterval) return
     this.nightSpawnTimer = 0
 
-    // Chance: 25% + (1 - globalHarmony) * 30%
-    const chance = 0.25 + (1 - worldState.globalHarmony) * 0.3
+    // Chance: 50% + (1 - globalHarmony) * 30%
+    const chance = 0.5 + (1 - worldState.globalHarmony) * 0.3
     if (Math.random() >= chance) return
 
     // Spawn 1-2 shamblers behind the player
