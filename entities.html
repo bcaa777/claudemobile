@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Game Entity Overview</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0a0a12; color: #d4a574; font-family: 'Courier New', monospace; padding: 20px; }
+  h1 { color: #ffcc44; font-size: 24px; margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+  h2 { color: #88bbff; font-size: 18px; margin: 24px 0 12px; }
+  h3 { color: #aa88ff; font-size: 14px; margin: 16px 0 8px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .card { background: #12121e; border: 1px solid #2a2a3a; border-radius: 6px; padding: 12px; }
+  .card:hover { border-color: #ffcc44; }
+  .card-title { color: #ffdd88; font-size: 14px; font-weight: bold; margin-bottom: 6px; }
+  .card-type { color: #666; font-size: 11px; text-transform: uppercase; margin-bottom: 4px; }
+  .card-desc { color: #999; font-size: 12px; line-height: 1.4; }
+  .stat { color: #88ccaa; font-size: 11px; }
+  .stat span { color: #aaa; }
+  .color-swatch { display: inline-block; width: 12px; height: 12px; border-radius: 2px; vertical-align: middle; margin-right: 4px; border: 1px solid #333; }
+  .section { margin-bottom: 32px; }
+  .count { color: #666; font-size: 12px; }
+  table { width: 100%; border-collapse: collapse; margin: 8px 0; }
+  th { text-align: left; color: #88bbff; font-size: 11px; padding: 4px 8px; border-bottom: 1px solid #2a2a3a; }
+  td { color: #bbb; font-size: 12px; padding: 4px 8px; border-bottom: 1px solid #1a1a2a; }
+</style>
+</head>
+<body>
+<h1>RETRO PROCEDURAL WORLD — Entity Overview</h1>
+<p class="count" id="timestamp"></p>
+
+<div class="section">
+<h2>BIOMES <span class="count">(11)</span></h2>
+<div class="grid">
+  <div class="card"><div class="card-title"><span class="color-swatch" style="background:#2a4430"></span>Ancient Forest</div><div class="card-type">Starting Biome</div><div class="card-desc">Warm, lush. Gentle golden haze, dust motes. Home of the Druid Ring Temple. Where the mystery begins.</div><div class="stat">Fog: 30-180 | God Rays: 1.0 | Particles: dust</div></div>
+  <div class="card"><div class="card-title"><span class="color-swatch" style="background:#aa8844"></span>Desert</div><div class="card-type">Hot & Ancient</div><div class="card-desc">Vast amber dunes, heat shimmer. Sand particles drift. Great Pyramid landmark. Civilization's heartland.</div><div class="stat">Fog: 40-200 | Heat Distortion: 0.6 | Particles: sand</div></div>
+  <div class="card"><div class="card-title"><span class="color-swatch" style="background:#445533"></span>Swamp</div><div class="card-type">Murky & Corrupt</div><div class="card-desc">Thick low fog, sickly green. Fireflies at night. Swamp Ziggurat. Corruption epicenter.</div><div class="stat">Fog: 8-100 | Ground Fog: 0.8 | Particles: fireflies</div></div>
+  <div class="card"><div class="card-title"><span class="color-swatch" style="background:#aabbcc"></span>Snow</div><div class="card-type">Frozen & Preserved</div><div class="card-desc">Cool blue-white, constant snowflakes. Ice Palace. Things preserved in ice remember the old world.</div><div class="stat">Fog: 25-160 | Particles: snow</div></div>
+  <div class="card"><div class="card-title"><span class="color-swatch" style="background:#883311"></span>Volcanic</div><div class="card-type">Dangerous & Deep</div><div class="card-desc">Orange-black, embers rise. Dark ash fog. Obsidian Citadel. The civilization's power source.</div><div class="stat">Fog: 15-90 | Heat Distortion: 0.8 | Particles: embers</div></div>
+  <div class="card"><div class="card-title"><span class="color-swatch" style="background:#4466ee"></span>Crystal Caverns</div><div class="card-type">Otherworldly</div><div class="card-desc">Cool blue, high saturation, floating light specks. Crystal Cathedral. The communication network.</div><div class="stat">Fog: 30-200 | God Rays: 0 | Particles: motes</div></div>
+  <div class="card"><div class="card-title"><span class="color-swatch" style="background:#226622"></span>Jungle</div><div class="card-type">Dense & Alive</div><div class="card-desc">Saturated deep green, rain drops. Green humidity haze. Jungle Pyramid. Nature reclaiming technology.</div><div class="stat">Fog: 15-120 | Particles: rain</div></div>
+  <div class="card"><div class="card-title"><span class="color-swatch" style="background:#bb6633"></span>Mesa</div><div class="card-type">Layered & Ancient</div><div class="card-desc">Terracotta, dust haze. Mesa Citadel. The archive — geological strata tell the story.</div><div class="stat">Fog: 35-180 | Particles: dust</div></div>
+  <div class="card"><div class="card-title"><span class="color-swatch" style="background:#44aaaa"></span>Coral Coast</div><div class="card-type">Tidal & Vibrant</div><div class="card-desc">Turquoise, sea spray mist. Coral Palace. The civilization's port and trade hub.</div><div class="stat">Fog: 20-160 | Particles: spray</div></div>
+  <div class="card"><div class="card-title"><span class="color-swatch" style="background:#eeeedd"></span>Heaven (Skylands)</div><div class="card-type">Ethereal & Crumbling</div><div class="card-desc">Soft white-gold bloom, ascending motes. Cloud Temple. The civilization's greatest achievement.</div><div class="stat">Fog: 30-280 | God Rays: 1.0 | Particles: motes</div></div>
+  <div class="card"><div class="card-title"><span class="color-swatch" style="background:#441111"></span>Hell (The Depths)</div><div class="card-type">Oppressive & Unstable</div><div class="card-desc">Deep red-black, ash/smoke. Infernal Citadel. The failed experiment. Source of destabilization.</div><div class="stat">Fog: 8-60 | God Rays: 0 | Particles: ash</div></div>
+</div>
+</div>
+
+<div class="section">
+<h2>CREATURES — Wildlife <span class="count">(24 species)</span></h2>
+<h3>Herbivores</h3>
+<div class="grid">
+  <div class="card"><div class="card-title">Rabbit</div><div class="card-type">Herbivore — Ground</div><div class="card-desc">Small, fast. Companion bonus: +20% move speed.</div><div class="stat">HP: 100 | Speed: 7 | Biomes: Forest, Desert, Snow</div></div>
+  <div class="card"><div class="card-title">Deer</div><div class="card-type">Herbivore — Ground</div><div class="card-desc">Graceful. Attuned to Forest. Walks ritual circles at dusk. Companion: crystal trail.</div><div class="stat">HP: 100 | Speed: 8 | Biomes: Forest, Snow</div></div>
+  <div class="card"><div class="card-title">Camel</div><div class="card-type">Herbivore — Ground</div><div class="card-desc">Desert dweller. Attuned to Desert. Kneels at dawn near monuments.</div><div class="stat">HP: 100 | Speed: 4 | Biomes: Desert</div></div>
+  <div class="card"><div class="card-title">Bird</div><div class="card-type">Herbivore — Air</div><div class="card-desc">Flying. Attuned to Jungle. Companion: predator warning.</div><div class="stat">HP: 100 | Speed: 10 | Biomes: Forest, Desert, Snow, Crystal</div></div>
+  <div class="card"><div class="card-title">Parrot</div><div class="card-type">Herbivore — Air</div><div class="card-desc">Colorful flyer. Attuned to Jungle. Companion: predator warning.</div><div class="stat">HP: 100 | Speed: 9 | Biomes: Jungle</div></div>
+  <div class="card"><div class="card-title">Fox</div><div class="card-type">Herbivore — Ground</div><div class="card-desc">Quick, clever. Companion: senses lore stones, ears point toward hidden ones.</div><div class="stat">HP: 100 | Speed: 9 | Biomes: Forest, Snow, Desert</div></div>
+  <div class="card"><div class="card-title">Goat</div><div class="card-type">Herbivore — Ground</div><div class="card-desc">Mountain climber. Attuned to Mesa. Companion: +50% jump height, stamps near buried items.</div><div class="stat">HP: 100 | Speed: 5 | Biomes: Snow, Mesa</div></div>
+  <div class="card"><div class="card-title">Mammoth</div><div class="card-type">Herbivore — Ground</div><div class="card-desc">Massive. Attuned to Snow. Gathers at frozen lake, breath encodes patterns.</div><div class="stat">HP: 100 | Speed: 3 | Biomes: Snow</div></div>
+  <div class="card"><div class="card-title">Toad</div><div class="card-type">Herbivore — Ground</div><div class="card-desc">Amphibious. Attuned to Swamp. Croaks in rhythm near ziggurat.</div><div class="stat">HP: 100 | Speed: 3 | Biomes: Swamp, Forest</div></div>
+  <div class="card"><div class="card-title">Fish</div><div class="card-type">Herbivore — Water</div><div class="card-desc">Aquatic only. Swims in rivers and lakes.</div><div class="stat">HP: 100 | Speed: 5 | Biomes: Forest, CoralReef</div></div>
+  <div class="card"><div class="card-title">Skywhale</div><div class="card-type">Giant — Air</div><div class="card-desc">Enormous flying creature. Attuned to Heaven. Sings the original chord.</div><div class="stat">HP: 100 | Speed: 4 | Biomes: Heaven</div></div>
+  <div class="card"><div class="card-title">Titan</div><div class="card-type">Giant — Ground</div><div class="card-desc">Building-sized. Extremely rare. Wanders slowly.</div><div class="stat">HP: 100 | Speed: 2 | Biomes: Forest, Desert</div></div>
+</div>
+
+<h3>Predators (attack player & herbivores)</h3>
+<div class="grid">
+  <div class="card"><div class="card-title">Wolf</div><div class="card-type">Predator — Ground</div><div class="card-desc">Pack hunter. Forms territories with 3+ wolves. Others avoid the area.</div><div class="stat">HP: 100 | Dmg: 15 | Speed: 6 | Sight: 18 | Biomes: Forest, Snow</div></div>
+  <div class="card"><div class="card-title">Bear</div><div class="card-type">Predator — Ground</div><div class="card-desc">Powerful, moderate speed. Solitary hunter.</div><div class="stat">HP: 100 | Dmg: 20 | Speed: 5 | Sight: 15 | Biomes: Forest, Snow</div></div>
+  <div class="card"><div class="card-title">Lion</div><div class="card-type">Predator — Ground</div><div class="card-desc">Desert apex predator. Fast and strong.</div><div class="stat">HP: 100 | Dmg: 18 | Speed: 7 | Sight: 20 | Biomes: Desert</div></div>
+  <div class="card"><div class="card-title">Dragon</div><div class="card-type">Predator — Air</div><div class="card-desc">Flying, highest sight range. Volcanic apex.</div><div class="stat">HP: 100 | Dmg: 20 | Speed: 7 | Sight: 35 | Biomes: Volcanic, Crystal</div></div>
+  <div class="card"><div class="card-title">Scorpion</div><div class="card-type">Predator — Ground</div><div class="card-desc">Small but venomous. Short sight range, ambush predator.</div><div class="stat">HP: 100 | Dmg: 15 | Speed: 4 | Sight: 8 | Biomes: Desert, Mesa</div></div>
+  <div class="card"><div class="card-title">Bat</div><div class="card-type">Predator — Air</div><div class="card-desc">Fast flyer, low damage. Swarms in caves.</div><div class="stat">HP: 100 | Dmg: 5 | Speed: 9 | Sight: 20 | Biomes: Volcanic, Swamp</div></div>
+  <div class="card"><div class="card-title">Crocodile</div><div class="card-type">Predator — Water</div><div class="card-desc">Ambush predator in water. High damage, slow on land.</div><div class="stat">HP: 100 | Dmg: 18 | Speed: 3 | Sight: 18 | Biomes: Swamp, Forest</div></div>
+  <div class="card"><div class="card-title">Eagle</div><div class="card-type">Predator — Air</div><div class="card-desc">Fastest creature. Swoops from above.</div><div class="stat">HP: 100 | Dmg: 12 | Speed: 12 | Sight: 30 | Biomes: Snow, Heaven, Mesa</div></div>
+  <div class="card"><div class="card-title">Hellhound</div><div class="card-type">Predator — Ground</div><div class="card-desc">Ridge spines along back. Hell-exclusive apex.</div><div class="stat">HP: 100 | Dmg: 20 | Speed: 8 | Sight: 20 | Biomes: Hell, Volcanic</div></div>
+  <div class="card"><div class="card-title">Imp</div><div class="card-type">Predator — Air</div><div class="card-desc">Small flying demon. Fast, annoying.</div><div class="stat">HP: 100 | Dmg: 8 | Speed: 10 | Sight: 16 | Biomes: Hell</div></div>
+  <div class="card"><div class="card-title">Wurm</div><div class="card-type">Predator — Ground</div><div class="card-desc">Surfaces along lava channels. Attuned to Volcanic.</div><div class="stat">HP: 100 | Dmg: 15 | Speed: 4 | Sight: 12 | Biomes: Desert, Swamp, Volcanic</div></div>
+</div>
+</div>
+
+<div class="section">
+<h2>THE HOLLOW — Enemies <span class="count">(4 types)</span></h2>
+<div class="grid">
+  <div class="card"><div class="card-title"><span class="color-swatch" style="background:#2a1030"></span>Shambler</div><div class="card-type">Starter — Slow Melee</div><div class="card-desc">Hunched humanoid. Dark purple with magenta eye-slit. Wobbles while idle. Walks toward player slowly.</div><div class="stat">HP: 30 | Dmg: 8 | Speed: 2.5 | XP: 10 | Aggro: 12u | All biomes</div></div>
+  <div class="card"><div class="card-title"><span class="color-swatch" style="background:#1a0a30"></span>Spitter</div><div class="card-type">Medium — Ranged</div><div class="card-desc">Tall floating form, no legs. Fires slow magenta projectiles. Strafes, flees if you get close.</div><div class="stat">HP: 45 | Dmg: 12 | Speed: 4 | XP: 25 | Range: 30u | Most biomes</div></div>
+  <div class="card"><div class="card-title"><span class="color-swatch" style="background:#150820"></span>Stalker</div><div class="card-type">Fast — Hit & Run</div><div class="card-desc">Low quadruped, no head, forward maw with purple teeth. Circles then dashes.</div><div class="stat">HP: 60 | Dmg: 15 | Speed: 10 | XP: 40 | Charge 3s cooldown | Harder biomes</div></div>
+  <div class="card"><div class="card-title"><span class="color-swatch" style="background:#0a0510"></span>Hollow Warden</div><div class="card-type">Boss — Rare</div><div class="card-desc">4m tall with pulsing magenta veins and crown of spires. Slam + shockwave. Summons 2 shamblers at 50% HP.</div><div class="stat">HP: 250 | Dmg: 25+10AoE | Speed: 3 | XP: 150 | 1 per unactivated site</div></div>
+</div>
+</div>
+
+<div class="section">
+<h2>NPCs <span class="count">(7)</span></h2>
+<div class="grid">
+  <div class="card"><div class="card-title">Finch — The Wandering Cartographer</div><div class="card-type">Gold robe, wide-brim hat</div><div class="card-desc">Maps every biome. Hints at forest frequencies and glowing stones. "The trees keep rearranging when I'm not looking."</div><div class="stat">Home: Forest | Artefact: The Torn Map</div></div>
+  <div class="card"><div class="card-title">Vesper — The Dusk Scholar</div><div class="card-type">Deep blue cloak</div><div class="card-desc">Studies twilight phenomena. Knows about thin times. "The hum changes when the sun goes down."</div><div class="stat">Home: Snow | Artefact: Crystal Lens</div></div>
+  <div class="card"><div class="card-title">Bramble — The Overgrown Hermit</div><div class="card-type">Moss-covered robes</div><div class="card-desc">Lives in the wild. Understands creature behavior. "The deer remember a dance we've forgotten."</div><div class="stat">Home: Swamp | Artefact: Root Charm</div></div>
+  <div class="card"><div class="card-title">Plume — The Wind Listener</div><div class="card-type">Feathered cloak</div><div class="card-desc">Hears harmonics in the wind. Knows about the chord. "Each biome sings a different note."</div><div class="stat">Home: Mesa | Artefact: Wind Flute</div></div>
+  <div class="card"><div class="card-title">Cinder — The Flame Keeper</div><div class="card-type">Charred armor</div><div class="card-desc">Guards the volcanic secrets. Warns of the Depths. "The fire below powers everything."</div><div class="stat">Home: Volcanic | Artefact: Ember Stone</div></div>
+  <div class="card"><div class="card-title">Pearl — The Tide Whisperer</div><div class="card-type">Iridescent shell garments</div><div class="card-desc">Reads the tides. Knows the coral patterns. "The sea carries frequencies between lands."</div><div class="stat">Home: Coral Coast | Artefact: Tidal Pearl</div></div>
+  <div class="card"><div class="card-title">Thornwick — The Archivist</div><div class="card-type">Heavy book-laden robes</div><div class="card-desc">Keeper of lore. Cross-references everything. "Page 312 only shows ink at night."</div><div class="stat">Home: Crystal | Artefact: Cipher Key</div></div>
+</div>
+</div>
+
+<div class="section">
+<h2>LANDMARKS <span class="count">(11 — one per biome)</span></h2>
+<div class="grid">
+  <div class="card"><div class="card-title">Druid Ring Temple</div><div class="card-desc">Ancient stone circle with altar. Forest resonance site. Deer circle at dusk.</div></div>
+  <div class="card"><div class="card-title">Great Pyramid</div><div class="card-desc">Massive desert monument. Buried chambers revealed by sandstorm.</div></div>
+  <div class="card"><div class="card-title">Swamp Ziggurat</div><div class="card-desc">Stepped pyramid in murky water. Fog corridors lead to center.</div></div>
+  <div class="card"><div class="card-title">Ice Palace</div><div class="card-desc">Frozen structure on lake. Mammoths gather, breath creates patterns.</div></div>
+  <div class="card"><div class="card-title">Obsidian Citadel</div><div class="card-desc">Dark volcanic fortress. Lava channels converge here.</div></div>
+  <div class="card"><div class="card-title">Crystal Cathedral</div><div class="card-desc">Resonant crystal formation. Communication network hub.</div></div>
+  <div class="card"><div class="card-title">Jungle Pyramid</div><div class="card-desc">Overgrown temple in canopy. Birds reveal patterns from above.</div></div>
+  <div class="card"><div class="card-title">Mesa Citadel</div><div class="card-desc">Cliff-face fortress. Fossils glow at sunset in sequence.</div></div>
+  <div class="card"><div class="card-title">Coral Palace</div><div class="card-desc">Underwater ruins. Tidal pools form patterns at low tide.</div></div>
+  <div class="card"><div class="card-title">Cloud Temple</div><div class="card-desc">Floating sky structure. Skywhales sing the original chord.</div></div>
+  <div class="card"><div class="card-title">Infernal Citadel</div><div class="card-desc">Heart of the Depths. Source of dissonance. Final ritual location.</div></div>
+</div>
+</div>
+
+<div class="section">
+<h2>WEAPONS <span class="count">(2)</span></h2>
+<div class="grid">
+  <div class="card"><div class="card-title">Resonance Strike (Fists)</div><div class="card-type">Default — Melee</div><div class="card-desc">Hands glow with golden energy. Left-click to punch. Camera bob on swing.</div><div class="stat">Dmg: 8 | Range: 2.5u | Cooldown: 0.4s</div></div>
+  <div class="card"><div class="card-title">Resonance Bolt (Magic)</div><div class="card-type">Found — Ranged</div><div class="card-desc">Crystal shard found near castle gate. Fires hitscan beam. 5 attunement tiers via XP.</div><div class="stat">Dmg: 15-50 | Range: 50u | Cooldown: 0.6-0.32s | Upgrades: 50/150/350/700 XP</div></div>
+</div>
+</div>
+
+<div class="section">
+<h2>SYSTEMS <span class="count">(15+)</span></h2>
+<table>
+  <tr><th>System</th><th>Description</th></tr>
+  <tr><td>Day/Night Cycle</td><td>600s full day. Dawn/dusk are "thin times" with enhanced mystery effects.</td></tr>
+  <tr><td>Weather</td><td>8 types: clear, rain, heavy rain, snow, blizzard, sandstorm, ash fall, fog. Per-biome tables.</td></tr>
+  <tr><td>Biome Transition</td><td>5-second smooth blend of all visual parameters between biomes.</td></tr>
+  <tr><td>Creature Ecology</td><td>Herding, food chain, wolf territories. Weather response. Site awareness.</td></tr>
+  <tr><td>Ritual System</td><td>11 biome rituals. Observe → understand → activate. World improves with each.</td></tr>
+  <tr><td>Narrative Progression</td><td>Auto-logs observations. Generates hypotheses. 4 phases of discovery.</td></tr>
+  <tr><td>Companion System</td><td>Bond with herbivores. Fox=lore sensing, Deer=ritual paths, Bird=aerial spotting, Goat=climbing.</td></tr>
+  <tr><td>Campfire System</td><td>Place up to 3 campfires. Heal zone. Fast travel between them.</td></tr>
+  <tr><td>Stamina</td><td>100 max. Multi-jump costs 20 each (up to 5 jumps). Glide drains 5/s. Regens 25/s.</td></tr>
+  <tr><td>Combat (Hollow)</td><td>4 enemy types spawn by biome. XP from kills. Activated biomes clear enemies.</td></tr>
+  <tr><td>Journal</td><td>3 tabs: World Map, Observations (per-biome with hypotheses), The Chord (progress).</td></tr>
+  <tr><td>Interactive Beacons</td><td>Glowing particle columns above NPCs (gold), lore stones (cyan), rune stones (purple).</td></tr>
+  <tr><td>Awakening System</td><td>Castle stone → luminous path → threshold circle. Early game tutorial hook.</td></tr>
+  <tr><td>Intro Bridge</td><td>Ethereal floating platform corridor. New player spawn experience.</td></tr>
+  <tr><td>Resonance Sites</td><td>Glowing rings + harmonic tones at each landmark. Activated = bright + chord note.</td></tr>
+</table>
+</div>
+
+<div class="section">
+<h2>LORE — The Resonance Builders</h2>
+<div class="card" style="max-width:800px">
+  <div class="card-desc" style="line-height:1.8">
+    An ancient civilization discovered each biome is a <em>frequency</em>. Together they form a chord keeping the world stable. They built Resonance Sites to amplify and connect biomes via Crystal networks. They ascended to Heaven riding harmonics.<br><br>
+    <strong>The Fall:</strong> They tried to create a new frequency — a new biome. The experiment cracked the harmony. Hell is that failed frequency — dissonance bleeding into the world. Creatures feel it. Weather distorts.<br><br>
+    <strong>The Present:</strong> The world is going out of tune. Each Resonance Site can be re-harmonized through ritual. Creatures are the key — they naturally resonate with their home biome. The player pieces together what happened and restores the chord.<br><br>
+    <strong>Endgame:</strong> With 8+ sites activated, enter Hell's center. Stand still for 10 seconds as each harmonic crescendos. Complete the chord. The world remembers its song.
+  </div>
+</div>
+</div>
+
+<div class="section">
+<h2>POST-PROCESSING PIPELINE</h2>
+<table>
+  <tr><th>Pass</th><th>Effect</th></tr>
+  <tr><td>1. RenderPass</td><td>Base 3D scene render</td></tr>
+  <tr><td>2. PixelatePass</td><td>Internal 640×480 resolution</td></tr>
+  <tr><td>3. ColorGradePass</td><td>Per-biome tint, contrast, saturation</td></tr>
+  <tr><td>4. GodRayPass</td><td>Screen-space radial blur from sun</td></tr>
+  <tr><td>5. HeatDistortionPass</td><td>UV shimmer for Desert/Volcanic</td></tr>
+  <tr><td>6. CRTPass</td><td>Faint scanlines + vignette (subtle retro)</td></tr>
+  <tr><td>7. UnderwaterPass</td><td>Blue tint + wave when below water</td></tr>
+  <tr><td>8. DamagePass</td><td>Red vignette on damage, black fade on death</td></tr>
+  <tr><td>9. RetroPass</td><td>Light grain + dithering</td></tr>
+</table>
+</div>
+
+<div class="section">
+<h2>AUDIO LAYERS</h2>
+<table>
+  <tr><th>Layer</th><th>Gain</th><th>Description</th></tr>
+  <tr><td>Ambience</td><td>1.0</td><td>4-layer per-biome soundscapes: drone + texture + detail chirps + occasional bursts</td></tr>
+  <tr><td>Music</td><td>0.7</td><td>Composed melodic phrases per biome. Lowpass filtered + 350ms delay. Silence gaps.</td></tr>
+  <tr><td>Creatures</td><td>0.8</td><td>Species calls. Rhythmic near sites, distorted in unstable zones.</td></tr>
+  <tr><td>SFX</td><td>0.8</td><td>Wind, footsteps, weather particles</td></tr>
+  <tr><td>Spatial Melody</td><td>0.5</td><td>Landmark-specific melodies audible from 120 units</td></tr>
+  <tr><td>Harmonic Tones</td><td>0.3</td><td>Per-biome sine frequencies. Building the world chord.</td></tr>
+  <tr><td>UI Chimes</td><td>0.8</td><td>Lore discovery, NPC meeting, ritual activation</td></tr>
+</table>
+</div>
+
+<script>
+  document.getElementById('timestamp').textContent = 'Generated: ' + new Date().toLocaleString()
+</script>
+</body>
+</html>
