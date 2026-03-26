@@ -52,6 +52,14 @@ export function tickEnemyAI(
   if (creature.state === 'dead') return
   if (!creature.enemyType) return
 
+  // Height check — if player is too far above/below, can't reach; go idle
+  const dy = Math.abs(creature.position.y - playerPos.y)
+  if (dy > 4) {
+    creature.state = 'idle'
+    creature.velocity.set(0, 0, 0)
+    return
+  }
+
   creature.stateTimer += dt
 
   const def = ENEMY_DEFS[creature.enemyType]

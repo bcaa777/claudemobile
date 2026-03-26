@@ -1,6 +1,6 @@
 import { WorldState } from '../systems/WorldState'
 
-export type WeaponType = 'fist' | 'magic'
+export type WeaponType = 'sword' | 'magic'
 
 export interface AttackInfo {
   type: WeaponType
@@ -15,14 +15,14 @@ interface AttunementTier {
 }
 
 export class WeaponSystem {
-  private currentWeapon: WeaponType = 'fist'
+  private currentWeapon: WeaponType = 'sword'
   private cooldownTimer = 0
   private worldState: WorldState
 
-  // Resonance Strike (fist) stats
-  private readonly FIST_RANGE = 2.5
-  private readonly FIST_DAMAGE = 8
-  private readonly FIST_COOLDOWN = 0.4
+  // Sword stats
+  private readonly SWORD_RANGE = 3.5
+  private readonly SWORD_DAMAGE = 15
+  private readonly SWORD_COOLDOWN = 0.35
 
   // Resonance Bolt (magic) stats — base values, scaled by attunement tier
   private readonly MAGIC_RANGE = 50
@@ -57,13 +57,13 @@ export class WeaponSystem {
       return { type: 'magic', range: this.MAGIC_RANGE, damage: tier.damage }
     }
 
-    this.cooldownTimer = this.FIST_COOLDOWN
-    return { type: 'fist', range: this.FIST_RANGE, damage: this.FIST_DAMAGE }
+    this.cooldownTimer = this.SWORD_COOLDOWN
+    return { type: 'sword', range: this.SWORD_RANGE, damage: this.SWORD_DAMAGE }
   }
 
   swapWeapon(): void {
     if (this.worldState.hasGun) {
-      this.currentWeapon = this.currentWeapon === 'fist' ? 'magic' : 'fist'
+      this.currentWeapon = this.currentWeapon === 'sword' ? 'magic' : 'sword'
     }
   }
 

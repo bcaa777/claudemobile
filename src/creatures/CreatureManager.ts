@@ -562,7 +562,11 @@ export class CreatureManager {
         if (c.stateTimer > 0.5) {
           c.stateTimer = 0
           if (c.targetId === PLAYER_ID) {
-            this.pendingKnockback = 1.0
+            // Y distance check — skip damage if player is too high/low
+            const dy = Math.abs(c.position.y - playerPos.y)
+            if (dy <= 4) {
+              this.pendingKnockback = 1.0
+            }
           } else if (preyCreature) {
             preyCreature.health -= sp.attackDamage
           }

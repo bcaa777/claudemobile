@@ -110,6 +110,7 @@ export class Engine {
   private readonly beaconCyan = new THREE.Color(0x44ddff)
   private readonly beaconPurple = new THREE.Color(0xaa44ff)
   private readonly beaconWhiteGold = new THREE.Color(0xffeeaa)
+  private readonly beaconEnemyRed = new THREE.Color(0x660022)
 
   private lastTime = 0
   private running = false
@@ -854,6 +855,13 @@ export class Engine {
         const pickupPos = this.combatSystem.getMagicPickupPosition()
         if (pickupPos) {
           beaconSources.push({ position: pickupPos, color: this.beaconWhiteGold, height: 6 })
+        }
+      }
+
+      // Enemy aura — dark red/purple particles
+      for (const creature of this.creatureManager.creatures.values()) {
+        if (creature.isEnemy && creature.state !== 'dead') {
+          beaconSources.push({ position: creature.position, color: this.beaconEnemyRed, height: 3 })
         }
       }
 

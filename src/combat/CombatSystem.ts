@@ -14,7 +14,7 @@ const _tmpDir = new THREE.Vector3()
 const _tmpFwd = new THREE.Vector3()
 
 /** Maximum angle (radians) between camera forward and direction-to-creature for a hit */
-const HIT_CONE_ANGLE = 15 * (Math.PI / 180) // 15 degrees
+const HIT_CONE_ANGLE = 20 * (Math.PI / 180) // 20 degrees
 
 export class CombatSystem {
   private weaponSystem: WeaponSystem
@@ -26,6 +26,16 @@ export class CombatSystem {
   private magicPickup: MagicPickup | null = null
   private playerState: PlayerState
   private weaponHUD: WeaponHUD
+
+  // First-person weapon models
+  private weaponGroup: THREE.Group
+  private swordMesh: THREE.Group
+  private magicMesh: THREE.Group
+  private orbMesh!: THREE.Mesh
+  private swingTimer = 0 // sword swing animation timer
+  private castTimer = 0  // magic cast animation timer
+  private swordBaseRotX = -0.1
+  private swordBaseRotZ = -0.3
 
   // Camera effects
   private punchBob = 0 // camera forward offset during melee
@@ -49,6 +59,57 @@ export class CombatSystem {
     this.projectileManager = new ProjectileManager(scene)
     this.combatEffects = new CombatEffects(scene)
     this.weaponHUD = new WeaponHUD()
+
+    // ── First-person weapon models ──
+    this.weaponGroup = new THREE.Group()
+    camera.add(this.weaponGroup)
+
+    // Sword model (blocky PS1-style)
+    this.swordMesh = new THREE.Group()
+    const blade = new THREE.Mesh(
+      new THREE.BoxGeometry(0.06, 0.6, 0.03),
+      new THREE.MeshStandardMaterial({ color: 0xaabbcc })
+    )
+    blade.position.y = 0.3
+    this.swordMesh.add(blade)
+    const guard = new THREE.Mesh(
+      new THREE.BoxGeometry(0.15, 0.03, 0.06),
+      new THREE.MeshStandardMaterial({ color: 0x556677 })
+    )
+    this.swordMesh.add(guard)
+    const grip = new THREE.Mesh(
+      new THREE.BoxGeometry(0.04, 0.15, 0.04),
+      new THREE.MeshStandardMaterial({ color: 0x664433 })
+    )
+    grip.position.y = -0.09
+    this.swordMesh.add(grip)
+    this.swordMesh.position.set(0.3, -0.25, -0.5)
+    this.swordMesh.rotation.set(this.swordBaseRotX, 0, this.swordBaseRotZ)
+    this.weaponGroup.add(this.swordMesh)
+
+    // Magic staff/orb model
+    this.magicMesh = new THREE.Group()
+    const staff = new THREE.Mesh(
+      new THREE.BoxGeometry(0.04, 0.5, 0.04),
+      new THREE.MeshStandardMaterial({ color: 0x443322 })
+    )
+    staff.position.y = 0.0
+    this.magicMesh.add(staff)
+    const orbMat = new THREE.MeshStandardMaterial({
+      color: 0x8844ff,
+      emissive: 0x8844ff,
+      emissiveIntensity: 0.6,
+    })
+    this.orbMesh = new THREE.Mesh(
+      new THREE.SphereGeometry(0.06, 8, 8),
+      orbMat
+    )
+    this.orbMesh.position.y = 0.28
+    this.magicMesh.add(this.orbMesh)
+    this.magicMesh.position.set(0.3, -0.3, -0.5)
+    this.magicMesh.rotation.set(0, 0, -0.2)
+    this.magicMesh.visible = false
+    this.weaponGroup.add(this.magicMesh)
   }
 
   /** Place the magic pickup near the castle gate */
@@ -100,6 +161,38 @@ export class CombatSystem {
     // Swap weapon
     if (input.consumeSwapWeapon()) {
       this.weaponSystem.swapWeapon()
+      // Show/hide weapon models
+      const w = this.weaponSystem.getCurrentWeapon()
+      this.swordMesh.visible = w === 'sword'
+      this.magicMesh.visible = w === 'magic'
+    }
+
+    // Sword swing animation
+    if (this.swingTimer > 0) {
+      this.swingTimer -= dt
+      if (this.swingTimer > 0.2) {
+        // Swing down phase (0.15s)
+        const t = (this.swingTimer - 0.2) / 0.15
+        this.swordMesh.rotation.x = this.swordBaseRotX + (-0.8) * (1 - t)
+      } else {
+        // Return phase (0.2s)
+        const t = this.swingTimer / 0.2
+        this.swordMesh.rotation.x = this.swordBaseRotX + (-0.8) * t
+      }
+      if (this.swingTimer <= 0) {
+        this.swordMesh.rotation.x = this.swordBaseRotX
+      }
+    }
+
+    // Magic cast animation
+    if (this.castTimer > 0) {
+      this.castTimer -= dt
+      const orbMat = this.orbMesh.material as THREE.MeshStandardMaterial
+      if (this.castTimer > 0) {
+        orbMat.emissiveIntensity = 0.6 + 2.0 * (this.castTimer / 0.1)
+      } else {
+        orbMat.emissiveIntensity = 0.6
+      }
     }
 
     // --- Spitter projectile spawning ---
@@ -118,10 +211,14 @@ export class CombatSystem {
       // Melee damage from enemies (_dealDamage flag from EnemyAI)
       if (r._dealDamage) {
         r._dealDamage = false
-        const def = creature.enemyType ? ENEMY_DEFS[creature.enemyType] : null
-        const damage = def ? def.damage : 8
-        this.playerState.takeDamage(damage, elapsedTime)
-        this.combatEffects.createPlayerHitEffect()
+        // Y distance check — skip damage if player is too high/low
+        const dy = Math.abs(creature.position.y - playerPos.y)
+        if (dy <= 4) {
+          const def = creature.enemyType ? ENEMY_DEFS[creature.enemyType] : null
+          const damage = def ? def.damage : 8
+          this.playerState.takeDamage(damage, elapsedTime)
+          this.combatEffects.createPlayerHitEffect()
+        }
       }
 
       // Shockwave from Warden
@@ -177,11 +274,13 @@ export class CombatSystem {
     // Get camera forward direction
     this.camera.getWorldDirection(_tmpFwd)
 
-    if (attack.type === 'fist') {
+    if (attack.type === 'sword') {
       this.punchBob = 0.08
+      this.swingTimer = 0.35 // 0.15s down + 0.2s return
       this.combatEffects.createMeleeSwing(playerPos, _tmpFwd)
     } else {
       this.recoilPitch = 0.02
+      this.castTimer = 0.1 // orb pulse duration
     }
 
     // Find the closest enemy creature within range and within hit cone
@@ -219,6 +318,7 @@ export class CombatSystem {
       const creature = this.creatureManager.creatures.get(closestId)
       if (creature) {
         const healthBefore = creature.health
+        console.log(`[Combat] Hit ${creature.enemyType || creature.species} — dealing ${attack.damage} dmg (hp: ${healthBefore} -> ${Math.max(0, healthBefore - attack.damage)})`)
         this.creatureManager.damageCreature(closestId, attack.damage)
 
         // Hit effect

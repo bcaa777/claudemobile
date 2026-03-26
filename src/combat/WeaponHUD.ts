@@ -112,11 +112,11 @@ export class WeaponHUD {
         this.weaponIcon.textContent = '\u26A1 RESONANCE BOLT'
         this.weaponIcon.style.opacity = '0.9'
       } else {
-        this.weaponIcon.textContent = '\uD83D\uDC4A STRIKE'
+        this.weaponIcon.textContent = '\u2694 SWORD'
         this.weaponIcon.style.opacity = '0.6'
       }
     } else {
-      this.weaponIcon.textContent = '\uD83D\uDC4A STRIKE'
+      this.weaponIcon.textContent = '\u2694 SWORD'
       this.weaponIcon.style.opacity = '0.6'
     }
 

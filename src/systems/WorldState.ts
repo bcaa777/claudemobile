@@ -44,7 +44,7 @@ export class WorldState {
   // Combat state
   playerXP: number = 0
   gunTier: number = 0
-  hasGun: boolean = false
+  hasGun: boolean = true
   totalKills: number = 0
   wardenKills: Set<BiomeType> = new Set()
 
