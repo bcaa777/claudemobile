@@ -48,6 +48,7 @@ import { IntroBridge } from '../systems/IntroBridge'
 import { CombatSystem } from '../combat/CombatSystem'
 import { InteractiveBeacons, BeaconSource } from '../systems/InteractiveBeacons'
 import { EnemySpawner } from '../combat/EnemySpawner'
+import { PortalNetwork } from '../systems/PortalNetwork'
 
 export class Engine {
   private renderer: Renderer
@@ -103,6 +104,7 @@ export class Engine {
   private combatSystem!: CombatSystem
   private enemySpawner!: EnemySpawner
   private beacons!: InteractiveBeacons
+  private portalNetwork!: PortalNetwork
   private firstEnemyLoreLogged = false
 
   // Beacon colors — created once, reused every frame
@@ -111,6 +113,7 @@ export class Engine {
   private readonly beaconPurple = new THREE.Color(0xaa44ff)
   private readonly beaconWhiteGold = new THREE.Color(0xffeeaa)
   private readonly beaconEnemyRed = new THREE.Color(0x660022)
+  private readonly beaconPortalBlue = new THREE.Color(0x88ccff)
 
   private lastTime = 0
   private running = false
@@ -253,6 +256,12 @@ export class Engine {
     this.enemySpawner.setCreatureManager(this.creatureManager)
     this.world.setEnemySpawner(this.enemySpawner)
     this.beacons = new InteractiveBeacons(this.renderer.scene)
+
+    // Portal wormhole network — one portal per biome, void corridors between them
+    this.portalNetwork = new PortalNetwork(
+      this.renderer.scene, this.biomeMap,
+      this.landmarkManager.positions, WORLD_CONFIG.seed
+    )
 
     // Intro bridge — if intro not complete, create bridge and position player there
     console.log('[Intro] introComplete:', this.worldState.introComplete)
@@ -465,6 +474,54 @@ export class Engine {
       this.controller.verticalVelocity = 0
     }
 
+    // -- Portal void corridor: if active, handle movement manually (no gravity/collision) --
+    if (this.portalNetwork.isInCorridor()) {
+      const corridorSpawn = this.portalNetwork.getCorridorSpawnPos()
+      if (corridorSpawn) {
+        // Mouse look
+        this.input.pollGamepad()
+        const { dx, dy } = this.input.consumeMouseDelta()
+        if (this.input.isPointerLocked()) {
+          this.controller.yaw -= dx * 0.002
+          this.controller.pitch -= dy * 0.002
+          this.controller.pitch = Math.max(-Math.PI * 0.45, Math.min(Math.PI * 0.45, this.controller.pitch))
+        }
+        const euler = new THREE.Euler(this.controller.pitch, this.controller.yaw, 0, 'YXZ')
+        this.renderer.camera.quaternion.setFromEuler(euler)
+
+        const forward = new THREE.Vector3(0, 0, -1).applyEuler(new THREE.Euler(0, this.controller.yaw, 0))
+        const right = new THREE.Vector3(1, 0, 0).applyEuler(new THREE.Euler(0, this.controller.yaw, 0))
+        const move = new THREE.Vector3()
+        if (this.input.isDown('KeyW') || this.input.isDown('ArrowUp')) move.add(forward)
+        if (this.input.isDown('KeyS') || this.input.isDown('ArrowDown')) move.sub(forward)
+        if (this.input.isDown('KeyD') || this.input.isDown('ArrowRight')) move.add(right)
+        if (this.input.isDown('KeyA') || this.input.isDown('ArrowLeft')) move.sub(right)
+        if (move.lengthSq() > 0) move.normalize()
+        this.renderer.camera.position.addScaledVector(move, 8 * delta)
+        this.renderer.camera.position.y = corridorSpawn.y  // lock Y
+
+        // Disable fog, set dark background
+        const savedFog = this.renderer.scene.fog
+        const savedBg = this.renderer.scene.background
+        this.renderer.scene.fog = null
+        this.renderer.scene.background = new THREE.Color(0x050510)
+
+        const portalResult = this.portalNetwork.update(delta, this.renderer.camera.position, this.elapsedTime, this.worldState)
+
+        if (portalResult.exitCorridor && portalResult.exitPosition) {
+          this.renderer.camera.position.copy(portalResult.exitPosition)
+          this.controller.verticalVelocity = 0
+          this.controller.isGrounded = true
+        }
+
+        this.renderer.render(delta)
+        this.renderer.scene.fog = savedFog
+        this.renderer.scene.background = savedBg
+        requestAnimationFrame((t) => this.loop(t))
+        return
+      }
+    }
+
     // WorldState: recalculate derived state at start of frame
     this.worldState.update()
 
@@ -638,6 +695,18 @@ export class Engine {
         delta, this.worldState, camPos, this._fwd,
         this.creatureManager, this.world
       )
+    }
+
+    // Portal network — check proximity and enter corridor if player walks in
+    const portalResult = this.portalNetwork.update(delta, camPos, this.elapsedTime, this.worldState)
+    if (portalResult.enterCorridor) {
+      const spawn = this.portalNetwork.getCorridorSpawnPos()
+      if (spawn) {
+        this.renderer.camera.position.copy(spawn)
+        this.controller.verticalVelocity = 0
+        // Face along corridor (positive X)
+        this.controller.yaw = -Math.PI / 2
+      }
     }
 
     // First-enemy lore trigger: when an enemy is within 30 units and player has no kills yet
@@ -863,6 +932,11 @@ export class Engine {
         if (creature.isEnemy && creature.state !== 'dead') {
           beaconSources.push({ position: creature.position, color: this.beaconEnemyRed, height: 3 })
         }
+      }
+
+      // Portal beacons — white-blue
+      for (const p of this.portalNetwork.getPortalPositions()) {
+        beaconSources.push({ position: p.position, color: this.beaconPortalBlue, height: 10 })
       }
 
       this.beacons.update(delta, camPos, beaconSources)
