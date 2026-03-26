@@ -26,6 +26,7 @@ interface VoidCorridor {
 export class PortalNetwork {
   private portals: Portal[] = []
   private activeCorridor: VoidCorridor | null = null
+  private exitCooldown = 0 // seconds remaining before portals can trigger again
   private scene: THREE.Scene
   private biomeMap: BiomeMap
 
@@ -154,8 +155,12 @@ export class PortalNetwork {
       const exitDist = playerPos.distanceTo(this.activeCorridor.endPos)
       if (exitDist < 3) {
         result.exitCorridor = true
-        result.exitPosition = this.activeCorridor.destinationWorldPos.clone()
-        result.exitPosition.y += 2 // eye height
+        // Offset exit 10 units away from the destination portal to avoid re-triggering
+        const destPos = this.activeCorridor.destinationWorldPos.clone()
+        const awayDir = new THREE.Vector3(Math.random() - 0.5, 0, Math.random() - 0.5).normalize()
+        result.exitPosition = destPos.clone().addScaledVector(awayDir, 10)
+        result.exitPosition.y = destPos.y + 2 // eye height
+        this.exitCooldown = 3 // 3 seconds before portals can trigger again
         // Dispose corridor
         this.scene.remove(this.activeCorridor.group)
         this.activeCorridor.group.traverse((obj: THREE.Object3D) => {
@@ -168,6 +173,11 @@ export class PortalNetwork {
         this.activeCorridor = null
       }
       return result
+    }
+
+    // Tick exit cooldown
+    if (this.exitCooldown > 0) {
+      this.exitCooldown -= dt
     }
 
     // === In normal world — update portal visuals and check proximity ===
@@ -207,7 +217,7 @@ export class PortalNetwork {
         worldState.activationMessageTimer = 0.5
       }
 
-      if (dist < 2) {
+      if (dist < 2 && this.exitCooldown <= 0) {
         // Enter the void corridor!
         result.enterCorridor = true
         this.createCorridor(portal)
