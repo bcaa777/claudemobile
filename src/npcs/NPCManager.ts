@@ -11,6 +11,7 @@ import type { BiomeMap } from '../world/BiomeMap'
 import type { InputManager } from '../engine/InputManager'
 import { RENDER_CONFIG } from '../config'
 import type { WorldState } from '../systems/WorldState'
+import type { NPCHouses } from './NPCHouses'
 
 const INTERACT_DIST_SQ = 5 * 5
 const RELOCATE_DIST_SQ = 60 * 60
@@ -36,6 +37,7 @@ export class NPCManager {
   private landmarkPositions: Map<BiomeType, THREE.Vector3>
   private artefactHud: HTMLElement | null
   artefactsCollected = 0
+  npcHouses: NPCHouses | null = null
 
   /** Set to the NPC's name when the player first enters dialogue range — consumed by Engine for intro chime. */
   pendingFirstMeetingName: string | null = null
@@ -124,7 +126,17 @@ export class NPCManager {
     let nearestNPC: ActiveNPC | null = null
     let nearestDistSq = Infinity
 
-    for (const [, npc] of this.npcs) {
+    for (const [id, npc] of this.npcs) {
+      // Daily routine: lerp NPC toward routine target when at home location
+      if (this.npcHouses && npc.state.currentLocationIndex === 0) {
+        const routinePos = this.npcHouses.getRoutinePosition(id, timeOfDay)
+        if (routinePos) {
+          npc.worldPos.lerp(routinePos, Math.min(1, delta * 0.5))
+          npc.mesh.group.position.copy(npc.worldPos)
+          npc.beacon.group.position.set(npc.worldPos.x + 3, npc.worldPos.y, npc.worldPos.z + 2)
+        }
+      }
+
       const dx = playerPos.x - npc.worldPos.x
       const dy = playerPos.y - npc.worldPos.y
       const dz = playerPos.z - npc.worldPos.z

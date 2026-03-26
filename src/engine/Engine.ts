@@ -24,6 +24,7 @@ import { GrandStaircase } from '../landmarks/GrandStaircase'
 import { InfernalStaircase } from '../landmarks/InfernalStaircase'
 import { BiomeType } from '../biomes/types'
 import { NPCManager } from '../npcs/NPCManager'
+import { NPCHouses } from '../npcs/NPCHouses'
 import { JournalSystem } from '../journal/JournalSystem'
 import { JournalOverlay } from '../journal/JournalOverlay'
 import { LoreStoneManager } from '../journal/LoreStone'
@@ -220,6 +221,7 @@ export class Engine {
     console.log(`[Traversal] RoadNetwork: ${this.roadNetwork.edges.length} edges, ${this.roadNetwork.edges.reduce((s, e) => s + e.waypoints.length, 0)} waypoints`)
 
     this.npcManager = new NPCManager(this.biomeMap, this.renderer.scene, this.landmarkManager.positions)
+    this.npcManager.npcHouses = new NPCHouses(this.renderer.scene, this.biomeMap, this.landmarkManager.positions)
 
     // --- Engagement systems ---
     this.journalSystem = new JournalSystem()
