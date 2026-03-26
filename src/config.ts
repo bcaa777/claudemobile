@@ -150,8 +150,8 @@ export const STAMINA_CONFIG = {
   sprintDrain: 15,      // per second
   jumpCost: 20,          // per jump
   glideDrain: 5,         // per second
-  regenRate: 25,          // per second
-  regenCooldown: 2,       // seconds after last drain
+  regenRate: 50,          // per second (fast recharge)
+  regenCooldown: 1,       // seconds after last drain (was 2)
   maxAirJumps: 4,         // additional jumps while airborne
   glideGravity: 2.8,      // reduced gravity while gliding (normal is 28)
   glideSpeedBoost: 1.2,   // horizontal speed multiplier while gliding

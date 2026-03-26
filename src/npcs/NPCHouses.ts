@@ -52,11 +52,14 @@ export class NPCHouses {
       const lmPos = landmarkPositions.get(cfg.biome)
       if (!lmPos) continue
 
+      // Place house further from landmark to avoid overlap with landmark structure
+      // NPC offset is ~20 units from landmark; push house 15 units further outward
       const npcX = lmPos.x + cfg.offset.x
       const npcZ = lmPos.z + cfg.offset.z
-      // House placed 5 units to the side of the NPC spawn
-      const houseX = npcX + 5
-      const houseZ = npcZ
+      const dirX = cfg.offset.x / Math.sqrt(cfg.offset.x ** 2 + cfg.offset.z ** 2 + 0.01)
+      const dirZ = cfg.offset.z / Math.sqrt(cfg.offset.x ** 2 + cfg.offset.z ** 2 + 0.01)
+      const houseX = npcX + dirX * 15
+      const houseZ = npcZ + dirZ * 15
       const groundY = sampleWorldHeight(houseX, houseZ, biomeMap)
 
       let group: THREE.Group
