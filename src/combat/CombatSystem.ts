@@ -64,50 +64,56 @@ export class CombatSystem {
     this.weaponGroup = new THREE.Group()
     camera.add(this.weaponGroup)
 
-    // Sword model (blocky PS1-style)
+    // Sword model (blocky PS1-style) — use MeshBasicMaterial so it's always visible
     this.swordMesh = new THREE.Group()
-    const blade = new THREE.Mesh(
-      new THREE.BoxGeometry(0.06, 0.6, 0.03),
-      new THREE.MeshStandardMaterial({ color: 0xaabbcc })
-    )
-    blade.position.y = 0.3
+    const bladeMat = new THREE.MeshBasicMaterial({ color: 0xccddee })
+    const blade = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.55, 0.02), bladeMat)
+    blade.position.y = 0.32
     this.swordMesh.add(blade)
-    const guard = new THREE.Mesh(
-      new THREE.BoxGeometry(0.15, 0.03, 0.06),
-      new THREE.MeshStandardMaterial({ color: 0x556677 })
-    )
+    // Blade edge highlight
+    const edgeMat = new THREE.MeshBasicMaterial({ color: 0xeeeeff })
+    const edge = new THREE.Mesh(new THREE.BoxGeometry(0.01, 0.5, 0.025), edgeMat)
+    edge.position.y = 0.32
+    edge.position.x = 0.025
+    this.swordMesh.add(edge)
+    // Guard
+    const guardMat = new THREE.MeshBasicMaterial({ color: 0x667788 })
+    const guard = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.025, 0.05), guardMat)
+    guard.position.y = 0.04
     this.swordMesh.add(guard)
-    const grip = new THREE.Mesh(
-      new THREE.BoxGeometry(0.04, 0.15, 0.04),
-      new THREE.MeshStandardMaterial({ color: 0x664433 })
-    )
-    grip.position.y = -0.09
+    // Grip
+    const gripMat = new THREE.MeshBasicMaterial({ color: 0x553322 })
+    const grip = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.13, 0.035), gripMat)
+    grip.position.y = -0.06
     this.swordMesh.add(grip)
-    this.swordMesh.position.set(0.3, -0.25, -0.5)
+    // Pommel
+    const pommelMat = new THREE.MeshBasicMaterial({ color: 0x667788 })
+    const pommel = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.025, 0.05), pommelMat)
+    pommel.position.y = -0.13
+    this.swordMesh.add(pommel)
+
+    this.swordMesh.position.set(0.35, -0.2, -0.45)
     this.swordMesh.rotation.set(this.swordBaseRotX, 0, this.swordBaseRotZ)
     this.weaponGroup.add(this.swordMesh)
 
-    // Magic staff/orb model
+    // Magic staff/orb model — MeshBasicMaterial for visibility
     this.magicMesh = new THREE.Group()
-    const staff = new THREE.Mesh(
-      new THREE.BoxGeometry(0.04, 0.5, 0.04),
-      new THREE.MeshStandardMaterial({ color: 0x443322 })
-    )
-    staff.position.y = 0.0
+    const staffMat = new THREE.MeshBasicMaterial({ color: 0x554433 })
+    const staff = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.45, 0.035), staffMat)
     this.magicMesh.add(staff)
-    const orbMat = new THREE.MeshStandardMaterial({
-      color: 0x8844ff,
-      emissive: 0x8844ff,
-      emissiveIntensity: 0.6,
-    })
-    this.orbMesh = new THREE.Mesh(
-      new THREE.SphereGeometry(0.06, 8, 8),
-      orbMat
-    )
+    // Staff ornament ring
+    const ringMat = new THREE.MeshBasicMaterial({ color: 0x8866aa })
+    const ring = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.015, 0.06), ringMat)
+    ring.position.y = 0.22
+    this.magicMesh.add(ring)
+    // Orb with bright emissive
+    const orbMat = new THREE.MeshBasicMaterial({ color: 0xbb66ff })
+    this.orbMesh = new THREE.Mesh(new THREE.SphereGeometry(0.055, 8, 8), orbMat)
     this.orbMesh.position.y = 0.28
     this.magicMesh.add(this.orbMesh)
-    this.magicMesh.position.set(0.3, -0.3, -0.5)
-    this.magicMesh.rotation.set(0, 0, -0.2)
+
+    this.magicMesh.position.set(0.35, -0.25, -0.45)
+    this.magicMesh.rotation.set(0, 0, -0.15)
     this.magicMesh.visible = false
     this.weaponGroup.add(this.magicMesh)
   }
@@ -167,31 +173,35 @@ export class CombatSystem {
       this.magicMesh.visible = w === 'magic'
     }
 
-    // Sword swing animation
+    // Sword swing animation — fast slash arc
     if (this.swingTimer > 0) {
       this.swingTimer -= dt
-      if (this.swingTimer > 0.2) {
-        // Swing down phase (0.15s)
-        const t = (this.swingTimer - 0.2) / 0.15
-        this.swordMesh.rotation.x = this.swordBaseRotX + (-0.8) * (1 - t)
+      if (this.swingTimer > 0.15) {
+        // Swing down phase (0.12s) — fast slash
+        const t = 1 - (this.swingTimer - 0.15) / 0.12
+        this.swordMesh.rotation.x = this.swordBaseRotX - 1.2 * t
+        this.swordMesh.rotation.z = this.swordBaseRotZ + 0.3 * t
       } else {
-        // Return phase (0.2s)
-        const t = this.swingTimer / 0.2
-        this.swordMesh.rotation.x = this.swordBaseRotX + (-0.8) * t
+        // Return phase (0.15s) — slower return
+        const t = this.swingTimer / 0.15
+        this.swordMesh.rotation.x = this.swordBaseRotX - 1.2 * t
+        this.swordMesh.rotation.z = this.swordBaseRotZ + 0.3 * t
       }
       if (this.swingTimer <= 0) {
         this.swordMesh.rotation.x = this.swordBaseRotX
+        this.swordMesh.rotation.z = this.swordBaseRotZ
       }
     }
 
-    // Magic cast animation
+    // Magic cast animation — flash orb bright white then back to purple
     if (this.castTimer > 0) {
       this.castTimer -= dt
-      const orbMat = this.orbMesh.material as THREE.MeshStandardMaterial
+      const orbMat = this.orbMesh.material as THREE.MeshBasicMaterial
       if (this.castTimer > 0) {
-        orbMat.emissiveIntensity = 0.6 + 2.0 * (this.castTimer / 0.1)
+        const t = this.castTimer / 0.15
+        orbMat.color.setRGB(0.7 + 0.3 * t, 0.4 + 0.6 * t, 1.0)
       } else {
-        orbMat.emissiveIntensity = 0.6
+        orbMat.color.setHex(0xbb66ff)
       }
     }
 
@@ -276,11 +286,11 @@ export class CombatSystem {
 
     if (attack.type === 'sword') {
       this.punchBob = 0.08
-      this.swingTimer = 0.35 // 0.15s down + 0.2s return
+      this.swingTimer = 0.27 // 0.12s slash + 0.15s return
       this.combatEffects.createMeleeSwing(playerPos, _tmpFwd)
     } else {
       this.recoilPitch = 0.02
-      this.castTimer = 0.1 // orb pulse duration
+      this.castTimer = 0.15 // orb flash duration
     }
 
     // Find the closest enemy creature within range and within hit cone
