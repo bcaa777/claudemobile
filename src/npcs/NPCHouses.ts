@@ -121,6 +121,10 @@ export class NPCHouses {
     }
   }
 
+  getHousePositions(): THREE.Vector3[] {
+    return this.houses.map(h => h.homePos.clone())
+  }
+
   /** Returns the target position for an NPC based on time of day */
   getRoutinePosition(npcId: string, timeOfDay: number): THREE.Vector3 | null {
     const house = this.houses.find(h => h.npcId === npcId)
