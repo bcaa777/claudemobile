@@ -21,6 +21,7 @@ export function loadSavedConfig(): void {
     if (saved.biome)    applyTo(BIOME_CONFIG    as unknown as Record<string, unknown>, saved.biome)
     if (saved.creature) applyTo(CREATURE_CONFIG as unknown as Record<string, unknown>, saved.creature)
     if (saved.render)   applyTo(RENDER_CONFIG   as unknown as Record<string, unknown>, saved.render)
+    if (saved.trail)    applyTo(TRAIL_CONFIG    as unknown as Record<string, unknown>, saved.trail)
   } catch { /* ignore */ }
 }
 
@@ -48,6 +49,18 @@ export const RENDER_CONFIG = {
   drawCreatures:    150,  // animals + NPCs + enemies
   drawParticles:    100,  // snow, ash, fireflies, embers, beacons
   renderScale:      1.0,  // legacy multiplier (kept for compat)
+}
+
+// ─── TRAILS ─────────────────────────────────────────────────────────────────
+export const TRAIL_CONFIG = {
+  enableTrails:       true,   // master toggle
+  maxConnections:     5,      // max trails per POI
+  maxDistance:        150,    // max connection distance (world units)
+  minPOIDistance:      15,    // merge POIs closer than this
+  gridResolution:      4,    // A* grid cell size (world units)
+  maxSearchNodes:   3000,    // A* budget per trail
+  slopeWalkable:     0.3,    // slope below this = no penalty
+  slopeImpassable:   0.5,    // slope above this = blocked
 }
 
 // ─── TERRAIN ─────────────────────────────────────────────────────────────────
