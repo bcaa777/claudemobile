@@ -2,6 +2,8 @@ import * as THREE from 'three'
 import { BiomeType } from '../biomes/types'
 import { TRAIL_CONFIG } from '../config'
 import type { BiomeMap } from '../world/BiomeMap'
+import { sampleWorldHeight, WATER_LEVEL, CHUNK_SIZE } from '../world/TerrainGenerator'
+import { SeededRandom, chunkSeed } from '../utils/SeededRandom'
 import type { TrailWaypoint, TrailEdge } from './traversalTypes'
 import { findTrailPath } from './TrailPathfinder'
 
@@ -117,5 +119,68 @@ export class TrailNetwork {
 
   getEdgesForChunk(cx: number, cz: number): TrailEdge[] {
     return this.chunkIndex.get(`${cx},${cz}`) ?? []
+  }
+
+  static sampleChunkPOIs(cx: number, cz: number, biomeMap: BiomeMap): THREE.Vector3[] {
+    const pois: THREE.Vector3[] = []
+    const rng = new SeededRandom(chunkSeed(cx, cz, 9999))
+
+    const count = 6 + Math.floor(rng.next() * 3)  // 6-8 candidates
+    for (let i = 0; i < count; i++) {
+      const wx = cx * CHUNK_SIZE + rng.range(8, CHUNK_SIZE - 8)
+      const wz = cz * CHUNK_SIZE + rng.range(8, CHUNK_SIZE - 8)
+      const wy = sampleWorldHeight(wx, wz, biomeMap)
+
+      if (wy < WATER_LEVEL + 0.5) continue  // skip underwater
+
+      const biome = biomeMap.getBiomeAt(wx, wz)
+      if (biome === BiomeType.Heaven || biome === BiomeType.Hell) continue
+
+      pois.push(new THREE.Vector3(wx, wy, wz))
+    }
+    return pois
+  }
+
+  generateConnectorTrails(cx: number, cz: number, biomeMap: BiomeMap): TrailEdge[] {
+    const localPOIs = TrailNetwork.sampleChunkPOIs(cx, cz, biomeMap)
+    if (localPOIs.length === 0) return []
+
+    // Gather backbone waypoints near this chunk (2-chunk radius search)
+    const nearbyBackbone: TrailWaypoint[] = []
+    for (let dz = -2; dz <= 2; dz++) {
+      for (let dx = -2; dx <= 2; dx++) {
+        const edges = this.getEdgesForChunk(cx + dx, cz + dz)
+        for (const edge of edges) {
+          nearbyBackbone.push(...edge.waypoints)
+        }
+      }
+    }
+
+    const connectorEdges: TrailEdge[] = []
+    const maxConnDist = 80
+    const maxConnDistSq = maxConnDist * maxConnDist
+
+    for (const poi of localPOIs) {
+      let nearestDistSq = Infinity
+      let nearestWp: TrailWaypoint | null = null
+      for (const wp of nearbyBackbone) {
+        const dx = poi.x - wp.x
+        const dz = poi.z - wp.z
+        const d = dx * dx + dz * dz
+        if (d < nearestDistSq) {
+          nearestDistSq = d
+          nearestWp = wp
+        }
+      }
+
+      if (!nearestWp || nearestDistSq > maxConnDistSq) continue
+
+      const path = findTrailPath(poi.x, poi.z, nearestWp.x, nearestWp.z, biomeMap)
+      if (path && path.length >= 2) {
+        connectorEdges.push({ waypoints: path })
+      }
+    }
+
+    return connectorEdges
   }
 }

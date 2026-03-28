@@ -342,6 +342,16 @@ export class Chunk {
       }
     }
 
+    // Phase 2: connector trails from local POIs
+    if (TRAIL_CONFIG.enableTrails && trailNetwork) {
+      const connectorEdges = trailNetwork.generateConnectorTrails(this.cx, this.cz, biomeMap)
+      if (connectorEdges.length > 0) {
+        const result = buildTrailSegments(this.cx, this.cz, connectorEdges, biomeMap, this.matCache, this.group)
+        for (const m of result.meshes) this.extras.push(m)
+        for (const w of result.walkables) this.walkableSurfaces.push(w)
+      }
+    }
+
     // ── Biome-specific traversal features (ziplines, vines, ice, lava) ──
     if (TERRAIN_CONFIG.enableBiomeTraversal && this.heightGrid && scene) {
       const result = buildBiomeFeatures(this.cx, this.cz, biomeMap, this.heightGrid, this.group, this.matCache, scene)
