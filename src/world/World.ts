@@ -13,6 +13,7 @@ import type { CreatureManager } from '../creatures/CreatureManager'
 import type { EnemySpawner } from '../combat/EnemySpawner'
 import type { CastleWalkable } from '../castle/Castle'
 import type { RoadNetwork } from '../traversal/RoadNetwork'
+import type { TrailNetwork } from '../traversal/TrailNetwork'
 import type { TraversalAnchor, LavaRockState } from '../traversal/traversalTypes'
 
 // Derive chunk view radius from geometry draw distance
@@ -37,6 +38,7 @@ export class World {
   private pendingKnockback = 0
   private castleWalkables: CastleWalkable[] = []
   private roadNetwork: RoadNetwork | null = null
+  private trailNetwork: TrailNetwork | null = null
 
   /** All traversal anchors (ziplines/vines) from loaded chunks */
   readonly traversalAnchors: TraversalAnchor[] = []
@@ -54,6 +56,10 @@ export class World {
 
   setRoadNetwork(rn: RoadNetwork) {
     this.roadNetwork = rn
+  }
+
+  setTrailNetwork(tn: TrailNetwork) {
+    this.trailNetwork = tn
   }
 
   private chunkKey(cx: number, cz: number): string {
@@ -149,7 +155,7 @@ export class World {
 
   private generateChunk(cx: number, cz: number, key: string) {
     if (!this.pendingGeneration.has(key)) return
-    const chunk = new Chunk(cx, cz, this.scene, this.biomeMap, this.atlas, this.lightPool, this.matCache, this.roadNetwork)
+    const chunk = new Chunk(cx, cz, this.scene, this.biomeMap, this.atlas, this.lightPool, this.matCache, this.roadNetwork, this.trailNetwork)
     this.chunks.set(key, chunk)
     this.pendingGeneration.delete(key)
     for (const ex of chunk.explodables) {

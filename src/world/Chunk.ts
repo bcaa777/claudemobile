@@ -11,11 +11,13 @@ import { PointLightPool } from '../lighting/PointLightPool'
 import { MaterialCache } from '../utils/MaterialCache'
 import { SeededRandom, chunkSeed } from '../utils/SeededRandom'
 import { texGen } from '../utils/PixelTextureGenerator'
-import { SPRITE_CONFIG, TERRAIN_CONFIG, RENDER_CONFIG } from '../config'
+import { SPRITE_CONFIG, TERRAIN_CONFIG, RENDER_CONFIG, TRAIL_CONFIG } from '../config'
 import { ExplodableStructure } from './ExplodableStructure'
 import { createWaterMaterial } from '../shaders/WaterMaterial'
 import type { RoadNetwork } from '../traversal/RoadNetwork'
+import type { TrailNetwork } from '../traversal/TrailNetwork'
 import { buildRoadSegments } from '../traversal/RoadRenderer'
+import { buildTrailSegments } from '../traversal/TrailRenderer'
 import { buildBiomeFeatures } from '../traversal/BiomeTraversal'
 import { updateLavaRocks } from '../traversal/LavaRocks'
 import type { TraversalAnchor, LavaRockState } from '../traversal/traversalTypes'
@@ -222,6 +224,7 @@ export class Chunk {
     lightPool: PointLightPool,
     matCache: MaterialCache,
     roadNetwork?: RoadNetwork | null,
+    trailNetwork?: TrailNetwork | null,
   ) {
     this.cx    = cx
     this.cz    = cz
@@ -230,7 +233,7 @@ export class Chunk {
     this.rngForExplode = new SeededRandom(chunkSeed(cx, cz, 99))
     this.matCache = matCache
     scene.add(this.group)
-    this.build(biomeMap, atlas, lightPool, scene, roadNetwork)
+    this.build(biomeMap, atlas, lightPool, scene, roadNetwork, trailNetwork)
   }
 
   // ── Register a walkable surface (local coords) ────────────────────────────
@@ -245,7 +248,7 @@ export class Chunk {
 
   // ── Terrain mesh ──────────────────────────────────────────────────────────
 
-  private build(biomeMap: BiomeMap, atlas: SpriteAtlas, lightPool: PointLightPool, scene?: THREE.Scene, roadNetwork?: RoadNetwork | null) {
+  private build(biomeMap: BiomeMap, atlas: SpriteAtlas, lightPool: PointLightPool, scene?: THREE.Scene, roadNetwork?: RoadNetwork | null, trailNetwork?: TrailNetwork | null) {
     const { positions, normals, colors, indices, heightGrid, hasWater } =
       generateHeightmap(this.cx, this.cz, biomeMap)
     this.heightGrid = heightGrid
@@ -324,6 +327,16 @@ export class Chunk {
       const waypoints = roadNetwork.getWaypointsForChunk(this.cx, this.cz)
       if (waypoints.length > 0) {
         const result = buildRoadSegments(this.cx, this.cz, waypoints, biomeMap, this.matCache, this.group)
+        for (const m of result.meshes) this.extras.push(m)
+        for (const w of result.walkables) this.walkableSurfaces.push(w)
+      }
+    }
+
+    // ── Trail network segments ──────────────────────────────────────────
+    if (TRAIL_CONFIG.enableTrails && trailNetwork && this.heightGrid) {
+      const trailEdges = trailNetwork.getEdgesForChunk(this.cx, this.cz)
+      if (trailEdges.length > 0) {
+        const result = buildTrailSegments(this.cx, this.cz, trailEdges, biomeMap, this.matCache, this.group)
         for (const m of result.meshes) this.extras.push(m)
         for (const w of result.walkables) this.walkableSurfaces.push(w)
       }
