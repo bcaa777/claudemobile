@@ -649,7 +649,7 @@ export class Engine {
     }
 
     // Player state update (regen, death, etc.)
-    this.playerState.update(delta, this.elapsedTime)
+    this.playerState.update(delta, this.elapsedTime, this.controller.isGrounded)
 
     // Max HP scaling from XP: every 100 XP = +10 max HP, capped at +100 (total max 200)
     this.playerState.updateMaxHealthFromXP(this.worldState.playerXP)

@@ -11,7 +11,7 @@ import { PointLightPool } from '../lighting/PointLightPool'
 import { MaterialCache } from '../utils/MaterialCache'
 import { SeededRandom, chunkSeed } from '../utils/SeededRandom'
 import { texGen } from '../utils/PixelTextureGenerator'
-import { SPRITE_CONFIG, TERRAIN_CONFIG } from '../config'
+import { SPRITE_CONFIG, TERRAIN_CONFIG, RENDER_CONFIG } from '../config'
 import { ExplodableStructure } from './ExplodableStructure'
 import { createWaterMaterial } from '../shaders/WaterMaterial'
 import type { RoadNetwork } from '../traversal/RoadNetwork'
@@ -2607,6 +2607,23 @@ export class Chunk {
     if (this.waterMaterial) {
       this.waterMaterial.uniforms.time.value = this.time
     }
+
+    // Per-category distance culling for sprites and particles
+    if (cameraX !== undefined && cameraZ !== undefined) {
+      const chunkWorldX = this.cx * CHUNK_SIZE + CHUNK_SIZE * 0.5
+      const chunkWorldZ = this.cz * CHUNK_SIZE + CHUNK_SIZE * 0.5
+      const dx = cameraX - chunkWorldX
+      const dz = cameraZ - chunkWorldZ
+      const distSq = dx * dx + dz * dz
+
+      const spriteVis = distSq < RENDER_CONFIG.drawSprites ** 2
+      for (const batch of this.billboardBatches) batch.mesh.visible = spriteVis
+      for (const batch of this.decalBatches) batch.mesh.visible = spriteVis
+
+      const particleVis = distSq < RENDER_CONFIG.drawParticles ** 2
+      for (const ps of this.particleSystems) ps.points.visible = particleVis
+    }
+
     for (const ps of this.particleSystems) ps.update(delta, this.time)
     for (const ex of this.explodables) ex.update(delta, this.rngForExplode)
 

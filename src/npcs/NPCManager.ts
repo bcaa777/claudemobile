@@ -15,8 +15,6 @@ import type { NPCHouses } from './NPCHouses'
 
 const INTERACT_DIST_SQ = 5 * 5
 const RELOCATE_DIST_SQ = 60 * 60
-const BASE_CULL_DIST = 100
-const BASE_BEACON_CULL_DIST = 200
 
 interface ActiveNPC {
   def: NPCDef
@@ -142,8 +140,8 @@ export class NPCManager {
       const dz = playerPos.z - npc.worldPos.z
       const distSq = dx * dx + dy * dy + dz * dz
 
-      // Distance cull — NPC mesh (scaled by render distance)
-      const cullDistSq = (BASE_CULL_DIST * RENDER_CONFIG.renderScale) ** 2
+      // Distance cull — NPC mesh (creature draw distance)
+      const cullDistSq = RENDER_CONFIG.drawCreatures ** 2
       npc.mesh.group.visible = distSq < cullDistSq
       if (npc.mesh.group.visible) {
         npc.mesh.setLOD(distSq)
@@ -156,8 +154,8 @@ export class NPCManager {
         }
       }
 
-      // Beacon — visible from further away
-      const beaconCullDistSq = (BASE_BEACON_CULL_DIST * RENDER_CONFIG.renderScale) ** 2
+      // Beacon — uses particle draw distance
+      const beaconCullDistSq = RENDER_CONFIG.drawParticles ** 2
       npc.beacon.group.visible = distSq < beaconCullDistSq
       if (npc.beacon.group.visible) {
         npc.beacon.update(time)

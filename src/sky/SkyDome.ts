@@ -115,7 +115,7 @@ export class SkyDome {
   private material: THREE.ShaderMaterial
 
   constructor(scene: THREE.Scene) {
-    const geo = new THREE.SphereGeometry(400, 16, 12)
+    const geo = new THREE.SphereGeometry(1, 16, 12)
     this.material = new THREE.ShaderMaterial({
       vertexShader,
       fragmentShader,
@@ -132,15 +132,21 @@ export class SkyDome {
       },
       side: THREE.BackSide,
       depthWrite: false,
+      depthTest: false,
     })
 
     this.mesh = new THREE.Mesh(geo, this.material)
     this.mesh.renderOrder = -1000
+    this.mesh.frustumCulled = false
     scene.add(this.mesh)
   }
 
   update(camera: THREE.Camera, timeOfDay: number, sunDirection: THREE.Vector3, sunColor: THREE.Color, delta: number) {
     this.mesh.position.copy(camera.position)
+    // Scale sky dome to 90% of far plane so it always fits inside the frustum
+    const far = (camera as THREE.PerspectiveCamera).far ?? 500
+    const s = far * 0.9
+    this.mesh.scale.set(s, s, s)
     this.material.uniforms.timeOfDay.value = timeOfDay
     this.material.uniforms.time.value += delta
     this.material.uniforms.sunDirection.value.copy(sunDirection)

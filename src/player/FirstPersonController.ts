@@ -140,12 +140,12 @@ export class FirstPersonController {
 
       // Gravity + Glide
       if (!this.isGrounded) {
-        if (this.verticalVelocity < -2 && this.input.isDown('Space') && playerState && playerState.stamina > 0) {
+        if (this.verticalVelocity < -2 && this.input.isDown('Space')) {
           // Gliding — gentle fall
           this.isGliding = true
           this.verticalVelocity -= STAMINA_CONFIG.glideGravity * delta
           this.verticalVelocity = Math.max(this.verticalVelocity, -3)
-          playerState.drainStaminaContinuous(STAMINA_CONFIG.glideDrain, delta)
+          // Gliding is free — stamina only drains on jump
         } else {
           // Normal falling
           this.isGliding = false

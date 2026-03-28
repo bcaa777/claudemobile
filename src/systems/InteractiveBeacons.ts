@@ -1,9 +1,10 @@
 import * as THREE from 'three'
 
+import { RENDER_CONFIG } from '../config'
+
 const MAX_BEACON_PARTICLES = 500
 const PARTICLES_PER_OBJECT = 5
 const RISE_SPEED = 1.5
-const CULL_DIST_SQ = 100 * 100
 
 export interface BeaconSource {
   position: THREE.Vector3
@@ -57,7 +58,7 @@ export class InteractiveBeacons {
       const dx = src.position.x - cameraPos.x
       const dz = src.position.z - cameraPos.z
       const distSq = dx * dx + dz * dz
-      if (distSq > CULL_DIST_SQ) continue
+      if (distSq > RENDER_CONFIG.drawParticles ** 2) continue
 
       for (let p = 0; p < PARTICLES_PER_OBJECT; p++) {
         if (idx >= MAX_BEACON_PARTICLES) break

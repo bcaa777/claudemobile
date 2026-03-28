@@ -7,7 +7,7 @@ import { PointLightPool } from '../lighting/PointLightPool'
 import { MaterialCache } from '../utils/MaterialCache'
 import { ExplodableStructure } from './ExplodableStructure'
 import { SeededRandom } from '../utils/SeededRandom'
-import { WORLD_CONFIG } from '../config'
+import { WORLD_CONFIG, RENDER_CONFIG } from '../config'
 import { BiomeType } from '../biomes/types'
 import type { CreatureManager } from '../creatures/CreatureManager'
 import type { EnemySpawner } from '../combat/EnemySpawner'
@@ -15,7 +15,10 @@ import type { CastleWalkable } from '../castle/Castle'
 import type { RoadNetwork } from '../traversal/RoadNetwork'
 import type { TraversalAnchor, LavaRockState } from '../traversal/traversalTypes'
 
-const VIEW_RADIUS = WORLD_CONFIG.viewRadius
+// Derive chunk view radius from geometry draw distance
+function getViewRadius(): number {
+  return Math.max(WORLD_CONFIG.viewRadius, Math.ceil(RENDER_CONFIG.drawGeometry / CHUNK_SIZE))
+}
 
 export class World {
   private scene: THREE.Scene
@@ -82,8 +85,9 @@ export class World {
     this.lastPlayerCZ = cz
 
     const needed = new Set<string>()
-    for (let dz = -VIEW_RADIUS; dz <= VIEW_RADIUS; dz++) {
-      for (let dx = -VIEW_RADIUS; dx <= VIEW_RADIUS; dx++) {
+    const vr = getViewRadius()
+    for (let dz = -vr; dz <= vr; dz++) {
+      for (let dx = -vr; dx <= vr; dx++) {
         needed.add(this.chunkKey(cx + dx, cz + dz))
       }
     }

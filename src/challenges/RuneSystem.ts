@@ -7,7 +7,6 @@ import { RUNE_CHALLENGES, ChallengeContext, ChallengeProgress, createDefaultProg
 import { RENDER_CONFIG } from '../config'
 
 const INTERACT_DIST_SQ = 100 // 10^2
-const BASE_VISIBLE_DIST = 60
 const STORAGE_KEY = 'rune_completed'
 
 export class RuneSystem {
@@ -67,8 +66,8 @@ export class RuneSystem {
       const dz = stone.position.z - ctx.playerPos.z
       const distSq = dx * dx + dz * dz
 
-      // Visibility — scales with render distance
-      const visDistSq = (BASE_VISIBLE_DIST * RENDER_CONFIG.renderScale) ** 2
+      // Visibility — geometry draw distance
+      const visDistSq = RENDER_CONFIG.drawGeometry ** 2
       stone.group.visible = distSq < visDistSq
       stone.update(delta)
 

@@ -17,7 +17,7 @@ import { tickEnemyAI } from '../combat/EnemyAI'
 
 const VIEW_RADIUS = WORLD_CONFIG.viewRadius
 const MAX_POPULATION = 500
-const BASE_MESH_VIEW_DIST = 60  // base distance, scaled by RENDER_CONFIG.renderScale
+// Creature mesh visibility uses the unified draw distance from RENDER_CONFIG
 const MAX_VISIBLE_MESHES = 150  // hard cap on total creature meshes
 const BATCH_SIZE = 30     // max state-machine ticks per frame
 const PLAYER_ID = '__player__'
@@ -128,11 +128,11 @@ export class CreatureManager {
     const start = this.batchOffset % Math.max(1, total)
     const end = Math.min(start + BATCH_SIZE, total)
 
-    // Pre-compute squared distance threshold (Phase 5c) — scaled by render distance
+    // Pre-compute squared distance threshold — creature draw distance
     const rs = RENDER_CONFIG.renderScale
-    const farThreshSq = ((VIEW_RADIUS + 3) * CHUNK_SIZE * rs) ** 2
-    const meshViewDist = BASE_MESH_VIEW_DIST * rs
-    const meshViewDistSq = meshViewDist * meshViewDist
+    const dd = RENDER_CONFIG.drawCreatures
+    const farThreshSq = dd * dd
+    const meshViewDistSq = dd * dd
     let meshesCreated = 0
 
     for (let i = 0; i < total; i++) {
@@ -217,7 +217,7 @@ export class CreatureManager {
     // Clear initializedChunks for far-away chunks so they can respawn when revisited
     const playerCX = Math.floor(playerPos.x / CHUNK_SIZE)
     const playerCZ = Math.floor(playerPos.z / CHUNK_SIZE)
-    const cullChunkRadius = Math.ceil((VIEW_RADIUS + 4) * rs)
+    const cullChunkRadius = Math.ceil(dd * 1.2 / CHUNK_SIZE)
     for (const key of this.initializedChunks) {
       const [kcx, kcz] = key.split(',').map(Number)
       if (Math.abs(kcx - playerCX) > cullChunkRadius || Math.abs(kcz - playerCZ) > cullChunkRadius) {
@@ -225,8 +225,8 @@ export class CreatureManager {
       }
     }
 
-    // Cull creatures far from the player to free population slots for nearby chunks
-    const cullDistSq = ((VIEW_RADIUS + 4) * CHUNK_SIZE * rs) ** 2
+    // Cull creatures beyond unified draw distance (with margin for creatures near the edge)
+    const cullDistSq = (dd * 1.2) ** 2
     for (let i = all.length - 1; i >= 0; i--) {
       const c2 = all[i]
       if (c2.state === 'dead') continue

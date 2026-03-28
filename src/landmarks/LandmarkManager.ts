@@ -2,8 +2,8 @@ import * as THREE from 'three'
 import { BiomeType } from '../biomes/types'
 import type { BiomeMap } from '../world/BiomeMap'
 import type { CastleWalkable } from '../castle/Castle'
-import { WATER_LEVEL, CHUNK_SIZE, sampleWorldHeight } from '../world/TerrainGenerator'
-import { WORLD_CONFIG, RENDER_CONFIG } from '../config'
+import { WATER_LEVEL, sampleWorldHeight } from '../world/TerrainGenerator'
+import { RENDER_CONFIG } from '../config'
 import { mergeStaticMeshes } from '../utils/mergeStaticMeshes'
 import { DruidRingTemple } from './DruidRingTemple'
 import { GreatPyramid } from './GreatPyramid'
@@ -226,12 +226,9 @@ export class LandmarkManager {
       }
     }
 
-    // Hide landmarks inside terrain distance with margin so terrain always loads first
+    // Hide landmarks beyond geometry draw distance
     if (playerPos) {
-      const terrainDist = WORLD_CONFIG.viewRadius * CHUNK_SIZE * RENDER_CONFIG.renderScale
-      // Landmarks cull 1 chunk-width inside terrain distance to guarantee ground is present
-      const cullDist = Math.max(CHUNK_SIZE, terrainDist - CHUNK_SIZE)
-      const cullDistSq = cullDist * cullDist
+      const cullDistSq = RENDER_CONFIG.drawGeometry ** 2
       for (const entry of this.landmarkSceneObjects) {
         const dx = entry.pos.x - playerPos.x
         const dz = entry.pos.z - playerPos.z

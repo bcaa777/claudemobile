@@ -449,8 +449,14 @@ export class DebugPanel {
 
     // ── WORLD ────────────────────────────────────────────────────────────────
     panel.appendChild(section('WORLD'))
-    panel.appendChild(slider('Draw dist ×', 1, 10,  0.5, RENDER_CONFIG.renderScale,
-      v => { RENDER_CONFIG.renderScale = v }))
+    panel.appendChild(slider('Draw geometry', 50, 600,  10, RENDER_CONFIG.drawGeometry,
+      v => { RENDER_CONFIG.drawGeometry = v }))
+    panel.appendChild(slider('Draw sprites', 30, 400,  10, RENDER_CONFIG.drawSprites,
+      v => { RENDER_CONFIG.drawSprites = v }))
+    panel.appendChild(slider('Draw creatures', 30, 400,  10, RENDER_CONFIG.drawCreatures,
+      v => { RENDER_CONFIG.drawCreatures = v }))
+    panel.appendChild(slider('Draw particles', 20, 300,  10, RENDER_CONFIG.drawParticles,
+      v => { RENDER_CONFIG.drawParticles = v }))
     panel.appendChild(slider('View radius', 1, 20,  1,   WORLD_CONFIG.viewRadius,
       v => { WORLD_CONFIG.viewRadius = Math.round(v) }, true))
     panel.appendChild(slider('Seed',        0, 999, 1,   WORLD_CONFIG.seed,

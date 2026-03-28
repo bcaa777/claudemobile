@@ -99,10 +99,10 @@ export class Renderer {
   }
 
   render(deltaTime: number) {
-    // Update camera far plane to match current render distance
-    const maxDist = (WORLD_CONFIG.viewRadius + 2) * CHUNK_SIZE * RENDER_CONFIG.renderScale
-    const targetFar = Math.max(500, maxDist * 1.5)
-    if (Math.abs(this.camera.far - targetFar) > 10) {
+    // Camera far plane = max of all category draw distances (with margin for fog fade)
+    const maxDraw = Math.max(RENDER_CONFIG.drawGeometry, RENDER_CONFIG.drawSprites, RENDER_CONFIG.drawCreatures, RENDER_CONFIG.drawParticles)
+    const targetFar = maxDraw * 1.1
+    if (Math.abs(this.camera.far - targetFar) > 5) {
       this.camera.far = targetFar
       this.camera.updateProjectionMatrix()
     }

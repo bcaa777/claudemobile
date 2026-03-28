@@ -9,8 +9,6 @@ import { BiomeType } from '../biomes/types'
 import { LORE_CONTENT, LoreFragment } from '../lore/LoreContent'
 
 const STONE_COLLECT_DIST_SQ = 9 // 3^2
-const BASE_STONE_VISIBLE_DIST = 30 // base distance, scaled by RENDER_CONFIG
-const FOX_STONE_VISIBLE_DIST = 50  // fox companion extends visibility
 
 export interface LoreStoneInstance {
   position: THREE.Vector3
@@ -134,8 +132,7 @@ export class LoreStoneManager {
 
   update(playerPos: THREE.Vector3, timeOfDay = 0.5): { loreIndex: number; text: string } | null {
     let collected: { loreIndex: number; text: string } | null = null
-    const baseDist = this.foxBonusActive ? FOX_STONE_VISIBLE_DIST : BASE_STONE_VISIBLE_DIST
-    const visDist = (baseDist * RENDER_CONFIG.renderScale) ** 2
+    const visDist = RENDER_CONFIG.drawGeometry ** 2
 
     // Night window: timeOfDay 0.8–1.0 and 0.0–0.2
     const isNight = timeOfDay >= 0.8 || timeOfDay <= 0.2

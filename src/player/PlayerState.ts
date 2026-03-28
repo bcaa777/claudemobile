@@ -60,7 +60,7 @@ export class PlayerState {
     }
   }
 
-  update(delta: number, time: number) {
+  update(delta: number, time: number, isGrounded = true) {
     // Decay damage flash
     this.damageFlashStrength = Math.max(0, this.damageFlashStrength - delta / 0.3)
 
@@ -83,8 +83,8 @@ export class PlayerState {
     // Reset speed multiplier each frame (hazards re-apply)
     this.speedMultiplier = 1.0
 
-    // Stamina regeneration
-    this.updateStamina(delta)
+    // Stamina regeneration — only on the ground
+    if (isGrounded) this.updateStamina(delta)
   }
 
   /** Drain a fixed amount of stamina (e.g. per jump). Returns false if not enough. */

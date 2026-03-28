@@ -41,11 +41,13 @@ export const WORLD_CONFIG = {
 }
 
 // ─── RENDER DISTANCE ────────────────────────────────────────────────────────
-// Unified render distance multiplier — all object types scale with this.
-// 1.0 = default distances. Up to 10.0 = 10× farther draw distance.
-// viewRadius is scaled separately (requires reload), other distances are live.
+// Per-category draw distances (world units). Camera far plane = max of all.
 export const RENDER_CONFIG = {
-  renderScale:      1.0,  // multiplier on all draw distances (live, no reload)
+  drawGeometry:     200,  // terrain + architecture + landmarks
+  drawSprites:      120,  // 2D billboard sprites (grass, trees, flowers)
+  drawCreatures:    150,  // animals + NPCs + enemies
+  drawParticles:    100,  // snow, ash, fireflies, embers, beacons
+  renderScale:      1.0,  // legacy multiplier (kept for compat)
 }
 
 // ─── TERRAIN ─────────────────────────────────────────────────────────────────
