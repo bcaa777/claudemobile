@@ -40,7 +40,6 @@ import { WorldState } from '../systems/WorldState'
 import { RitualSystem } from '../systems/RitualSystem'
 import { NarrativeProgression } from '../lore/NarrativeProgression'
 import { RoadNetwork } from '../traversal/RoadNetwork'
-import { TrailNetwork } from '../traversal/TrailNetwork'
 import { ZiplineRide } from '../traversal/ZiplineRide'
 import { VineSwing } from '../traversal/VineSwing'
 import { HUD } from '../ui/HUD'
@@ -107,7 +106,6 @@ export class Engine {
   private enemySpawner!: EnemySpawner
   private beacons!: InteractiveBeacons
   private portalNetwork!: PortalNetwork
-  private trailNetwork!: TrailNetwork
   private firstEnemyLoreLogged = false
 
   // Beacon colors — created once, reused every frame
@@ -267,16 +265,6 @@ export class Engine {
       this.landmarkManager.positions, WORLD_CONFIG.seed
     )
 
-    // Trail network — POI-to-POI paths along terrain contours
-    const housePositions = this.npcManager?.npcHouses ? this.npcManager.npcHouses.getHousePositions() : []
-    const portalPositions = this.portalNetwork ? this.portalNetwork.getPortalPositions() : []
-    this.trailNetwork = new TrailNetwork(
-      this.landmarkManager.positions,
-      housePositions,
-      portalPositions,
-      this.biomeMap,
-    )
-    this.world.setTrailNetwork(this.trailNetwork)
 
     // Intro bridge — if intro not complete, create bridge and position player there
     console.log('[Intro] introComplete:', this.worldState.introComplete)

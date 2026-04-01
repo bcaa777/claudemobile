@@ -17,7 +17,7 @@ import { BiomeType } from '../biomes/types'
 import {
   PLAYER_CONFIG, POST_CONFIG, SPRITE_CONFIG,
   WORLD_CONFIG, TIME_CONFIG, BIOME_CONFIG, CREATURE_CONFIG,
-  RENDER_CONFIG, TRAIL_CONFIG, LS_CONFIG_KEY,
+  RENDER_CONFIG, LS_CONFIG_KEY,
 } from '../config'
 
 interface SavedLS {
@@ -29,7 +29,6 @@ interface SavedLS {
   biome?: Record<string, unknown>
   creature?: Record<string, unknown>
   render?: Record<string, unknown>
-  trail?: Record<string, unknown>
   debug?: Record<string, unknown>
 }
 
@@ -203,7 +202,6 @@ export class DebugPanel {
       biome:   { ...BIOME_CONFIG },
       creature: { ...CREATURE_CONFIG },
       render:   { ...RENDER_CONFIG },
-      trail:    { ...TRAIL_CONFIG },
       debug: {
         ambientMult:          this.dayNight.ambientMult,
         sunMult:              this.dayNight.sunMult,
@@ -465,10 +463,6 @@ export class DebugPanel {
       v => { WORLD_CONFIG.seed = Math.round(v) }, true))
     panel.appendChild(slider('Biome size',  60, 400, 10, BIOME_CONFIG.seedSpacing,
       v => { BIOME_CONFIG.seedSpacing = v }, true))
-    panel.appendChild(slider('Trails', 0, 1, 1, TRAIL_CONFIG.enableTrails ? 1 : 0,
-      v => { TRAIL_CONFIG.enableTrails = v > 0.5 }, true))
-    panel.appendChild(slider('Trail density', 0, 10, 1, TRAIL_CONFIG.maxConnections,
-      v => { TRAIL_CONFIG.maxConnections = Math.round(v) }, true))
 
     // ── VISUAL EFFECTS ──────────────────────────────────────────────────────
     panel.appendChild(section('VISUAL EFFECTS'))

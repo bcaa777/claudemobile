@@ -67,8 +67,8 @@ export class CreatureManager {
   spawnForChunk(cx: number, cz: number, world: World): void {
     const key = `${cx},${cz}`
     if (this.initializedChunks.has(key)) return
-    this.initializedChunks.add(key)
     if (this.creatures.size >= MAX_POPULATION) return
+    this.initializedChunks.add(key)
 
     const centerX = cx * CHUNK_SIZE + CHUNK_SIZE * 0.5
     const centerZ = cz * CHUNK_SIZE + CHUNK_SIZE * 0.5

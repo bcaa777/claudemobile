@@ -31,28 +31,6 @@ export interface TraversalAnchor {
   ropeLength?: number
 }
 
-export interface TrailWaypoint {
-  x: number
-  y: number
-  z: number
-  biome: BiomeType
-  cx: number  // chunk coords for indexing
-  cz: number
-}
-
-export interface TrailEdge {
-  waypoints: TrailWaypoint[]
-}
-
-export interface TrailStyle {
-  color: number
-  tex: string
-  w: number        // trail width
-  h: number        // trail thickness
-  elevated: boolean // true = boardwalk mode (swamp/water)
-  emissive?: number
-}
-
 export interface LavaRockState {
   mesh: THREE.Mesh
   baseY: number
