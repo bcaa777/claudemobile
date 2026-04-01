@@ -11,26 +11,51 @@ export interface MeshRefs {
 
 // ─── Leg bending utility ────────────────────────────────────────────────────
 
+/** Find the next child segment (box mesh positioned below or to the side) */
+function findChildSeg(node: THREE.Object3D): THREE.Mesh | undefined {
+  return node.children.find(
+    c => c instanceof THREE.Mesh && (c as THREE.Mesh).geometry instanceof THREE.BoxGeometry
+      && (c.position.y < -0.01 || Math.abs(c.position.x) > 0.01)  // below or to the side
+  ) as THREE.Mesh | undefined
+}
+
 /**
- * Apply walk animation with knee bending to a leg hierarchy.
+ * Apply walk animation with knee bending to a standard (downward) leg.
  * `topRotation` is the hip rotation (from sin wave). Child segments
  * bend in the opposite direction for a natural gait.
  */
 export function animateLeg(topSeg: THREE.Mesh, topRotation: number): void {
   topSeg.rotation.x = topRotation
 
-  // Find child segments (Mesh children with BoxGeometry — skip knee spheres)
   let current: THREE.Object3D = topSeg
   let depth = 0
-  while (current.children.length > 0 && depth < 3) {
-    const childSeg = current.children.find(
-      c => c instanceof THREE.Mesh && (c as THREE.Mesh).geometry instanceof THREE.BoxGeometry
-        && c.position.y < -0.01  // segment is below (not a claw)
-    ) as THREE.Mesh | undefined
+  while (depth < 3) {
+    const childSeg = findChildSeg(current)
     if (!childSeg) break
     depth++
-    // Bend opposite at ~60% of parent rotation, creating a natural knee flex
     childSeg.rotation.x = -topRotation * 0.6
+    current = childSeg
+  }
+}
+
+/**
+ * Apply walk animation to an insectoid (side-mounted) leg.
+ * The top segment swings forward/back (rotation.y), and
+ * child segments flex at the knee (rotation.x for vertical segments).
+ */
+export function animateInsectLeg(topSeg: THREE.Mesh, swing: number): void {
+  // Top horizontal segment: swing forward/back
+  topSeg.rotation.y = swing
+
+  // Find the vertical (knee-down) child segment and bend it
+  let current: THREE.Object3D = topSeg
+  let depth = 0
+  while (depth < 3) {
+    const childSeg = findChildSeg(current)
+    if (!childSeg) break
+    depth++
+    // Vertical segments flex forward/back opposite to swing
+    childSeg.rotation.x = swing * 0.4
     current = childSeg
   }
 }
@@ -182,10 +207,12 @@ export function buildFromDNA(dna: CreatureDNA, group: THREE.Group): MeshRefs {
   // ── Legs (multi-segment) ──────────────────────────────────────────────
   const totalLegH = bodyH * (0.5 + dna.legLength * 1.0)
   const legW = bodyW * (0.05 + dna.legThickness * 0.1)
+  const isInsectLeg = dna.bodyPlan === 'insectoid'
 
-  // Determine segment count from leg length
-  const segCount = dna.legLength < 0.3 ? 1 : dna.legLength < 0.7 ? 2 : 3
-  const segH = totalLegH / segCount
+  // Determine segment count from leg length (insectoid: min 2)
+  const segCount = isInsectLeg
+    ? (dna.legLength < 0.5 ? 2 : 3)
+    : (dna.legLength < 0.3 ? 1 : dna.legLength < 0.7 ? 2 : 3)
 
   if (legCount > 0) {
     const pairs = Math.ceil(legCount / 2)
@@ -195,51 +222,99 @@ export function buildFromDNA(dna: CreatureDNA, group: THREE.Group): MeshRefs {
       for (const side of [-1, 1]) {
         if (refs.legs.length >= legCount) break
 
-        // Build leg as chain of parent-child segments
-        // Top segment is positioned relative to body and stored in refs.legs
-        let parentNode: THREE.Object3D = group
-        let attachY = -bodyH * 0.5
-        const xPos = side * bodyW * 0.4
+        if (isInsectLeg) {
+          // ── Insectoid leg: horizontal from side, then vertical down ──
+          const horizLen = bodyW * (0.4 + dna.legLength * 0.5)  // horizontal reach
+          const vertLen = totalLegH * 0.6  // vertical drop
+          const thinFactor = 0.8
 
-        let topSeg: THREE.Mesh | null = null
+          // Top segment: horizontal, extends outward from body side
+          const topW = legW
+          const topSeg = new THREE.Mesh(box(horizLen, topW, topW), mat(legCol))
+          topSeg.position.set(side * (bodyW * 0.5 + horizLen * 0.5), 0, zPos)
+          group.add(topSeg)
+          refs.legs.push(topSeg)
 
-        for (let s = 0; s < segCount; s++) {
-          const taper = 1 - s * 0.15  // each lower segment slightly thinner
-          const segW = legW * taper
-          const seg = new THREE.Mesh(box(segW, segH, segW), mat(legCol))
+          // Hip joint at body attachment
+          const hip = new THREE.Mesh(sphere(topW * 0.9, 6), mat(legCol))
+          hip.position.set(side * bodyW * 0.5, 0, zPos)
+          group.add(hip)
 
-          if (s === 0) {
-            // Top segment: positioned in world relative to body
-            seg.position.set(xPos, attachY - segH * 0.5, zPos)
-            group.add(seg)
-            topSeg = seg
+          // Knee joint at end of horizontal segment
+          const kneeR = topW * thinFactor * 0.8
+          const knee = new THREE.Mesh(sphere(kneeR, 6), mat(legCol))
+          knee.position.set(side * horizLen * 0.5, 0, 0)
+          topSeg.add(knee)
 
-            // Hip joint sphere
-            const hip = new THREE.Mesh(sphere(legW * 0.8, 6), mat(legCol))
-            hip.position.set(xPos, attachY, zPos)
-            group.add(hip)
-          } else {
-            // Lower segments: child of previous segment, positioned at bottom
-            seg.position.set(0, -segH, 0)
-            parentNode.add(seg)
+          // Second segment: vertical, drops down from knee
+          const seg2W = topW * thinFactor
+          const seg2 = new THREE.Mesh(box(seg2W, vertLen, seg2W), mat(legCol))
+          seg2.position.set(side * horizLen * 0.5, -vertLen * 0.5, 0)
+          topSeg.add(seg2)
 
-            // Knee joint sphere between segments
-            const knee = new THREE.Mesh(sphere(segW * 0.7, 6), mat(legCol))
-            knee.position.set(0, -segH * 0.5, 0)
-            parentNode.add(knee)
+          // Optional 3rd segment (longer legs)
+          let lastNode: THREE.Object3D = seg2
+          if (segCount >= 3) {
+            const seg3Len = vertLen * 0.6
+            const seg3W = seg2W * thinFactor
+            const knee2 = new THREE.Mesh(sphere(seg3W * 0.7, 6), mat(legCol))
+            knee2.position.set(0, -vertLen * 0.5, 0)
+            seg2.add(knee2)
+
+            const seg3 = new THREE.Mesh(box(seg3W, seg3Len, seg3W), mat(legCol))
+            seg3.position.set(0, -vertLen * 0.5 - seg3Len * 0.5, 0)
+            seg2.add(seg3)
+            lastNode = seg3
           }
 
-          parentNode = seg
-        }
+          // Claws at tip
+          if (dna.hasClaws > 0.5) {
+            const clawSize = 0.03 + dna.clawSize * 0.05
+            const claw = new THREE.Mesh(box(clawSize, clawSize * 0.5, clawSize * 2), mat(accentCol))
+            claw.position.set(0, -(lastNode === seg2 ? vertLen : vertLen * 0.3) * 0.5, legW * 0.5)
+            lastNode.add(claw)
+          }
+        } else {
+          // ── Standard leg: downward from body underside ────────────────
+          const segH = totalLegH / segCount
+          let parentNode: THREE.Object3D = group
+          const xPos = side * bodyW * 0.4
+          let topSeg: THREE.Mesh | null = null
 
-        if (topSeg) refs.legs.push(topSeg)
+          for (let s = 0; s < segCount; s++) {
+            const taper = 1 - s * 0.15
+            const segW = legW * taper
+            const seg = new THREE.Mesh(box(segW, segH, segW), mat(legCol))
 
-        // Claws at the bottom of the last segment
-        if (dna.hasClaws > 0.5) {
-          const clawSize = 0.03 + dna.clawSize * 0.05
-          const claw = new THREE.Mesh(box(clawSize, clawSize * 0.5, clawSize * 2), mat(accentCol))
-          claw.position.set(0, -segH * 0.5, legW * 0.5)
-          parentNode.add(claw)
+            if (s === 0) {
+              seg.position.set(xPos, -bodyH * 0.5 - segH * 0.5, zPos)
+              group.add(seg)
+              topSeg = seg
+
+              const hip = new THREE.Mesh(sphere(legW * 0.8, 6), mat(legCol))
+              hip.position.set(xPos, -bodyH * 0.5, zPos)
+              group.add(hip)
+            } else {
+              seg.position.set(0, -segH, 0)
+              parentNode.add(seg)
+
+              const knee = new THREE.Mesh(sphere(segW * 0.7, 6), mat(legCol))
+              knee.position.set(0, -segH * 0.5, 0)
+              parentNode.add(knee)
+            }
+
+            parentNode = seg
+          }
+
+          if (topSeg) refs.legs.push(topSeg)
+
+          // Claws at the bottom of the last segment
+          if (dna.hasClaws > 0.5) {
+            const clawSize = 0.03 + dna.clawSize * 0.05
+            const claw = new THREE.Mesh(box(clawSize, clawSize * 0.5, clawSize * 2), mat(accentCol))
+            claw.position.set(0, -(totalLegH / segCount) * 0.5, legW * 0.5)
+            parentNode.add(claw)
+          }
         }
       }
     }

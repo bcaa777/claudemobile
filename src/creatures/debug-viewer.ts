@@ -3,7 +3,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import type { CreatureDNA } from './CreatureDNA'
 import { dnaToStats, quantizeLegCount, quantizeEyeCount } from './CreatureDNA'
 import { DNA_PRESETS, getPresetDNA } from './DNAPresets'
-import { buildFromDNA, animateLeg, type MeshRefs } from './DNAMeshBuilder'
+import { buildFromDNA, animateLeg, animateInsectLeg, type MeshRefs } from './DNAMeshBuilder'
 import { breedDNA } from './DNABreeding'
 
 // ─── Scene setup ────────────────────────────────────────────────────────────
@@ -332,8 +332,14 @@ function animate() {
       const freq = 3.0
       const amp = 0.45
       const sinVal = Math.sin(animTime * freq) * amp
+      const isInsect = currentDNA.bodyPlan === 'insectoid'
       for (let i = 0; i < currentRefs.legs.length; i++) {
-        animateLeg(currentRefs.legs[i], sinVal * (i % 2 === 0 ? 1 : -1))
+        const rot = sinVal * (i % 2 === 0 ? 1 : -1)
+        if (isInsect) {
+          animateInsectLeg(currentRefs.legs[i], rot)
+        } else {
+          animateLeg(currentRefs.legs[i], rot)
+        }
       }
     }
 

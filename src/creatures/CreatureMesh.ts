@@ -4,7 +4,7 @@ import { SPECIES } from './Species'
 import { texGen, type TexturePattern } from '../utils/PixelTextureGenerator'
 import { buildEnemyMesh } from '../combat/EnemyMesh'
 import { ENEMY_DEFS } from '../combat/EnemyTypes'
-import { buildFromDNA, animateLeg, type MeshRefs } from './DNAMeshBuilder'
+import { buildFromDNA, animateLeg, animateInsectLeg, type MeshRefs } from './DNAMeshBuilder'
 import { dnaToStats } from './CreatureDNA'
 
 // Phase 6: Shared geometry and material caches
@@ -713,15 +713,21 @@ export class CreatureMesh {
       const moving = creature.velocity.lengthSq() > 0.04
 
       if (st.mobility === 'ground' && this.legs.length >= 2) {
+        const isInsect = creature.dna!.bodyPlan === 'insectoid'
         if (moving) {
           const freq = st.isGiant ? creature.velocity.length() * 0.8 : creature.velocity.length() * 2.5
           const amp = st.isGiant ? 0.25 : 0.5
           const sinVal = Math.sin(this.animTime * freq) * amp
           for (let i = 0; i < this.legs.length; i++) {
-            animateLeg(this.legs[i], sinVal * (i % 2 === 0 ? 1 : -1))
+            const rot = sinVal * (i % 2 === 0 ? 1 : -1)
+            if (isInsect) animateInsectLeg(this.legs[i], rot)
+            else animateLeg(this.legs[i], rot)
           }
         } else {
-          for (const leg of this.legs) animateLeg(leg, 0)
+          for (const leg of this.legs) {
+            if (isInsect) animateInsectLeg(leg, 0)
+            else animateLeg(leg, 0)
+          }
         }
       }
 
