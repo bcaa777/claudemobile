@@ -9,6 +9,32 @@ export interface MeshRefs {
   body: THREE.Mesh
 }
 
+// ─── Leg bending utility ────────────────────────────────────────────────────
+
+/**
+ * Apply walk animation with knee bending to a leg hierarchy.
+ * `topRotation` is the hip rotation (from sin wave). Child segments
+ * bend in the opposite direction for a natural gait.
+ */
+export function animateLeg(topSeg: THREE.Mesh, topRotation: number): void {
+  topSeg.rotation.x = topRotation
+
+  // Find child segments (Mesh children with BoxGeometry — skip knee spheres)
+  let current: THREE.Object3D = topSeg
+  let depth = 0
+  while (current.children.length > 0 && depth < 3) {
+    const childSeg = current.children.find(
+      c => c instanceof THREE.Mesh && (c as THREE.Mesh).geometry instanceof THREE.BoxGeometry
+        && c.position.y < -0.01  // segment is below (not a claw)
+    ) as THREE.Mesh | undefined
+    if (!childSeg) break
+    depth++
+    // Bend opposite at ~60% of parent rotation, creating a natural knee flex
+    childSeg.rotation.x = -topRotation * 0.6
+    current = childSeg
+  }
+}
+
 // ─── Caches ─────────────────────────────────────────────────────────────────
 
 const _boxCache = new Map<string, THREE.BoxGeometry>()

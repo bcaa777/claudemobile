@@ -4,7 +4,7 @@ import { SPECIES } from './Species'
 import { texGen, type TexturePattern } from '../utils/PixelTextureGenerator'
 import { buildEnemyMesh } from '../combat/EnemyMesh'
 import { ENEMY_DEFS } from '../combat/EnemyTypes'
-import { buildFromDNA, type MeshRefs } from './DNAMeshBuilder'
+import { buildFromDNA, animateLeg, type MeshRefs } from './DNAMeshBuilder'
 import { dnaToStats } from './CreatureDNA'
 
 // Phase 6: Shared geometry and material caches
@@ -718,10 +718,10 @@ export class CreatureMesh {
           const amp = st.isGiant ? 0.25 : 0.5
           const sinVal = Math.sin(this.animTime * freq) * amp
           for (let i = 0; i < this.legs.length; i++) {
-            this.legs[i].rotation.x = sinVal * (i % 2 === 0 ? 1 : -1)
+            animateLeg(this.legs[i], sinVal * (i % 2 === 0 ? 1 : -1))
           }
         } else {
-          for (const leg of this.legs) leg.rotation.x = 0
+          for (const leg of this.legs) animateLeg(leg, 0)
         }
       }
 

@@ -3,7 +3,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import type { CreatureDNA } from './CreatureDNA'
 import { dnaToStats, quantizeLegCount, quantizeEyeCount } from './CreatureDNA'
 import { DNA_PRESETS, getPresetDNA } from './DNAPresets'
-import { buildFromDNA, type MeshRefs } from './DNAMeshBuilder'
+import { buildFromDNA, animateLeg, type MeshRefs } from './DNAMeshBuilder'
 import { breedDNA } from './DNABreeding'
 
 // ─── Scene setup ────────────────────────────────────────────────────────────
@@ -327,13 +327,13 @@ function animate() {
     creatureGroup.rotation.x = Math.sin(animTime * 1.2) * 0.01
     creatureGroup.rotation.z = Math.sin(animTime * 0.8 + 1) * 0.008
 
-    // Leg walk cycle
+    // Leg walk cycle with knee bending
     if (stats.mobility === 'ground' && currentRefs.legs.length >= 2) {
       const freq = 3.0
       const amp = 0.45
       const sinVal = Math.sin(animTime * freq) * amp
       for (let i = 0; i < currentRefs.legs.length; i++) {
-        currentRefs.legs[i].rotation.x = sinVal * (i % 2 === 0 ? 1 : -1)
+        animateLeg(currentRefs.legs[i], sinVal * (i % 2 === 0 ? 1 : -1))
       }
     }
 
