@@ -3,6 +3,10 @@ import { Creature } from './Creature'
 import { CreatureMesh } from './CreatureMesh'
 import { SpatialGrid } from './SpatialGrid'
 import { SPECIES, SpeciesId } from './Species'
+import { dnaToStats, dnaToSpeciesId } from './CreatureDNA'
+import type { CreatureDNA } from './CreatureDNA'
+import { BIOME_DNA_TABLE, getPresetDNA } from './DNAPresets'
+import { breedDNA } from './DNABreeding'
 import { SeededRandom, chunkSeed } from '../utils/SeededRandom'
 import { HollowType, ENEMY_DEFS } from '../combat/EnemyTypes'
 import { World } from '../world/World'
@@ -64,6 +68,12 @@ export class CreatureManager {
     this.scene = scene
   }
 
+  /** Get stats for a creature — from DNA if available, else legacy SPECIES lookup */
+  private getStats(c: Creature) {
+    if (c.stats) return c.stats
+    return SPECIES[c.species]
+  }
+
   spawnForChunk(cx: number, cz: number, world: World): void {
     const key = `${cx},${cz}`
     if (this.initializedChunks.has(key)) return
@@ -73,28 +83,65 @@ export class CreatureManager {
     const centerX = cx * CHUNK_SIZE + CHUNK_SIZE * 0.5
     const centerZ = cz * CHUNK_SIZE + CHUNK_SIZE * 0.5
     const biome = world.getBiomeAt(centerX, centerZ)
-    const candidates = BIOME_SPAWN_TABLE[biome] ?? []
-    if (candidates.length === 0) return
 
     const rng = new SeededRandom(chunkSeed(cx, cz, 42))
 
+    // DNA-based spawning
+    const dnaPresets = BIOME_DNA_TABLE[biome]
+    if (dnaPresets && dnaPresets.length > 0) {
+      for (const presetName of dnaPresets) {
+        const count = Math.round(rng.int(14, 28) * CREATURE_CONFIG.spawnMultiplier)
+        for (let i = 0; i < count; i++) {
+          if (this.creatures.size >= MAX_POPULATION) return
+
+          const wx = cx * CHUNK_SIZE + rng.range(4, CHUNK_SIZE - 4)
+          const wz = cz * CHUNK_SIZE + rng.range(4, CHUNK_SIZE - 4)
+          const h = world.getHeightAt(wx, wz)
+          if (h === null) continue
+
+          const creatureDna = getPresetDNA(presetName, rng)
+          const stats = dnaToStats(creatureDna)
+          const speciesId = dnaToSpeciesId(creatureDna)
+
+          let spawnY: number
+          if (stats.mobility === 'water') {
+            if (h > WATER_LEVEL - 0.3) continue
+            spawnY = WATER_LEVEL - 0.5
+          } else if (stats.mobility === 'air') {
+            if (h < WATER_LEVEL - 1) continue
+            spawnY = h + rng.range(6, 15)
+          } else {
+            if (h < WATER_LEVEL) continue
+            spawnY = h + stats.bodyH * stats.adultScale + 0.1
+          }
+
+          const creature = new Creature(speciesId, new THREE.Vector3(wx, spawnY, wz), stats.babyScale)
+          creature.dna = creatureDna
+          creature.stats = stats
+          creature.scale = stats.adultScale
+          creature.age = rng.range(30, stats.maxAge * 0.6)
+          creature.reproductionCooldown = rng.range(0, 60)
+          this.creatures.set(creature.id, creature)
+        }
+      }
+      return
+    }
+
+    // Legacy fallback for biomes not in BIOME_DNA_TABLE
+    const candidates = BIOME_SPAWN_TABLE[biome] ?? []
+    if (candidates.length === 0) return
     for (const speciesId of candidates) {
       const sp = SPECIES[speciesId]
-
-      // Giants: extremely rare — ~5% chance to spawn 1 per chunk
       if (sp.isGiant) {
         if (rng.next() > 0.05) continue
       }
-
       const count = sp.isGiant ? 1 : Math.round(rng.int(14, 28) * CREATURE_CONFIG.spawnMultiplier)
       for (let i = 0; i < count; i++) {
         if (this.creatures.size >= MAX_POPULATION) return
-
         const wx = cx * CHUNK_SIZE + rng.range(4, CHUNK_SIZE - 4)
         const wz = cz * CHUNK_SIZE + rng.range(4, CHUNK_SIZE - 4)
         const h = world.getHeightAt(wx, wz)
         if (h === null) continue
-
         let spawnY: number
         if (sp.mobility === 'water') {
           if (h > WATER_LEVEL - 0.3) continue
@@ -106,7 +153,6 @@ export class CreatureManager {
           if (h < WATER_LEVEL) continue
           spawnY = h + sp.bodyH * sp.adultScale + 0.1
         }
-
         const creature = new Creature(speciesId, new THREE.Vector3(wx, spawnY, wz), sp.babyScale)
         creature.scale = sp.adultScale
         creature.age = rng.range(30, sp.maxAge * 0.6)
@@ -324,7 +370,7 @@ export class CreatureManager {
 
   private tickStats(c: Creature, delta: number) {
     if (c.state === 'dead') return
-    const sp = SPECIES[c.species]
+    const sp = this.getStats(c)
 
     c.age += delta
 
@@ -373,7 +419,7 @@ export class CreatureManager {
       return
     }
 
-    const sp = SPECIES[c.species]
+    const sp = this.getStats(c)
     c.stateTimer += delta
 
     // Sleep / wake
@@ -551,7 +597,7 @@ export class CreatureManager {
           : null
 
         if (!attackTarget || (preyCreature && preyCreature.state === 'dead')) {
-          if (preyCreature) c.hunger = Math.max(0, c.hunger - SPECIES[c.species].maxHunger * 0.7)
+          if (preyCreature) c.hunger = Math.max(0, c.hunger - this.getStats(c).maxHunger * 0.7)
           c.state = 'idle'; c.targetId = null; break
         }
 
@@ -607,7 +653,7 @@ export class CreatureManager {
   private applyMovement(c: Creature, delta: number, world: World) {
     if (c.state === 'dead' || c.state === 'sleep' || c.state === 'sheltering') return
     if (c.velocity.lengthSq() < 0.001) return
-    const sp = SPECIES[c.species]
+    const sp = this.getStats(c)
 
     c.position.addScaledVector(c.velocity, delta)
 
@@ -676,7 +722,7 @@ export class CreatureManager {
 
   private startFlee(c: Creature, threat: THREE.Vector3) {
     c.state = 'flee'; c.stateTimer = 0; c.targetId = null; c.targetPos = null
-    this.steerAwayFrom(c, threat, SPECIES[c.species].fleeSpeed)
+    this.steerAwayFrom(c, threat, this.getStats(c).fleeSpeed)
   }
 
   private tryHunt(c: Creature) {
@@ -687,7 +733,7 @@ export class CreatureManager {
   // ─── Query helpers ────────────────────────────────────────────────────────────
 
   private findThreat(c: Creature, playerPos: THREE.Vector3): THREE.Vector3 | null {
-    const sp = SPECIES[c.species]
+    const sp = this.getStats(c)
     const sr = sp.sightRange * CREATURE_CONFIG.aggroRange
 
     // Check player distance with squared comparison (Phase 5c)
@@ -697,7 +743,7 @@ export class CreatureManager {
 
     // Use spatial grid instead of iterating all creatures (Phase 4)
     const threat = this.grid.queryNearest(c.position, sr, (other) =>
-      other !== c && SPECIES[other.species].role === 'predator'
+      other !== c && this.getStats(other).role === 'predator'
     )
     return threat ? threat.position : null
   }
@@ -744,24 +790,28 @@ export class CreatureManager {
   }
 
   private findMate(c: Creature): Creature | null {
-    // Use spatial grid (Phase 4) with filter
-    return this.grid.queryNearest(c.position, 30, (other) =>
-      other !== c &&
-      other.species === c.species &&
-      (other.state === 'seek_mate' || other.state === 'idle' || other.state === 'wander') &&
-      other.reproductionCooldown <= 0
-    )
+    return this.grid.queryNearest(c.position, 30, (other) => {
+      if (other === c) return false
+      if (other.state !== 'seek_mate' && other.state !== 'idle' && other.state !== 'wander') return false
+      if (other.reproductionCooldown > 0) return false
+
+      // DNA creatures: allow any body plan (breedDNA handles the 15% chance for cross-body)
+      if (c.dna && other.dna) return true
+
+      // Legacy: same species only
+      return other.species === c.species
+    })
   }
 
   // Returns a creature id or PLAYER_ID or null
   private findPrey(c: Creature, playerPos: THREE.Vector3 | null): string | null {
-    const sp = SPECIES[c.species]
+    const sp = this.getStats(c)
     const aggroSight = sp.sightRange * CREATURE_CONFIG.aggroRange
     const range = aggroSight * 2
 
     // Use spatial grid (Phase 4)
     const prey = this.grid.queryNearest(c.position, range, (other) =>
-      other !== c && SPECIES[other.species].role === 'herbivore' && other.state !== 'dead'
+      other !== c && this.getStats(other).role === 'herbivore' && other.state !== 'dead'
     )
 
     let best: string | null = prey ? prey.id : null
@@ -783,16 +833,32 @@ export class CreatureManager {
   }
 
   private spawnBaby(parentA: Creature, parentB: Creature) {
-    const sp = SPECIES[parentA.species]
+    if (this.creatures.size >= MAX_POPULATION) return
+
     const mid = new THREE.Vector3(
       (parentA.position.x + parentB.position.x) * 0.5,
       (parentA.position.y + parentB.position.y) * 0.5,
       (parentA.position.z + parentB.position.z) * 0.5
     )
-    if (this.creatures.size < MAX_POPULATION) {
+
+    // DNA breeding path
+    if (parentA.dna && parentB.dna) {
+      const childDna = breedDNA(parentA.dna, parentB.dna)
+      if (!childDna) return  // cross-body breeding failed
+
+      const stats = dnaToStats(childDna)
+      const speciesId = dnaToSpeciesId(childDna)
+      const baby = new Creature(speciesId, mid, stats.babyScale)
+      baby.dna = childDna
+      baby.stats = stats
+      this.creatures.set(baby.id, baby)
+    } else {
+      // Legacy fallback
+      const sp = SPECIES[parentA.species]
       const baby = new Creature(parentA.species, mid, sp.babyScale)
       this.creatures.set(baby.id, baby)
     }
+
     parentB.reproductionCooldown = 120
     parentB.state = 'idle'; parentB.stateTimer = 0; parentB.targetId = null
   }
