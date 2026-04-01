@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { Creature } from './Creature'
-import { SPECIES, SpeciesId } from './Species'
+import { getCreatureStats } from './CreatureDNA'
+import type { BodyPlan } from './CreatureDNA'
 import { WorldState, ResonanceSite } from '../systems/WorldState'
 import { BiomeType } from '../biomes/types'
 
@@ -15,19 +16,17 @@ const ORBIT_SPEED = 1.5 // units/sec — angular speed derived from this
 // States that should never be overridden by site awareness
 const PRIORITY_STATES = new Set(['dead', 'flee', 'mating', 'courtship'])
 
-// Attuned species per biome — these creatures glow and perform ritual orbits
-const ATTUNED_SPECIES: Partial<Record<BiomeType, Set<SpeciesId>>> = {
-  [BiomeType.Forest]:   new Set(['deer']),
-  [BiomeType.Desert]:   new Set(['camel']),
-  [BiomeType.Swamp]:    new Set(['toad']),
-  [BiomeType.Snow]:     new Set(['mammoth']),
-  [BiomeType.Volcanic]: new Set(['wurm']),
-  [BiomeType.Crystal]:  null as any, // any creature is attuned in Crystal biome
-  [BiomeType.Jungle]:   new Set(['bird', 'parrot']),
-  [BiomeType.Mesa]:     new Set(['goat']),
-  // CoralReef: skip (no aquatic creatures for this)
-  [BiomeType.Heaven]:   new Set(['skywhale']),
-  // Hell: none (too chaotic)
+// Attuned body plans per biome — these creatures glow and perform ritual orbits
+const BIOME_ATTUNED_PLANS: Partial<Record<BiomeType, Set<BodyPlan> | null>> = {
+  [BiomeType.Forest]:   new Set<BodyPlan>(['quadruped']),
+  [BiomeType.Desert]:   new Set<BodyPlan>(['quadruped', 'serpentine']),
+  [BiomeType.Swamp]:    new Set<BodyPlan>(['insectoid', 'aquatic']),
+  [BiomeType.Snow]:     new Set<BodyPlan>(['quadruped']),
+  [BiomeType.Volcanic]: new Set<BodyPlan>(['serpentine']),
+  [BiomeType.Crystal]:  null,  // any creature
+  [BiomeType.Jungle]:   new Set<BodyPlan>(['avian', 'insectoid']),
+  [BiomeType.Mesa]:     new Set<BodyPlan>(['quadruped']),
+  [BiomeType.Heaven]:   new Set<BodyPlan>(['avian']),
 }
 
 // Biome-themed glow colors for attuned creatures
@@ -47,14 +46,15 @@ const BIOME_GLOW_COLORS: Partial<Record<BiomeType, number>> = {
 const _tmpVec = new THREE.Vector3()
 
 /**
- * Check if a species is attuned to a given biome's resonance site.
+ * Check if a creature is attuned to a given biome's resonance site.
  */
-function isAttuned(species: SpeciesId, biome: BiomeType): boolean {
-  const set = ATTUNED_SPECIES[biome]
-  if (set === undefined) return false
-  // Crystal biome: any creature is attuned
-  if (set === null) return true
-  return set.has(species)
+function isAttuned(creature: Creature, biome: BiomeType): boolean {
+  const plans = BIOME_ATTUNED_PLANS[biome]
+  if (plans === undefined) return false
+  if (plans === null) return true  // Crystal: any creature
+  if (creature.dna) return plans.has(creature.dna.bodyPlan)
+  // Legacy fallback
+  return creature.species === 'deer' || creature.species === 'camel' || creature.species === 'toad'
 }
 
 /**
@@ -72,7 +72,7 @@ export function applySiteAwareness(
     return false
   }
 
-  const sp = SPECIES[creature.species]
+  const sp = getCreatureStats(creature)
 
   // Find the nearest resonance site within range
   let nearestSite: ResonanceSite | null = null
@@ -119,7 +119,7 @@ export function applySiteAwareness(
   }
 
   // --- Herbivores ---
-  const attuned = isAttuned(creature.species, nearestSite.biome)
+  const attuned = isAttuned(creature, nearestSite.biome)
 
   if (attuned) {
     // Attuned creature: glow and perform ritual orbit
