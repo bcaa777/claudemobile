@@ -13,6 +13,7 @@ export class DialogueSystem {
   private charTimer = 0
   private active = false
   private fullTextShown = false
+  private onSpeak: ((text: string) => void) | null = null
 
   constructor() {
     this.container = document.getElementById('dialogue-box')!
@@ -34,7 +35,14 @@ export class DialogueSystem {
     this.textEl.textContent = ''
     this.promptEl.textContent = '[E] Continue'
     this.container.style.display = 'block'
+    if (this.onSpeak && this.lines.length > 0) {
+      this.onSpeak(this.lines[0])
+    }
     this.hideInteractPrompt()
+  }
+
+  setOnSpeak(cb: ((text: string) => void) | null): void {
+    this.onSpeak = cb
   }
 
   /** Call when E is pressed. Returns true if dialogue consumed the input. */
@@ -62,6 +70,9 @@ export class DialogueSystem {
     this.fullTextShown = false
     this.textEl.textContent = ''
     this.promptEl.textContent = '[E] Continue'
+    if (this.onSpeak) {
+      this.onSpeak(this.lines[this.currentLine])
+    }
     return true
   }
 
@@ -90,6 +101,7 @@ export class DialogueSystem {
     this.active = false
     this.container.style.display = 'none'
     this.lines = []
+    this.onSpeak = null
   }
 
   showInteractPrompt() {

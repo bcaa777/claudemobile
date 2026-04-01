@@ -12,6 +12,7 @@ import type { InputManager } from '../engine/InputManager'
 import { RENDER_CONFIG } from '../config'
 import type { WorldState } from '../systems/WorldState'
 import type { NPCHouses } from './NPCHouses'
+import type { SpatialTTS } from '../audio/SpatialTTS'
 
 const INTERACT_DIST_SQ = 5 * 5
 const RELOCATE_DIST_SQ = 60 * 60
@@ -36,6 +37,7 @@ export class NPCManager {
   private artefactHud: HTMLElement | null
   artefactsCollected = 0
   npcHouses: NPCHouses | null = null
+  spatialTTS: SpatialTTS | null = null
 
   /** Set to the NPC's name when the player first enters dialogue range — consumed by Engine for intro chime. */
   pendingFirstMeetingName: string | null = null
@@ -241,6 +243,11 @@ export class NPCManager {
     if (filteredTexts.length === 0) return
 
     this.dialogue.startDialogue(npc.def.name, npc.def.title, filteredTexts)
+    const npcPos = npc.worldPos
+    const npcBiome = this.biomeMap.getBiomeAt(npcPos.x, npcPos.z)
+    this.dialogue.setOnSpeak((text) => {
+      this.spatialTTS?.speak(text, npcPos, npcBiome)
+    })
 
     // Mark all lines as delivered for this stage
     npc.state.allLinesDelivered = true
