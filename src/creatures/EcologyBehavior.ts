@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { Creature, CreatureState } from './Creature'
-import { SPECIES, SpeciesId } from './Species'
+import { getCreatureStats } from './CreatureDNA'
 import { SpatialGrid } from './SpatialGrid'
 
 /**
@@ -16,7 +16,9 @@ const ECOLOGY_PRIORITY_STATES = new Set<CreatureState>([
 ])
 
 // Wolf-like species that form territorial packs
-const PACK_SPECIES = new Set<SpeciesId>(['wolf', 'hellhound'])
+function isPackCreature(c: Creature): boolean {
+  return c.dna ? (c.dna.aggression > 0.7 && c.dna.bodyPlan === 'quadruped') : (c.species === 'wolf' || c.species === 'hellhound')
+}
 
 const HERD_RADIUS = 20
 const HERD_MIN_SIZE = 3
@@ -56,7 +58,7 @@ export function computeTerritories(
   const all = grid.flat
   for (let i = 0; i < all.length; i++) {
     const c = all[i]
-    if (c.state !== 'dead' && PACK_SPECIES.has(c.species)) {
+    if (c.state !== 'dead' && isPackCreature(c)) {
       packCreatures.push(c)
     }
   }
@@ -73,7 +75,7 @@ export function computeTerritories(
 
     const neighbors = grid.queryRadius(wolf.position, TERRITORY_RADIUS, (other) =>
       other !== wolf &&
-      other.species === wolf.species &&
+      (wolf.dna ? isPackCreature(other) : other.species === wolf.species) &&
       other.state !== 'dead'
     )
 
@@ -113,7 +115,7 @@ export function applyEcologyBehavior(
   // Never override high-priority states
   if (ECOLOGY_PRIORITY_STATES.has(creature.state)) return
 
-  const sp = SPECIES[creature.species]
+  const sp = getCreatureStats(creature)
 
   // --- Food chain: predators in hunt/chase cause prey to flee ---
   if (sp.role === 'herbivore') {
@@ -126,7 +128,7 @@ export function applyEcologyBehavior(
   }
 
   // --- Territorial: wolf territories deter other predators ---
-  if (sp.role === 'predator' && !PACK_SPECIES.has(creature.species)) {
+  if (sp.role === 'predator' && !isPackCreature(creature)) {
     applyTerritoryAvoidance(creature, frameCounter, grid)
   }
 }
@@ -138,14 +140,14 @@ function applyFoodChainFlee(creature: Creature, grid: SpatialGrid<Creature>): vo
   // Already fleeing — don't re-trigger
   if (creature.state === 'flee') return
 
-  const sp = SPECIES[creature.species]
+  const sp = getCreatureStats(creature)
   const sightRange = sp.sightRange
 
   // Find nearest predator in hunt/chase within sight range
   const predator = grid.queryNearest(creature.position, sightRange, (other) =>
     other !== creature &&
     other.state !== 'dead' &&
-    SPECIES[other.species].role === 'predator' &&
+    getCreatureStats(other).role === 'predator' &&
     (other.state === 'hunt' || other.state === 'chase')
   )
 
@@ -174,7 +176,7 @@ function applyFoodChainFlee(creature: Creature, grid: SpatialGrid<Creature>): vo
 function applyHerding(creature: Creature, grid: SpatialGrid<Creature>): void {
   const neighbors = grid.queryRadius(creature.position, HERD_RADIUS, (other) =>
     other !== creature &&
-    other.species === creature.species &&
+    (creature.dna ? other.dna?.bodyPlan === creature.dna.bodyPlan : other.species === creature.species) &&
     other.state !== 'dead'
   )
 
@@ -199,7 +201,7 @@ function applyHerding(creature: Creature, grid: SpatialGrid<Creature>): void {
   _avgVelocity.z /= total
 
   // Blend creature velocity toward group center direction + average heading
-  const sp = SPECIES[creature.species]
+  const sp = getCreatureStats(creature)
   const towardCenterX = _groupCenter.x - creature.position.x
   const towardCenterZ = _groupCenter.z - creature.position.z
   const centerLen = Math.sqrt(towardCenterX * towardCenterX + towardCenterZ * towardCenterZ)
@@ -278,7 +280,7 @@ function applyTerritoryAvoidance(
       if (creature.state === 'idle' || creature.state === 'wander') {
         const dist = Math.sqrt(distSq)
         if (dist > 0.1) {
-          const sp = SPECIES[creature.species]
+          const sp = getCreatureStats(creature)
           const avoidSpeed = sp.maxSpeed * 0.4
           creature.velocity.x = (dx / dist) * avoidSpeed
           creature.velocity.z = (dz / dist) * avoidSpeed
