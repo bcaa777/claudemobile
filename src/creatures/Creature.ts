@@ -1,6 +1,8 @@
 import * as THREE from 'three'
 import { SpeciesId } from './Species'
 import type { HollowType } from '../combat/EnemyTypes'
+import type { CreatureDNA } from './CreatureDNA'
+import type { DerivedStats } from './CreatureDNA'
 
 export type CreatureState =
   | 'idle' | 'wander' | 'seek_food' | 'eating'
@@ -37,6 +39,8 @@ export class Creature {
   enemyType: HollowType | null
   glowing: boolean
   glowColor: number
+  dna: CreatureDNA | null = null
+  stats: DerivedStats | null = null
 
   constructor(species: SpeciesId, position: THREE.Vector3, startScale: number) {
     this.id = `c${_nextId++}`
