@@ -4,6 +4,8 @@ import { SPECIES } from './Species'
 import { texGen, type TexturePattern } from '../utils/PixelTextureGenerator'
 import { buildEnemyMesh } from '../combat/EnemyMesh'
 import { ENEMY_DEFS } from '../combat/EnemyTypes'
+import { buildFromDNA, type MeshRefs } from './DNAMeshBuilder'
+import { dnaToStats } from './CreatureDNA'
 
 // Phase 6: Shared geometry and material caches
 const _geoCache = new Map<string, THREE.BoxGeometry>()
@@ -56,6 +58,7 @@ export class CreatureMesh {
   private animTime = 0
   private lod: 'full' | 'simple' = 'simple'
   private bodyMesh: THREE.Mesh | null = null
+  private dnaRefs: MeshRefs | null = null
 
   constructor(creature: Creature, scene: THREE.Scene, distSq: number) {
     this.group = new THREE.Group()
@@ -94,6 +97,7 @@ export class CreatureMesh {
     this.tailFin = null
     this.crocLegs = []
     this.bodyMesh = null
+    this.dnaRefs = null
   }
 
   /** Simple LOD: just a single colored box (1 draw call) */
@@ -104,6 +108,16 @@ export class CreatureMesh {
       const mesh = new THREE.Mesh(
         getCachedBox(0.6, 0.8, 0.4),
         getCachedMat(def?.bodyColor ?? 0x2a1030)
+      )
+      this.group.add(mesh)
+      this.bodyMesh = mesh
+      return
+    }
+    if (creature.dna) {
+      const stats = dnaToStats(creature.dna)
+      const mesh = new THREE.Mesh(
+        getCachedBox(stats.bodyW, stats.bodyH, stats.bodyD),
+        getCachedMat(stats.bodyColor)
       )
       this.group.add(mesh)
       this.bodyMesh = mesh
@@ -136,6 +150,16 @@ export class CreatureMesh {
       if (this.group.children.length > 0) {
         this.bodyMesh = this.group.children[0] as THREE.Mesh
       }
+      return
+    }
+
+    // DNA-driven creatures
+    if (creature.dna) {
+      this.dnaRefs = buildFromDNA(creature.dna, this.group)
+      this.bodyMesh = this.dnaRefs.body
+      this.legs = this.dnaRefs.legs
+      this.wings = this.dnaRefs.wings
+      this.tailFin = this.dnaRefs.tail
       return
     }
 
@@ -635,7 +659,7 @@ export class CreatureMesh {
 
     // Add golden collar for companions
     if (creature.isCompanion && !this.hasCollar && this.lod === 'full') {
-      const sp = SPECIES[creature.species]
+      const sp = creature.stats ?? SPECIES[creature.species]
       const collarGeo = getCachedBox(sp.bodyW * 0.8, sp.bodyH * 0.15, sp.bodyW * 0.8)
       const collarMat = new THREE.MeshBasicMaterial({ color: 0xffcc00 })
       this.collar = new THREE.Mesh(collarGeo, collarMat)
@@ -649,7 +673,7 @@ export class CreatureMesh {
       if (!this.isGlowing) {
         // Save original material and create a glow material (non-cached, per creature)
         this.originalMat = this.bodyMesh.material as THREE.Material
-        const sp2 = SPECIES[creature.species]
+        const sp2 = creature.stats ?? SPECIES[creature.species]
         this.glowMat = new THREE.MeshLambertMaterial({
           color: sp2.bodyColor,
           emissive: creature.glowColor,
@@ -682,6 +706,48 @@ export class CreatureMesh {
     }
 
     this.animTime += delta
+
+    // DNA creatures: custom animation using dnaRefs
+    if (creature.dna && creature.stats) {
+      const st = creature.stats
+      const moving = creature.velocity.lengthSq() > 0.04
+
+      if (st.mobility === 'ground' && this.legs.length >= 2) {
+        if (moving) {
+          const freq = st.isGiant ? creature.velocity.length() * 0.8 : creature.velocity.length() * 2.5
+          const amp = st.isGiant ? 0.25 : 0.5
+          const sinVal = Math.sin(this.animTime * freq) * amp
+          for (let i = 0; i < this.legs.length; i++) {
+            this.legs[i].rotation.x = sinVal * (i % 2 === 0 ? 1 : -1)
+          }
+        } else {
+          for (const leg of this.legs) leg.rotation.x = 0
+        }
+      }
+
+      if (st.isGiant && st.mobility === 'ground') {
+        this.group.rotation.x = Math.sin(this.animTime * 0.6) * 0.015
+        this.group.rotation.z = Math.sin(this.animTime * 0.4 + 1.5) * 0.01
+      }
+
+      if (this.wings.length >= 2) {
+        const flapSpeed = st.isGiant ? 0.8 : creature.dna.size > 0.6 ? 2.5 : 5.0
+        const flapAmp = st.isGiant ? 0.2 : creature.dna.size > 0.6 ? 0.4 : 0.6
+        const angle = Math.sin(this.animTime * flapSpeed) * flapAmp
+        this.wings[0].rotation.z = angle
+        this.wings[1].rotation.z = -angle
+      }
+
+      if (this.tailFin) {
+        this.tailFin.rotation.y = Math.sin(this.animTime * 1.5) * 0.3
+      }
+
+      if (creature.state === 'dead') {
+        this.group.rotation.z = Math.min(Math.PI * 0.5, creature.deathTimer * 1.2)
+      }
+      return
+    }
+
     const sp = SPECIES[creature.species]
     const moving = creature.velocity.lengthSq() > 0.04
 
