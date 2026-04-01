@@ -11,7 +11,7 @@ export interface MeshRefs {
 
 const _boxCache = new Map<string, THREE.BoxGeometry>()
 const _sphereCache = new Map<string, THREE.SphereGeometry>()
-const _matCache = new Map<number, THREE.MeshLambertMaterial>()
+const _matCache = new Map<string, THREE.MeshLambertMaterial>()
 
 function box(w: number, h: number, d: number): THREE.BoxGeometry {
   const key = `${w.toFixed(3)}_${h.toFixed(3)}_${d.toFixed(3)}`
@@ -28,7 +28,7 @@ function sphere(r: number, seg = 8): THREE.SphereGeometry {
 }
 
 function mat(color: number, opts?: { side?: THREE.Side; emissive?: number; emissiveIntensity?: number }): THREE.MeshLambertMaterial {
-  const key = color + (opts?.side === THREE.DoubleSide ? 0x2000000 : 0) + (opts?.emissive ?? 0)
+  const key = `${color}_${opts?.side ?? 0}_${opts?.emissive ?? 0}_${opts?.emissiveIntensity ?? 0}`
   let m = _matCache.get(key)
   if (!m) { m = new THREE.MeshLambertMaterial({ color, ...opts }); _matCache.set(key, m) }
   return m
