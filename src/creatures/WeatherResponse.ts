@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { Creature } from './Creature'
-import { SPECIES } from './Species'
+import { getCreatureStats } from './CreatureDNA'
 import { WorldState } from '../systems/WorldState'
 import { WATER_LEVEL } from '../world/TerrainGenerator'
 
@@ -21,7 +21,7 @@ export function applyWeatherResponse(
   // Never override high-priority combat/death states
   if (PRIORITY_STATES.has(creature.state)) return
 
-  const sp = SPECIES[creature.species]
+  const sp = getCreatureStats(creature)
   const weather = worldState.currentWeather
   const severity = worldState.weatherSeverity
   const timeOfDay = worldState.timeOfDay
