@@ -4,7 +4,7 @@ import { TOTAL_ENTRIES } from './JournalData'
 import { BiomeType } from '../biomes/types'
 import { WeatherType } from '../systems/WeatherSystem'
 import { Creature } from '../creatures/Creature'
-import { SPECIES } from '../creatures/Species'
+import { getCreatureStats } from '../creatures/CreatureDNA'
 import { NarrativeProgression, NarrativeLogEntry } from '../lore/NarrativeProgression'
 
 export class JournalSystem {
@@ -54,7 +54,7 @@ export class JournalSystem {
     const px = playerPos.x, pz = playerPos.z
     for (const c of creatures.values()) {
       if (c.state === 'dead') continue
-      const sp = SPECIES[c.species]
+      const sp = getCreatureStats(c)
       if (sp.isGiant) continue
       const dx = c.position.x - px
       const dz = c.position.z - pz

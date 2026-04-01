@@ -1,5 +1,5 @@
 import { BiomeType } from '../biomes/types'
-import { SpeciesId, ALL_SPECIES, SPECIES } from '../creatures/Species'
+import { DNA_PRESETS } from '../creatures/DNAPresets'
 import { WeatherType } from '../systems/WeatherSystem'
 import { getAllFragments, TOTAL_LORE_FRAGMENTS } from '../lore/LoreContent'
 
@@ -13,7 +13,7 @@ export interface JournalEntry {
 }
 
 // Creature entries — exclude giants from journal tracking
-const JOURNAL_SPECIES: SpeciesId[] = ALL_SPECIES.filter(s => !SPECIES[s].isGiant)
+const JOURNAL_SPECIES: string[] = Object.keys(DNA_PRESETS)
 
 const CREATURE_NAMES: Record<string, string> = {
   rabbit: 'Rabbit', deer: 'Deer', bird: 'Bluebird', dragon: 'Dragon',
@@ -22,6 +22,10 @@ const CREATURE_NAMES: Record<string, string> = {
   lion: 'Lion', mammoth: 'Mammoth', toad: 'Toad', eagle: 'Golden Eagle',
   parrot: 'Parrot', crab: 'Crab', goat: 'Mountain Goat',
   imp: 'Imp', hellhound: 'Hellhound',
+  elk: 'Elk', beetle: 'Beetle', spider: 'Spider', mantis: 'Mantis',
+  ant: 'Ant', centipede: 'Centipede', songbird: 'Songbird',
+  shark: 'Shark', goldfish: 'Goldfish', eel: 'Eel',
+  snake: 'Snake', wyrm: 'Wyrm',
 }
 
 const CREATURE_DESCS: Record<string, string> = {
