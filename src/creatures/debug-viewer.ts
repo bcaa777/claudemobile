@@ -55,7 +55,7 @@ let parentB: CreatureDNA | null = null
 // ─── Simulation mode state ──────────────────────────────────────────────────
 
 const ARENA_SIZE = 16  // half-extent of the walking area
-const MAX_POP = 30
+let MAX_POP = 50
 const BREED_INTERVAL_BASE = 4  // seconds between breed attempts (at 1x speed)
 const DEATH_AGE = 60  // seconds until creature dies (at 1x speed)
 
@@ -126,9 +126,10 @@ function initSimulation() {
   simGeneration = 0
   simTotalBorn = 0
 
-  // Spawn 20 random preset creatures
+  // Spawn initial population
+  const startCount = parseInt(spawnInp?.value ?? '20') || 20
   const presetNames = Object.keys(DNA_PRESETS)
-  for (let i = 0; i < 20; i++) {
+  for (let i = 0; i < startCount; i++) {
     const name = presetNames[Math.floor(Math.random() * presetNames.length)]
     const dna = getPresetDNA(name, rng)
     simCreatures.push(spawnSimCreature(dna, 0))
@@ -516,6 +517,24 @@ const speedVal = document.createElement('span'); speedVal.className = 'val'; spe
 speedInp.addEventListener('input', () => { simSpeed = parseFloat(speedInp.value); speedVal.textContent = simSpeed.toFixed(1) + 'x' })
 speedLabel.appendChild(speedSpan); speedLabel.appendChild(speedInp); speedLabel.appendChild(speedVal)
 addSimEl(speedLabel)
+
+// Population cap slider
+const popLabel = document.createElement('label')
+const popSpan = document.createElement('span'); popSpan.textContent = 'Max Pop'
+const popInp = document.createElement('input'); popInp.type = 'range'; popInp.min = '5'; popInp.max = '200'; popInp.step = '5'; popInp.value = String(MAX_POP)
+const popVal = document.createElement('span'); popVal.className = 'val'; popVal.textContent = String(MAX_POP)
+popInp.addEventListener('input', () => { MAX_POP = parseInt(popInp.value); popVal.textContent = String(MAX_POP) })
+popLabel.appendChild(popSpan); popLabel.appendChild(popInp); popLabel.appendChild(popVal)
+addSimEl(popLabel)
+
+// Initial spawn count slider
+const spawnLabel = document.createElement('label')
+const spawnSpan = document.createElement('span'); spawnSpan.textContent = 'Start #'
+const spawnInp = document.createElement('input'); spawnInp.type = 'range'; spawnInp.min = '5'; spawnInp.max = '100'; spawnInp.step = '5'; spawnInp.value = '20'
+const spawnVal = document.createElement('span'); spawnVal.className = 'val'; spawnVal.textContent = '20'
+spawnInp.addEventListener('input', () => { spawnVal.textContent = spawnInp.value })
+spawnLabel.appendChild(spawnSpan); spawnLabel.appendChild(spawnInp); spawnLabel.appendChild(spawnVal)
+addSimEl(spawnLabel)
 
 // Controls
 addSimHTML('<h2>Controls</h2>')
