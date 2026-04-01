@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import type { SpatialTTS } from '../audio/SpatialTTS'
 import { LORE_TEXTS } from './JournalData'
 import { SeededRandom, chunkSeed } from '../utils/SeededRandom'
 import { sampleWorldHeight } from '../world/TerrainGenerator'
@@ -27,6 +28,7 @@ export class LoreStoneManager {
   private collectedSet: Set<number> = new Set()
   private collectedFragmentIds: Set<string> = new Set()
   foxBonusActive = false
+  spatialTTS: SpatialTTS | null = null
 
   /** Number of unique lore stones the player has collected. */
   get collectedCount(): number {
@@ -189,6 +191,9 @@ export class LoreStoneManager {
           }
           // Look up narrative text from LoreContent, fall back to legacy LORE_TEXTS
           const text = this.getFragmentText(s.fragmentId, s.loreIndex)
+          if (this.spatialTTS && s.biome !== undefined) {
+            this.spatialTTS.speak(text, s.position, s.biome)
+          }
           collected = { loreIndex: s.loreIndex, text }
         }
       }
