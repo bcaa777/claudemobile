@@ -1,5 +1,5 @@
 import { BiomeType } from '../biomes/types'
-import type { SpeciesId } from './Species'
+import { SPECIES, type SpeciesId } from './Species'
 
 export type BodyPlan = 'quadruped' | 'insectoid' | 'avian' | 'aquatic' | 'serpentine'
 
@@ -147,5 +147,38 @@ export function dnaToSpeciesId(dna: CreatureDNA): SpeciesId {
       return 'croc'
     default:
       return 'rabbit'
+  }
+}
+
+/**
+ * Get stats for a creature — from DNA if available, else legacy SPECIES lookup.
+ * Use this instead of SPECIES[c.species] everywhere.
+ */
+export function getCreatureStats(c: { stats: DerivedStats | null; species: string }): DerivedStats {
+  if (c.stats) return c.stats
+  // Legacy fallback: build DerivedStats from SPECIES table
+  const sp = SPECIES[c.species as SpeciesId]
+  if (!sp) return c.stats!
+  return {
+    mobility: sp.mobility,
+    role: sp.role,
+    maxSpeed: sp.maxSpeed,
+    fleeSpeed: sp.fleeSpeed,
+    attackDamage: sp.attackDamage,
+    attackRange: sp.attackRange,
+    sightRange: sp.sightRange,
+    adultScale: sp.adultScale,
+    babyScale: sp.babyScale,
+    maxHunger: sp.maxHunger,
+    maxThirst: sp.maxThirst,
+    maxAge: sp.maxAge,
+    maxEnergy: sp.maxEnergy,
+    bodyW: sp.bodyW,
+    bodyH: sp.bodyH,
+    bodyD: sp.bodyD,
+    bodyColor: sp.bodyColor,
+    headColor: sp.headColor,
+    legColor: sp.legColor,
+    isGiant: sp.isGiant ?? false,
   }
 }
