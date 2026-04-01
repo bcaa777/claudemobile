@@ -29,7 +29,8 @@
       "Bash(sed -i '' 's/particleSize: 0.05/particleSize: 0.25/' \"$f\")",
       "Bash(sed -i '' 's/particleSize: 0.06/particleSize: 0.3/' \"$f\")",
       "Bash(sed -i '' 's/particleSize: 0.07/particleSize: 0.35/' \"$f\")",
-      "Bash(xargs cat:*)"
+      "Bash(xargs cat:*)",
+      "Bash(git:*)"
     ]
   }
 }

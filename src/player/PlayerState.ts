@@ -83,8 +83,11 @@ export class PlayerState {
     // Reset speed multiplier each frame (hazards re-apply)
     this.speedMultiplier = 1.0
 
-    // Stamina regeneration — only on the ground
-    if (isGrounded) this.updateStamina(delta)
+    // Stamina: fully refill when standing on ground
+    if (isGrounded) {
+      this.stamina = this.maxStamina
+      this.staminaRegenDelay = 0
+    }
   }
 
   /** Drain a fixed amount of stamina (e.g. per jump). Returns false if not enough. */

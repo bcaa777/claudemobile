@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { SeededRandom } from '../utils/SeededRandom'
 import { mergeStaticMeshes } from '../utils/mergeStaticMeshes'
-import { WATER_LEVEL } from '../world/TerrainGenerator'
+import { WATER_LEVEL, HEAVEN_ALTITUDE } from '../world/TerrainGenerator'
 import { texGen } from '../utils/PixelTextureGenerator'
 
 export interface CastleWalkable {
@@ -34,7 +34,7 @@ export class Castle {
     const dist = 420 + rng.range(0, 180)
     this.position = new THREE.Vector3(
       Math.cos(angle) * dist,
-      WATER_LEVEL + 10,
+      HEAVEN_ALTITUDE,
       Math.sin(angle) * dist
     )
 
