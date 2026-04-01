@@ -113,7 +113,7 @@ export class AudioSystem {
       // Ambience layer
       this.ambience = new AmbienceSound(this.ctx, this.ambienceGain, this.environmentReverb)
 
-      this.spatialTTS = new SpatialTTS(this.ctx, this.masterGain, this.environmentReverb)
+      this.spatialTTS = new SpatialTTS(this.ctx, this.sfxGain, this.environmentReverb)
 
       this.initialized = true
     } catch {

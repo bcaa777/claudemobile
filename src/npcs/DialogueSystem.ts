@@ -14,6 +14,7 @@ export class DialogueSystem {
   private active = false
   private fullTextShown = false
   private onSpeak: ((text: string) => void) | null = null
+  private onClose: (() => void) | null = null
 
   constructor() {
     this.container = document.getElementById('dialogue-box')!
@@ -41,8 +42,9 @@ export class DialogueSystem {
     this.hideInteractPrompt()
   }
 
-  setOnSpeak(cb: ((text: string) => void) | null): void {
+  setOnSpeak(cb: ((text: string) => void) | null, onClose?: (() => void) | null): void {
     this.onSpeak = cb
+    this.onClose = onClose ?? null
   }
 
   /** Call when E is pressed. Returns true if dialogue consumed the input. */
@@ -101,7 +103,9 @@ export class DialogueSystem {
     this.active = false
     this.container.style.display = 'none'
     this.lines = []
+    if (this.onClose) this.onClose()
     this.onSpeak = null
+    this.onClose = null
   }
 
   showInteractPrompt() {

@@ -243,11 +243,12 @@ export class NPCManager {
     if (filteredTexts.length === 0) return
 
     this.dialogue.startDialogue(npc.def.name, npc.def.title, filteredTexts)
-    const npcPos = npc.worldPos
+    const npcPos = npc.worldPos.clone()
     const npcBiome = this.biomeMap.getBiomeAt(npcPos.x, npcPos.z)
-    this.dialogue.setOnSpeak((text) => {
-      this.spatialTTS?.speak(text, npcPos, npcBiome)
-    })
+    this.dialogue.setOnSpeak(
+      (text) => { this.spatialTTS?.speak(text, npcPos, npcBiome) },
+      () => { this.spatialTTS?.cancel() },
+    )
 
     // Mark all lines as delivered for this stage
     npc.state.allLinesDelivered = true

@@ -44,19 +44,21 @@ export class SpatialTTS {
   private accompNodes: AudioNode[] = []
 
   private voices: SpeechSynthesisVoice[] = []
+  private onVoicesChanged: (() => void) | null = null
 
   constructor(ctx: AudioContext, masterGain: GainNode, reverb: EnvironmentReverb | null) {
     this.ctx = ctx
     this.masterGain = masterGain
     this.reverb = reverb
 
+    if (typeof speechSynthesis === 'undefined') return
     this.voices = speechSynthesis.getVoices()
-    speechSynthesis.addEventListener('voiceschanged', () => {
-      this.voices = speechSynthesis.getVoices()
-    })
+    this.onVoicesChanged = () => { this.voices = speechSynthesis.getVoices() }
+    speechSynthesis.addEventListener('voiceschanged', this.onVoicesChanged)
   }
 
   speak(text: string, position: THREE.Vector3, biome: BiomeType): void {
+    if (typeof speechSynthesis === 'undefined') return
     this.cancel()
 
     const profile = BIOME_VOICES[biome] ?? DEFAULT_VOICE
@@ -142,8 +144,15 @@ export class SpatialTTS {
     }
 
     const vol = dist <= REF_DISTANCE ? 1.0 : Math.max(0, 1.0 - (dist - REF_DISTANCE) / (MAX_DISTANCE - REF_DISTANCE))
+
+    // Attenuate speech voice by distance
+    if (this.utterance) {
+      this.utterance.volume = vol
+    }
+
+    // Smooth ramp accompaniment gain to avoid clicks
     if (this.accompGain) {
-      this.accompGain.gain.value = ACCOMP_VOLUME * vol
+      this.accompGain.gain.setTargetAtTime(ACCOMP_VOLUME * vol, this.ctx.currentTime, 0.05)
     }
   }
 
@@ -167,5 +176,9 @@ export class SpatialTTS {
 
   dispose(): void {
     this.cancel()
+    if (this.onVoicesChanged) {
+      speechSynthesis.removeEventListener('voiceschanged', this.onVoicesChanged)
+      this.onVoicesChanged = null
+    }
   }
 }
