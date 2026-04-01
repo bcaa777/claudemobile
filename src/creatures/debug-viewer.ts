@@ -3,7 +3,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import type { CreatureDNA } from './CreatureDNA'
 import { dnaToStats, quantizeLegCount, quantizeEyeCount } from './CreatureDNA'
 import { DNA_PRESETS, getPresetDNA } from './DNAPresets'
-import { buildFromDNA } from './DNAMeshBuilder'
+import { buildFromDNA, type MeshRefs } from './DNAMeshBuilder'
 import { breedDNA } from './DNABreeding'
 
 // ─── Scene setup ────────────────────────────────────────────────────────────
@@ -44,6 +44,9 @@ scene.add(creatureGroup)
 
 let parentA: CreatureDNA | null = null
 let parentB: CreatureDNA | null = null
+let currentRefs: MeshRefs | null = null
+let animTime = 0
+let animating = true
 
 const rng = { next: () => Math.random() }
 
@@ -56,7 +59,8 @@ function rebuildMesh() {
   creatureGroup = new THREE.Group()
   scene.add(creatureGroup)
 
-  buildFromDNA(currentDNA, creatureGroup)
+  currentRefs = buildFromDNA(currentDNA, creatureGroup)
+  animTime = 0
 
   const stats = dnaToStats(currentDNA)
   if (stats.mobility === 'air') {
@@ -245,6 +249,14 @@ mutateBtn.addEventListener('click', () => {
 })
 panel.appendChild(mutateBtn)
 
+const animBtn = document.createElement('button')
+animBtn.textContent = 'Pause Animation'
+animBtn.addEventListener('click', () => {
+  animating = !animating
+  animBtn.textContent = animating ? 'Pause Animation' : 'Play Animation'
+})
+panel.appendChild(animBtn)
+
 // Breed section
 addHTML('<h2>Breeding</h2>')
 const saveABtn = document.createElement('button')
@@ -296,10 +308,50 @@ function updateAllSliders() {
   }
 }
 
-// ─── Render loop ────────────────────────────────────────────────────────
+// ─── Render loop with animation ─────────────────────────────────────────
+
+let lastTime = performance.now()
 
 function animate() {
   requestAnimationFrame(animate)
+
+  const now = performance.now()
+  const delta = (now - lastTime) / 1000
+  lastTime = now
+
+  if (animating && currentRefs) {
+    animTime += delta
+    const stats = dnaToStats(currentDNA)
+
+    // Idle body bob
+    creatureGroup.rotation.x = Math.sin(animTime * 1.2) * 0.01
+    creatureGroup.rotation.z = Math.sin(animTime * 0.8 + 1) * 0.008
+
+    // Leg walk cycle
+    if (stats.mobility === 'ground' && currentRefs.legs.length >= 2) {
+      const freq = 3.0
+      const amp = 0.45
+      const sinVal = Math.sin(animTime * freq) * amp
+      for (let i = 0; i < currentRefs.legs.length; i++) {
+        currentRefs.legs[i].rotation.x = sinVal * (i % 2 === 0 ? 1 : -1)
+      }
+    }
+
+    // Wing flap
+    if (currentRefs.wings.length >= 2) {
+      const flapSpeed = currentDNA.size > 0.6 ? 2.5 : 5.0
+      const flapAmp = currentDNA.size > 0.6 ? 0.4 : 0.6
+      const angle = Math.sin(animTime * flapSpeed) * flapAmp
+      currentRefs.wings[0].rotation.z = angle
+      currentRefs.wings[1].rotation.z = -angle
+    }
+
+    // Tail wag
+    if (currentRefs.tail) {
+      currentRefs.tail.rotation.y = Math.sin(animTime * 2.0) * 0.35
+    }
+  }
+
   controls.update()
   renderer.render(scene, camera)
 }
