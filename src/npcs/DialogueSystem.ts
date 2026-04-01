@@ -13,8 +13,6 @@ export class DialogueSystem {
   private charTimer = 0
   private active = false
   private fullTextShown = false
-  private onSpeak: ((text: string) => void) | null = null
-  private onClose: (() => void) | null = null
 
   constructor() {
     this.container = document.getElementById('dialogue-box')!
@@ -36,15 +34,7 @@ export class DialogueSystem {
     this.textEl.textContent = ''
     this.promptEl.textContent = '[E] Continue'
     this.container.style.display = 'block'
-    if (this.onSpeak && this.lines.length > 0) {
-      this.onSpeak(this.lines[0])
-    }
     this.hideInteractPrompt()
-  }
-
-  setOnSpeak(cb: ((text: string) => void) | null, onClose?: (() => void) | null): void {
-    this.onSpeak = cb
-    this.onClose = onClose ?? null
   }
 
   /** Call when E is pressed. Returns true if dialogue consumed the input. */
@@ -72,9 +62,6 @@ export class DialogueSystem {
     this.fullTextShown = false
     this.textEl.textContent = ''
     this.promptEl.textContent = '[E] Continue'
-    if (this.onSpeak) {
-      this.onSpeak(this.lines[this.currentLine])
-    }
     return true
   }
 
@@ -103,9 +90,6 @@ export class DialogueSystem {
     this.active = false
     this.container.style.display = 'none'
     this.lines = []
-    if (this.onClose) this.onClose()
-    this.onSpeak = null
-    this.onClose = null
   }
 
   showInteractPrompt() {

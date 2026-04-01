@@ -12,7 +12,6 @@ import { BiomeMusic, MusicContext } from './BiomeMusic'
 import { SpatialMelody } from './SpatialMelody'
 import { EnvironmentReverb } from './EnvironmentReverb'
 import { AmbienceSound } from './AmbienceSound'
-import { SpatialTTS } from './SpatialTTS'
 import { updateListener } from './SpatialAudioHelper'
 
 const MUTE_KEY = 'audio_muted'
@@ -45,7 +44,6 @@ export class AudioSystem {
   private spatialMelody: SpatialMelody | null = null
   private environmentReverb: EnvironmentReverb | null = null
   private ambience: AmbienceSound | null = null
-  private spatialTTS: SpatialTTS | null = null
   private initialized = false
   private muted = false
   private muteEl: HTMLElement | null
@@ -59,7 +57,6 @@ export class AudioSystem {
   getMasterGain(): GainNode | null { return this.masterGain }
   /** Expose the harmonic-tone layer gain so HarmonicTone routes through it */
   getHarmonicGain(): GainNode | null { return this.harmonicGain }
-  getSpatialTTS(): SpatialTTS | null { return this.spatialTTS }
 
   constructor() {
     this.muteEl = document.getElementById('mute-hud')
@@ -113,8 +110,6 @@ export class AudioSystem {
       // Ambience layer
       this.ambience = new AmbienceSound(this.ctx, this.ambienceGain, this.environmentReverb)
 
-      this.spatialTTS = new SpatialTTS(this.ctx, this.sfxGain, this.environmentReverb)
-
       this.initialized = true
     } catch {
       // Web Audio not available
@@ -162,7 +157,6 @@ export class AudioSystem {
 
     // Update biome-specific reverb
     this.environmentReverb?.update(biome)
-    this.spatialTTS?.update(playerPos)
 
     const isBlizzard = weatherType === WeatherType.Blizzard
     const weatherIntensity =

@@ -307,12 +307,6 @@ export class Engine {
     this.weatherSystem.setWorldState(this.worldState)
     this.biomeTransition.setWorldState(this.worldState)
 
-    // Wire SpatialTTS from AudioSystem to systems that use spatial voice
-    const tts = this.audioSystem.getSpatialTTS()
-    if (tts) {
-      this.loreStones.spatialTTS = tts
-      this.npcManager.spatialTTS = tts
-    }
 
     // Wire data into the journal overlay
     this.journalOverlay.setData({
