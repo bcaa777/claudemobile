@@ -54,6 +54,7 @@ export interface DerivedStats {
   bodyColor: number
   headColor: number
   legColor: number
+  isGiant: boolean
 }
 
 export function quantizeLegCount(gene: number): number {
@@ -115,6 +116,7 @@ export function dnaToStats(dna: CreatureDNA): DerivedStats {
     bodyColor: rgbToHex(br, bg, bb),
     headColor: rgbToHex(ar, ag, ab),
     legColor: shiftColor(br, bg, bb, -0.1),
+    isGiant: dna.size > 0.85,
   }
 }
 

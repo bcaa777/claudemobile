@@ -90,7 +90,13 @@ export class CreatureManager {
     const dnaPresets = BIOME_DNA_TABLE[biome]
     if (dnaPresets && dnaPresets.length > 0) {
       for (const presetName of dnaPresets) {
-        const count = Math.round(rng.int(14, 28) * CREATURE_CONFIG.spawnMultiplier)
+        // Peek at preset to check for giants (size > 0.85)
+        const peekDna = getPresetDNA(presetName, rng)
+        const peekStats = dnaToStats(peekDna)
+        if (peekStats.isGiant) {
+          if (rng.next() > 0.05) continue  // 5% chance, 1 max
+        }
+        const count = peekStats.isGiant ? 1 : Math.round(rng.int(14, 28) * CREATURE_CONFIG.spawnMultiplier)
         for (let i = 0; i < count; i++) {
           if (this.creatures.size >= MAX_POPULATION) return
 
@@ -99,8 +105,9 @@ export class CreatureManager {
           const h = world.getHeightAt(wx, wz)
           if (h === null) continue
 
-          const creatureDna = getPresetDNA(presetName, rng)
-          const stats = dnaToStats(creatureDna)
+          // Reuse peeked DNA for first creature, generate fresh for rest
+          const creatureDna = i === 0 ? peekDna : getPresetDNA(presetName, rng)
+          const stats = i === 0 ? peekStats : dnaToStats(creatureDna)
           const speciesId = dnaToSpeciesId(creatureDna)
 
           let spawnY: number
@@ -225,7 +232,7 @@ export class CreatureManager {
 
       // Mesh lifecycle (limit mesh creation to 4 per frame, cap total visible)
       // Giants visible from much farther away
-      const sp2 = SPECIES[c.species]
+      const sp2 = this.getStats(c)
       const effectiveMeshDistSq = sp2.isGiant ? meshViewDistSq * 9 : meshViewDistSq
       if (distSq <= effectiveMeshDistSq) {
         if (!c.hasMesh && meshesCreated < 4 && this.meshes.size < MAX_VISIBLE_MESHES) {
