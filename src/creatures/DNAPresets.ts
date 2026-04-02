@@ -251,7 +251,8 @@ export function getPresetDNA(name: string, rng: { next(): number }): CreatureDNA
     bodyColor: [...base.bodyColor] as [number, number, number],
     accentColor: [...base.accentColor] as [number, number, number],
   }
-  const vary = (v: number) => Math.max(0, Math.min(1, v + (rng.next() - 0.5) * 0.1))
+  const vary = (v: number) => Math.max(0, Math.min(1, v + (rng.next() - 0.5) * 0.3))
+  const varyWide = (v: number) => Math.max(0, Math.min(1, v + (rng.next() - 0.5) * 0.5))
   clone.bodyLength = vary(clone.bodyLength)
   clone.bodyWidth = vary(clone.bodyWidth)
   clone.bodyHeight = vary(clone.bodyHeight)
@@ -260,11 +261,17 @@ export function getPresetDNA(name: string, rng: { next(): number }): CreatureDNA
   clone.legThickness = vary(clone.legThickness)
   clone.speed = vary(clone.speed)
   clone.size = vary(clone.size)
-  clone.bodyColor[0] = vary(clone.bodyColor[0])
-  clone.bodyColor[1] = vary(clone.bodyColor[1])
-  clone.bodyColor[2] = vary(clone.bodyColor[2])
-  clone.accentColor[0] = vary(clone.accentColor[0])
-  clone.accentColor[1] = vary(clone.accentColor[1])
-  clone.accentColor[2] = vary(clone.accentColor[2])
+  // Vary morphology extras
+  clone.wingSpan = vary(clone.wingSpan)
+  clone.tailLength = vary(clone.tailLength)
+  clone.hornSize = vary(clone.hornSize)
+  clone.eyeSize = vary(clone.eyeSize)
+  // Wide color variation using hue shift for diverse starting palette
+  clone.bodyColor[0] = varyWide(clone.bodyColor[0])
+  clone.bodyColor[1] = varyWide(clone.bodyColor[1])
+  clone.bodyColor[2] = varyWide(clone.bodyColor[2])
+  clone.accentColor[0] = varyWide(clone.accentColor[0])
+  clone.accentColor[1] = varyWide(clone.accentColor[1])
+  clone.accentColor[2] = varyWide(clone.accentColor[2])
   return clone
 }
