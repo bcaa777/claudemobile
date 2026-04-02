@@ -7,6 +7,7 @@ const vertexShader = /* glsl */ `
 
   varying vec2 vUv;
   varying float vSeed;
+  varying float vNdotV;  // for depth-aware shading on cross planes
 
   float hash(float s, float off) {
     return fract(sin(s * 127.1 + off * 311.7) * 43758.5453);
@@ -39,6 +40,11 @@ const vertexShader = /* glsl */ `
       }
     }
 
+    // Transform normal to view space for cross-plane shading
+    vec3 worldNormal = normalize((instanceMatrix * vec4(normal, 0.0)).xyz);
+    vec3 viewDir = normalize(-(modelViewMatrix * instanceMatrix * vec4(0.0, 0.0, 0.0, 1.0)).xyz);
+    vNdotV = abs(dot(worldNormal, viewDir));
+
     vec4 mvPosition = modelViewMatrix * instanceMatrix * vec4(pos, 1.0);
     gl_Position = projectionMatrix * mvPosition;
   }
@@ -50,6 +56,7 @@ const fragmentShader = /* glsl */ `
 
   varying vec2 vUv;
   varying float vSeed;
+  varying float vNdotV;
 
   float hash(float s, float off) {
     return fract(sin(s * 127.1 + off * 311.7) * 43758.5453);
@@ -119,7 +126,11 @@ const fragmentShader = /* glsl */ `
 
     vec3 finalColor = hsl2rgb(hsl);
 
-    float lightFactor = 0.6 + 0.4 * (uIsDecal > 0.5 ? 0.8 : vUv.y * 0.5 + 0.5);
+    // Lighting with cross-plane depth shading
+    float heightLight = uIsDecal > 0.5 ? 0.8 : vUv.y * 0.5 + 0.5;
+    // Planes facing away from camera are darker — gives visible depth
+    float viewFacing = mix(0.55, 1.0, vNdotV);
+    float lightFactor = (0.5 + 0.5 * heightLight) * viewFacing;
     finalColor *= lightFactor;
 
     gl_FragColor = vec4(finalColor, texColor.a);
