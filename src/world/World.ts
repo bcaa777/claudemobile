@@ -74,13 +74,6 @@ export class World {
       }
     }
 
-    // Retry creature spawning for chunks that were skipped due to population cap
-    if (this.creatureManager) {
-      for (const [key] of this.chunks) {
-        const [kcx, kcz] = key.split(',').map(Number)
-        this.creatureManager.spawnForChunk(kcx, kcz, this)
-      }
-    }
 
     if (cx === this.lastPlayerCX && cz === this.lastPlayerCZ) {
       for (const chunk of this.chunks.values()) {

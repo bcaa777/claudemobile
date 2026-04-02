@@ -53,7 +53,8 @@ export class CreatureManager {
   spawnForChunk(cx: number, cz: number, world: World): void {
     const key = `${cx},${cz}`
     if (this.initializedChunks.has(key)) return
-    if (this.creatures.size >= MAX_POPULATION) return
+    // No global population cap here — let every loaded chunk spawn its creatures.
+    // The excess population cull in update() removes oldest creatures to stay near MAX.
 
     const centerX = cx * CHUNK_SIZE + CHUNK_SIZE * 0.5
     const centerZ = cz * CHUNK_SIZE + CHUNK_SIZE * 0.5
@@ -84,7 +85,7 @@ export class CreatureManager {
         }
         const count = peekStats.isGiant ? 1 : Math.round(rng.int(4, 10) * CREATURE_CONFIG.spawnMultiplier)
         for (let i = 0; i < count; i++) {
-          if (chunkSpawned >= MAX_PER_CHUNK || this.creatures.size >= MAX_POPULATION) break
+          if (chunkSpawned >= MAX_PER_CHUNK) break
 
           const wx = cx * CHUNK_SIZE + rng.range(4, CHUNK_SIZE - 4)
           const wz = cz * CHUNK_SIZE + rng.range(4, CHUNK_SIZE - 4)
@@ -118,10 +119,7 @@ export class CreatureManager {
           chunkSpawned++
         }
       }
-      // Mark chunk as initialized only if we spawned successfully (not blocked by population cap)
-      if (chunkSpawned > 0) {
-        this.initializedChunks.add(key)
-      }
+      this.initializedChunks.add(key)
       return
     }
   }
