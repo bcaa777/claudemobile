@@ -54,7 +54,6 @@ export class CreatureManager {
     const key = `${cx},${cz}`
     if (this.initializedChunks.has(key)) return
     if (this.creatures.size >= MAX_POPULATION) return
-    this.initializedChunks.add(key)
 
     const centerX = cx * CHUNK_SIZE + CHUNK_SIZE * 0.5
     const centerZ = cz * CHUNK_SIZE + CHUNK_SIZE * 0.5
@@ -62,19 +61,30 @@ export class CreatureManager {
 
     const rng = new SeededRandom(chunkSeed(cx, cz, 42))
 
-    // DNA-based spawning
+    // DNA-based spawning — limit per chunk so population spreads across chunks
+    const MAX_PER_CHUNK = 30
+    let chunkSpawned = 0
+
     const dnaPresets = BIOME_DNA_TABLE[biome]
     if (dnaPresets && dnaPresets.length > 0) {
-      for (const presetName of dnaPresets) {
-        // Peek at preset to check for giants (size > 0.85)
+      // Pick a random subset of presets (3-5) instead of iterating all
+      const presetCount = Math.min(dnaPresets.length, 3 + rng.int(0, 2))
+      const shuffled = [...dnaPresets]
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = rng.int(0, i)
+        ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+      }
+
+      for (let p = 0; p < presetCount; p++) {
+        const presetName = shuffled[p]
         const peekDna = getPresetDNA(presetName, rng)
         const peekStats = dnaToStats(peekDna)
         if (peekStats.isGiant) {
-          if (rng.next() > 0.05) continue  // 5% chance, 1 max
+          if (rng.next() > 0.05) continue
         }
-        const count = peekStats.isGiant ? 1 : Math.round(rng.int(14, 28) * CREATURE_CONFIG.spawnMultiplier)
+        const count = peekStats.isGiant ? 1 : Math.round(rng.int(4, 10) * CREATURE_CONFIG.spawnMultiplier)
         for (let i = 0; i < count; i++) {
-          if (this.creatures.size >= MAX_POPULATION) return
+          if (chunkSpawned >= MAX_PER_CHUNK || this.creatures.size >= MAX_POPULATION) break
 
           const wx = cx * CHUNK_SIZE + rng.range(4, CHUNK_SIZE - 4)
           const wz = cz * CHUNK_SIZE + rng.range(4, CHUNK_SIZE - 4)
@@ -105,7 +115,12 @@ export class CreatureManager {
           creature.age = rng.range(30, stats.maxAge * 0.6)
           creature.reproductionCooldown = rng.range(0, 60)
           this.creatures.set(creature.id, creature)
+          chunkSpawned++
         }
+      }
+      // Mark chunk as initialized only if we spawned successfully (not blocked by population cap)
+      if (chunkSpawned > 0) {
+        this.initializedChunks.add(key)
       }
       return
     }
