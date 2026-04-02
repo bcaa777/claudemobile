@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { createSpriteMaterial } from './SpriteShader'
 
 const _sharedGeo = new THREE.PlaneGeometry(1, 1)
 
@@ -7,6 +8,7 @@ interface SpriteEntry {
   y: number
   z: number
   scale: number
+  seed?: number
 }
 
 export class BillboardBatch {
@@ -23,15 +25,16 @@ export class BillboardBatch {
     this.entries = sprites
     this.isBillboard = billboard
 
-    const mat = new THREE.MeshLambertMaterial({
-      map: texture,
-      transparent: false,
-      alphaTest: 0.5,
-      side: THREE.DoubleSide,
-      depthWrite: true,
-    })
+    const mat = createSpriteMaterial(texture, !billboard)
 
     this.mesh = new THREE.InstancedMesh(_sharedGeo, mat, sprites.length)
+    // Clone geometry so aSeed attribute is per-batch (not shared globally)
+    this.mesh.geometry = _sharedGeo.clone()
+    const seedArray = new Float32Array(sprites.length)
+    for (let i = 0; i < sprites.length; i++) {
+      seedArray[i] = sprites[i].seed ?? (sprites[i].x * 127.1 + sprites[i].z * 311.7)
+    }
+    this.mesh.geometry.setAttribute('aSeed', new THREE.InstancedBufferAttribute(seedArray, 1))
     this.mesh.frustumCulled = false
 
     // Write initial matrices directly (column-major Float32Array)
