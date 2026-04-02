@@ -28,7 +28,7 @@ export class World {
   private matCache: MaterialCache
   private chunks: Map<string, Chunk> = new Map()
   private pendingGeneration: Set<string> = new Set()
-  private generationQueue: { cx: number; cz: number; key: string }[] = []
+  private generationQueue: { cx: number; cz: number; key: string; dist: number }[] = []
   private static readonly MAX_CHUNKS_PER_FRAME = 2
   private explodables: ExplodableStructure[] = []
   private explodeRng = new SeededRandom(9999)
@@ -113,19 +113,28 @@ export class World {
       }
     }
 
-    // Queue new chunks for staggered generation (sorted by distance to player)
-    const newChunks: { cx: number; cz: number; key: string; dist: number }[] = []
+    // Rebuild entire generation queue sorted by distance to CURRENT player position.
+    // This ensures nearby chunks always generate first, even if the player moved
+    // since previous chunks were queued.
+    this.generationQueue.length = 0  // clear stale entries
+    for (const key of needed) {
+      if (!this.chunks.has(key) && this.pendingGeneration.has(key)) {
+        // Already pending from a previous frame — re-queue at correct priority
+        const [kcx, kcz] = key.split(',').map(Number)
+        const dist = Math.abs(kcx - cx) + Math.abs(kcz - cz)
+        this.generationQueue.push({ cx: kcx, cz: kcz, key, dist })
+      }
+    }
+    // Also add newly needed chunks
     for (const key of needed) {
       if (!this.chunks.has(key) && !this.pendingGeneration.has(key)) {
         this.pendingGeneration.add(key)
         const [kcx, kcz] = key.split(',').map(Number)
         const dist = Math.abs(kcx - cx) + Math.abs(kcz - cz)
-        newChunks.push({ cx: kcx, cz: kcz, key, dist })
+        this.generationQueue.push({ cx: kcx, cz: kcz, key, dist })
       }
     }
-    // Generate closest chunks first
-    newChunks.sort((a, b) => a.dist - b.dist)
-    this.generationQueue.push(...newChunks)
+    this.generationQueue.sort((a, b) => a.dist - b.dist)
 
     for (const chunk of this.chunks.values()) {
       chunk.update(1/60, playerPos.x, playerPos.z)

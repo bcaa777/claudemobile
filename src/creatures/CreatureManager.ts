@@ -53,8 +53,6 @@ export class CreatureManager {
   spawnForChunk(cx: number, cz: number, world: World): void {
     const key = `${cx},${cz}`
     if (this.initializedChunks.has(key)) return
-    // No global population cap here — let every loaded chunk spawn its creatures.
-    // The excess population cull in update() removes oldest creatures to stay near MAX.
 
     const centerX = cx * CHUNK_SIZE + CHUNK_SIZE * 0.5
     const centerZ = cz * CHUNK_SIZE + CHUNK_SIZE * 0.5
