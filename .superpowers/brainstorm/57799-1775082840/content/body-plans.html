@@ -1,0 +1,57 @@
+<h2>Body Plan Base Geometry</h2>
+<p class="subtitle">Each body plan defines a skeleton of boxes/spheres. DNA genes then scale, color, and add appendages. Which approach for the base shapes?</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Box-only (match current style)</h3>
+      <p>All body parts are stretched <code>BoxGeometry</code> — same blocky aesthetic as current creatures. Head = small box, body = large box, legs = thin boxes. Simple, fast, consistent with existing look.</p>
+      <div style="display:flex;gap:20px;margin-top:12px;font-family:monospace;font-size:12px;color:#888;">
+        <div>
+          <div style="background:#8b6914;width:40px;height:30px;margin:0 auto 2px;border-radius:2px;"></div>
+          <div style="background:#9a7820;width:20px;height:18px;margin:0 auto 2px;border-radius:2px;"></div>
+          <div style="display:flex;gap:14px;justify-content:center;">
+            <div style="background:#7a5a10;width:6px;height:20px;border-radius:1px;"></div>
+            <div style="background:#7a5a10;width:6px;height:20px;border-radius:1px;"></div>
+          </div>
+          <div style="text-align:center;margin-top:4px;">quadruped</div>
+        </div>
+        <div>
+          <div style="background:#2a5a20;width:25px;height:20px;margin:0 auto 2px;border-radius:2px;"></div>
+          <div style="background:#3a6a30;width:15px;height:12px;margin:0 auto 2px;border-radius:2px;"></div>
+          <div style="display:flex;gap:4px;justify-content:center;">
+            <div style="background:#1a4a10;width:3px;height:18px;border-radius:1px;"></div>
+            <div style="background:#1a4a10;width:3px;height:18px;border-radius:1px;"></div>
+            <div style="background:#1a4a10;width:3px;height:18px;border-radius:1px;"></div>
+          </div>
+          <div style="text-align:center;margin-top:4px;">insectoid</div>
+        </div>
+        <div>
+          <div style="background:#8888cc;width:30px;height:20px;margin:0 auto 2px;border-radius:2px;"></div>
+          <div style="display:flex;gap:24px;justify-content:center;">
+            <div style="background:#6666aa;width:30px;height:6px;border-radius:1px;transform:rotate(-15deg);"></div>
+            <div style="background:#6666aa;width:30px;height:6px;border-radius:1px;transform:rotate(15deg);"></div>
+          </div>
+          <div style="text-align:center;margin-top:8px;">avian</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Box + Sphere hybrid</h3>
+      <p>Body = box, head = sphere, joints = small spheres. Slightly more organic feel while keeping the low-poly voxel aesthetic. Eyes and joints feel rounder.</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Segmented boxes (current giant style)</h3>
+      <p>Body built from multiple connected box segments — like the current Wyrm/Titan builds. More visual detail but more draw calls per creature. Best for larger creatures, might be too heavy for small ones.</p>
+    </div>
+  </div>
+</div>
