@@ -2540,7 +2540,8 @@ export class Chunk {
         const scale   = rng.range(chosen.minScale, chosen.maxScale) * globalScaleMultiplier
         const variant = rng.int(0, VARIANTS - 1)
         const tex     = atlas.getTexture(biome, chosen.category as SpriteCategory, variant)
-        const entry   = { x: lx, y: height + heightOffset, z: lz, scale }
+        const seed = Math.abs(Math.sin(wx * 127.1 + wz * 311.7) * 43758.5453) % 10000
+        const entry   = { x: lx, y: height + heightOffset, z: lz, scale, seed }
 
         if (chosen.isBillboard) {
           let arr = billboardGroups.get(tex)
