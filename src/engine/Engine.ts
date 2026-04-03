@@ -1060,6 +1060,8 @@ export class Engine {
         showCompass: this.onboarding.flags.showCompass,
         journalHintTimer: this.onboarding.flags.journalHintTimer,
         compassPullBoost: this.onboarding.flags.compassPullBoost,
+        cameraActive: this.cameraSystem.active,
+        fieldGuideCount: this.fieldGuide.getPhotographedCount(),
       })
     }
 

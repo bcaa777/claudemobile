@@ -19,6 +19,8 @@ export interface HUDUpdateParams {
   showCompass: boolean
   journalHintTimer: number
   compassPullBoost: number
+  cameraActive: boolean
+  fieldGuideCount: number
 }
 
 /**
@@ -37,6 +39,7 @@ export class HUD {
   private activationMessageEl: HTMLDivElement
 
   private journalHint: HTMLDivElement
+  private cameraIndicator: HTMLDivElement
 
   private healthShowTime = -Infinity // time when health was last shown
   private healthOpacity = 0
@@ -178,6 +181,15 @@ export class HUD {
     this.journalHint.textContent = 'Journal Updated [ J ]'
     this.container.appendChild(this.journalHint)
 
+    // --- Camera mode indicator (top-right) ---
+    this.cameraIndicator = document.createElement('div')
+    this.cameraIndicator.style.cssText = `
+  position:absolute; top:8px; right:16px;
+  font:10px monospace; color:#d4a574; text-transform:uppercase;
+  letter-spacing:1px; opacity:0; transition:opacity 0.3s;
+`
+    this.container.appendChild(this.cameraIndicator)
+
     document.body.appendChild(this.container)
   }
 
@@ -242,6 +254,12 @@ export class HUD {
 
     // --- Interaction prompt ---
     this.interactionPrompt.style.display = nearInteractable ? 'block' : 'none'
+
+    // --- Camera mode indicator ---
+    this.cameraIndicator.style.opacity = params.cameraActive ? '1' : '0'
+    this.cameraIndicator.textContent = params.cameraActive
+      ? `CAMERA [X] | Guide: ${params.fieldGuideCount} species [N]`
+      : ''
 
     // --- Activation message ---
     if (activationMessage && activationMessage !== this.lastActivationMessage) {
