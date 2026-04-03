@@ -18,6 +18,7 @@ import { applyWeatherResponse, getWeatherHuntRangeMultiplier } from './WeatherRe
 import { applyEcologyBehavior } from './EcologyBehavior'
 import { applySiteAwareness } from './SiteAwareness'
 import { tickEnemyAI } from '../combat/EnemyAI'
+import { EcologyTools } from '../ecology/EcologyTools'
 
 const VIEW_RADIUS = WORLD_CONFIG.viewRadius
 const MAX_POPULATION = 500
@@ -44,6 +45,8 @@ export class CreatureManager {
 
   // WorldState reference for weather response
   worldState: WorldState | null = null
+
+  ecologyTools: EcologyTools | null = null
 
   constructor(worldSeed: number, scene: THREE.Scene) {
     this.rng = new SeededRandom(worldSeed + 1)
@@ -423,7 +426,28 @@ export class CreatureManager {
         if (sp.maxThirst > 0 && c.thirst > sp.maxThirst * 0.7) { this.beginSeek(c, 'seek_water'); break }
         if (c.hunger > sp.maxHunger * 0.5)                     { this.beginSeek(c, 'seek_food'); break }
         if (c.hunger < sp.maxHunger * 0.3 && c.reproductionCooldown <= 0) { this.beginSeek(c, 'seek_mate'); break }
-        if (c.stateTimer > 2) { c.state = 'wander'; c.stateTimer = 0; c.targetPos = this.wanderTarget(c) }
+        if (c.stateTimer > 2) {
+          // Check for nearby ecological tools
+          if (this.ecologyTools) {
+            const attractorPos = this.ecologyTools.hasAttractorNear(c.position)
+            if (attractorPos && Math.random() < 0.4) {
+              c.targetPos = attractorPos.clone()
+              c.targetPos.x += (Math.random() - 0.5) * 4
+              c.targetPos.z += (Math.random() - 0.5) * 4
+              c.state = 'wander'
+              c.stateTimer = 60 + Math.random() * 60
+              return
+            }
+            const repellerPos = this.ecologyTools.hasRepellerNear(c.position)
+            if (repellerPos) {
+              this.steerAwayFrom(c, repellerPos, sp.maxSpeed)
+              c.state = 'flee'
+              c.stateTimer = 30
+              return
+            }
+          }
+          c.state = 'wander'; c.stateTimer = 0; c.targetPos = this.wanderTarget(c)
+        }
         break
 
       case 'wander':
@@ -803,7 +827,8 @@ export class CreatureManager {
 
     // DNA breeding path
     if (parentA.dna && parentB.dna) {
-      const childDna = breedDNA(parentA.dna, parentB.dna)
+      const mutMult = this.ecologyTools?.getMutationMultiplierAt(mid) ?? 1.0
+      const childDna = breedDNA(parentA.dna, parentB.dna, mutMult)
       if (!childDna) return  // cross-body breeding failed
 
       const stats = dnaToStats(childDna)
