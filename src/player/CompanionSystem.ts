@@ -5,6 +5,7 @@ import { WorldState } from '../systems/WorldState'
 import { BiomeType } from '../biomes/types'
 import type { LoreStoneInstance } from '../journal/LoreStone'
 import type { LandmarkCrystal } from '../landmarks/LandmarkCrystal'
+import { calculateRarityScore, getRarityTier } from '../creatures/CreatureVariant'
 
 const BOND_DIST = 6
 const BOND_TIME = 8
@@ -56,6 +57,8 @@ export class CompanionSystem {
   birdCirclingPos: THREE.Vector3 | null = null
   /** True when goat companion stands within 10 units of a hidden landmark crystal. */
   goatStamping = false
+  foxHighlightCreatureId: string | null = null
+  birdBehaviorSignalId: string | null = null
 
   /** Current companion mood. */
   mood: CompanionMood = 'normal'
@@ -189,6 +192,21 @@ export class CompanionSystem {
         }
       }
 
+      // Fox: highlight rare creatures within 30 units
+      this.foxHighlightCreatureId = null
+      if (this.companionSpecies === 'fox' || this.companionSpecies === 'deer') {
+        for (const creature of creatures.values()) {
+          if (!creature.dna || creature.isEnemy || creature.state === 'dead') continue
+          const dist = creature.position.distanceTo(playerPos)
+          if (dist > 30) continue
+          const score = calculateRarityScore(creature.dna)
+          if (getRarityTier(score) === 'rare' || getRarityTier(score) === 'legendary') {
+            this.foxHighlightCreatureId = creature.id
+            break
+          }
+        }
+      }
+
       // Deer: resonating near Forest or Snow resonance sites
       if (species === 'deer' && worldState) {
         for (const biome of DEER_RESONANCE_BIOMES) {
@@ -220,6 +238,21 @@ export class CompanionSystem {
         }
       }
 
+      // Bird: signal when nearby creature is in a rare behavior (photo opportunity)
+      this.birdBehaviorSignalId = null
+      if (this.companionSpecies === 'bird' || this.companionSpecies === 'parrot') {
+        const rareBehaviors = new Set(['reverence', 'resonating', 'courtship', 'mating', 'hunt'])
+        for (const creature of creatures.values()) {
+          if (creature.isEnemy || creature.state === 'dead') continue
+          const dist = creature.position.distanceTo(playerPos)
+          if (dist > 40) continue
+          if (rareBehaviors.has(creature.state)) {
+            this.birdBehaviorSignalId = creature.id
+            break
+          }
+        }
+      }
+
       // Goat: stamping near hidden landmark crystals within 10 units
       if (species === 'goat' && landmarkCrystals && landmarkCrystals.length > 0) {
         const threshSq = GOAT_STAMP_DIST * GOAT_STAMP_DIST
@@ -243,6 +276,9 @@ export class CompanionSystem {
         this.mood = 'alert'
       } else {
         this.mood = 'normal'
+      }
+      if (this.foxHighlightCreatureId || this.birdBehaviorSignalId) {
+        this.mood = this.mood === 'normal' ? 'alert' : this.mood
       }
 
       this.updateHud()
