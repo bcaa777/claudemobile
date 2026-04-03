@@ -28,14 +28,14 @@ function clamp01(v: number): number {
   return Math.max(0, Math.min(1, v))
 }
 
-function mutateGene(value: number): number {
+function mutateGene(value: number, rateMultiplier = 1.0): number {
   // Radical mutation: completely random new value
-  if (Math.random() < RADICAL_CHANCE) {
+  if (Math.random() < RADICAL_CHANCE * rateMultiplier) {
     return Math.random()
   }
   // Normal mutation: shift by up to +/- MUTATION_RANGE
-  if (Math.random() < MUTATION_CHANCE) {
-    return clamp01(value + (Math.random() - 0.5) * 2 * MUTATION_RANGE)
+  if (Math.random() < MUTATION_CHANCE * rateMultiplier) {
+    return clamp01(value + (Math.random() * 2 - 1) * MUTATION_RANGE * Math.min(rateMultiplier, 2.0))
   }
   return value
 }
@@ -111,7 +111,7 @@ function blendColor(
   return hslToRgb(clamp01(h), clamp01(s), clamp01(l))
 }
 
-export function breedDNA(parentA: CreatureDNA, parentB: CreatureDNA): CreatureDNA | null {
+export function breedDNA(parentA: CreatureDNA, parentB: CreatureDNA, mutationRateMultiplier = 1.0): CreatureDNA | null {
   const sameBody = parentA.bodyPlan === parentB.bodyPlan
 
   if (!sameBody && Math.random() > CROSS_BODY_SUCCESS_RATE) {
@@ -149,11 +149,12 @@ export function breedDNA(parentA: CreatureDNA, parentB: CreatureDNA): CreatureDN
       const chosenVal = chosen[key] as number
       const otherVal = other[key] as number
       ;(child as unknown as Record<string, unknown>)[key] = mutateGene(
-        chosenVal * (1 - CROSS_BODY_BLEED) + otherVal * CROSS_BODY_BLEED
+        chosenVal * (1 - CROSS_BODY_BLEED) + otherVal * CROSS_BODY_BLEED,
+        mutationRateMultiplier
       )
     } else {
       const picked = Math.random() < 0.5 ? aVal : bVal
-      ;(child as unknown as Record<string, unknown>)[key] = mutateGene(picked)
+      ;(child as unknown as Record<string, unknown>)[key] = mutateGene(picked, mutationRateMultiplier)
     }
   }
 
