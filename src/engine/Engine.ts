@@ -50,6 +50,10 @@ import { CombatSystem } from '../combat/CombatSystem'
 import { InteractiveBeacons, BeaconSource } from '../systems/InteractiveBeacons'
 import { EnemySpawner } from '../combat/EnemySpawner'
 import { PortalNetwork } from '../systems/PortalNetwork'
+import { FieldGuide } from '../fieldguide/FieldGuide'
+import { FieldGuideOverlay } from '../fieldguide/FieldGuideOverlay'
+import { CameraSystem } from '../camera/CameraSystem'
+import { EcologyTools } from '../ecology/EcologyTools'
 
 export class Engine {
   private renderer: Renderer
@@ -107,6 +111,10 @@ export class Engine {
   private beacons!: InteractiveBeacons
   private portalNetwork!: PortalNetwork
   private firstEnemyLoreLogged = false
+  private fieldGuide: FieldGuide
+  private fieldGuideOverlay: FieldGuideOverlay
+  private cameraSystem: CameraSystem
+  private ecologyTools: EcologyTools
 
   // Beacon colors — created once, reused every frame
   private readonly beaconGold = new THREE.Color(0xffcc44)
@@ -265,6 +273,14 @@ export class Engine {
       this.landmarkManager.positions, WORLD_CONFIG.seed
     )
 
+
+    // Field guide, camera system, and ecology tools
+    this.fieldGuide = new FieldGuide()
+    this.fieldGuideOverlay = new FieldGuideOverlay(this.fieldGuide)
+    this.cameraSystem = new CameraSystem(this.renderer.camera, this.creatureManager, this.input, this.fieldGuide)
+    this.ecologyTools = new EcologyTools(this.renderer.scene, this.input, this.fieldGuide)
+    this.ecologyTools.restoreMeshes()
+    this.creatureManager.ecologyTools = this.ecologyTools
 
     // Intro bridge — if intro not complete, create bridge and position player there
     console.log('[Intro] introComplete:', this.worldState.introComplete)
@@ -689,8 +705,17 @@ export class Engine {
 
     this.creatureManager.update(delta, camPos, this.world, this.dayNight.getTime())
 
+    // Camera system
+    this.cameraSystem.setBiome(this.worldState.playerBiome)
+    this.cameraSystem.update(delta, camPos)
+
+    // Ecology tools
+    this.ecologyTools.update(delta, camPos, this.worldState.playerBiome)
+
     // --- Combat system ---
-    this.combatSystem.update(delta, this.input, camPos, this.elapsedTime)
+    if (!this.cameraSystem.active) {
+      this.combatSystem.update(delta, this.input, camPos, this.elapsedTime)
+    }
 
     // Enemy spawner — chunk-based + night spawns
     {
@@ -839,7 +864,7 @@ export class Engine {
     )
 
     // Apply companion bonuses
-    this.controller.speedMultiplier *= this.companionSystem.getSpeedMultiplier()
+    this.controller.speedMultiplier *= this.companionSystem.getSpeedMultiplier() * this.cameraSystem.getSpeedMultiplier()
     if (this.companionSystem.getRegenBonus() > 0) {
       this.playerState.heal(this.companionSystem.getRegenBonus() * delta)
     }
