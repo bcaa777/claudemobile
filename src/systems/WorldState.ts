@@ -219,6 +219,21 @@ export class WorldState {
     return true // newly discovered
   }
 
+  addPhotoXP(rarityTier: string, isNewDiscovery: boolean, newTier: number): void {
+    let xp = 0
+    switch (rarityTier) {
+      case 'common': xp = 5; break
+      case 'uncommon': xp = 15; break
+      case 'rare': xp = 30; break
+      case 'legendary': xp = 50; break
+    }
+    if (isNewDiscovery) xp *= 2
+    if (newTier === 3) xp += 20
+    if (newTier === 4) xp += 50
+    this.playerXP += xp
+    this.saveToStorage()
+  }
+
   /** Check whether a specific weather reveal has been witnessed */
   hasWeatherReveal(biome: BiomeType, revealKey: string): boolean {
     return this.weatherReveals.get(biome)?.has(revealKey) ?? false

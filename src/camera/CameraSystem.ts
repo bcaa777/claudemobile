@@ -6,6 +6,7 @@ import { FieldGuide } from '../fieldguide/FieldGuide'
 import { getVariantId, getRarityColor } from '../creatures/CreatureVariant'
 import { scorePhoto, PhotoResult } from './PhotoScoring'
 import { BiomeType } from '../biomes/types'
+import { WorldState } from '../systems/WorldState'
 
 const CAMERA_SPEED_MULTIPLIER = 0.375
 const DETECTION_RANGE = 50
@@ -25,6 +26,7 @@ export class CameraSystem {
   private input: InputManager
   private fieldGuide: FieldGuide
   private currentBiome: BiomeType = BiomeType.Forest
+  private worldState: WorldState | null = null
 
   private viewfinder: HTMLDivElement
   private resultCard: HTMLDivElement
@@ -125,6 +127,8 @@ export class CameraSystem {
     this.currentBiome = biome
   }
 
+  setWorldState(ws: WorldState): void { this.worldState = ws }
+
   update(delta: number, playerPos: THREE.Vector3): void {
     if (this.input.consumeCameraToggle()) {
       this.active = !this.active
@@ -217,6 +221,11 @@ export class CameraSystem {
       result.rarityTier,
       this.currentBiome,
     )
+
+    const entry = this.fieldGuide.getEntry(variantId)
+    if (this.worldState && entry) {
+      this.worldState.addPhotoXP(result.rarityTier, result.isNewDiscovery, entry.tier)
+    }
 
     this.lastResult = result
     this.showResult(result)

@@ -155,6 +155,11 @@ export class FieldGuide {
     return isNew
   }
 
+  /** Returns the entry for a given variantId, or undefined if not registered. */
+  getEntry(variantId: string): SpeciesEntry | undefined {
+    return this.entries.get(variantId)
+  }
+
   /** Returns true if the variant has been photographed (tier >= 2). */
   isPhotographed(variantId: string): boolean {
     const entry = this.entries.get(variantId)

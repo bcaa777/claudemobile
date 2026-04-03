@@ -278,6 +278,7 @@ export class Engine {
     this.fieldGuide = new FieldGuide()
     this.fieldGuideOverlay = new FieldGuideOverlay(this.fieldGuide)
     this.cameraSystem = new CameraSystem(this.renderer.camera, this.creatureManager, this.input, this.fieldGuide)
+    this.cameraSystem.setWorldState(this.worldState)
     this.ecologyTools = new EcologyTools(this.renderer.scene, this.input, this.fieldGuide)
     this.ecologyTools.restoreMeshes()
     this.creatureManager.ecologyTools = this.ecologyTools
