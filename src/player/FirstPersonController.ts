@@ -16,6 +16,7 @@ export class FirstPersonController {
   public airJumpsUsed: number = 0
   public isGliding: boolean = false
   public isSprinting: boolean = false
+  public isSliding: boolean = false
   public prevPos = new THREE.Vector3()
   public targetY = 0
   public frictionMultiplier = 1.0
@@ -122,7 +123,7 @@ export class FirstPersonController {
       }
 
       // Jump — ground or air (with stamina)
-      if (this.input.consumeJump()) {
+      if (this.input.consumeJump() && !this.isSliding) {
         if (this.isGrounded) {
           if (!playerState || playerState.drainStamina(STAMINA_CONFIG.jumpCost)) {
             this.verticalVelocity = STAMINA_CONFIG.airJumpVelocities[0]

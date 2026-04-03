@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { World } from '../world/World'
 import { FirstPersonController } from './FirstPersonController'
+import { TERRAIN_CONFIG } from '../config'
 
 const PLAYER_HEIGHT   = 1.8
 const TERRAIN_OFFSET  = 0.05
@@ -45,14 +46,19 @@ export class CollisionSystem {
     const groundYAtNew  = this.getGroundY(pos, pos.y)
     const groundYAtPrev = this.getGroundY(prevPos, pos.y)
 
-    // ── Slope blocking with sliding ──────────────────────────────────────────
-    // Only block when walking on ground for several frames (not mid-jump/landing).
-    // This prevents the "invisible wall" feel when jumping near slopes.
+    // ── Slope detection: slide on steep slopes, slow on moderate slopes ──────
     if (controller.isGrounded) {
       this.groundedFrames++
     } else {
       this.groundedFrames = 0
+      controller.isSliding = false
     }
+
+    const slideAngleRad = TERRAIN_CONFIG.slopeSlideAngle * Math.PI / 180
+    const slideTan = Math.tan(slideAngleRad)
+    const slowdownStartRad = TERRAIN_CONFIG.slopeSlowdownStart * Math.PI / 180
+    const slowdownTan = Math.tan(slowdownStartRad)
+
     if (this.groundedFrames > 5 && controller.verticalVelocity <= 0 && groundYAtNew > -Infinity && groundYAtPrev > -Infinity) {
       const stepUp = groundYAtNew - groundYAtPrev
       if (stepUp > AUTO_STEP_HEIGHT) {
@@ -61,22 +67,57 @@ export class CollisionSystem {
         const horizDist = Math.sqrt(dx * dx + dz * dz)
         if (horizDist > 0.001) {
           const slopeTan = stepUp / horizDist
-          if (slopeTan > MAX_SLOPE_TAN) {
-            // Slope sliding: project velocity along the slope face instead of full stop
+          const slopeAngle = Math.atan(slopeTan) * 180 / Math.PI
+
+          if (slopeTan > slideTan) {
+            // ── Slide down the slope ──────────────────────────────────────
+            controller.isSliding = true
+
+            // Push player back to previous position
+            pos.x = prevPos.x
+            pos.z = prevPos.z
+
+            // Apply downhill slide velocity
             const nx = dx / horizDist
             const nz = dz / horizDist
-            // Try sliding along each axis independently
-            const gX = this.getGroundY(_tmpVec.set(pos.x, pos.y, prevPos.z), pos.y)
-            const gZ = this.getGroundY(_tmpVec.set(prevPos.x, pos.y, pos.z), pos.y)
-            const stepX = gX - groundYAtPrev
-            const stepZ = gZ - groundYAtPrev
-            const canSlideX = stepX <= AUTO_STEP_HEIGHT || (Math.abs(dx) > 0.001 && stepX / Math.abs(dx) <= MAX_SLOPE_TAN)
-            const canSlideZ = stepZ <= AUTO_STEP_HEIGHT || (Math.abs(dz) > 0.001 && stepZ / Math.abs(dz) <= MAX_SLOPE_TAN)
-            if (!canSlideX) pos.x = prevPos.x
-            if (!canSlideZ) pos.z = prevPos.z
+            const slideSpeed = 28 * Math.sin(slopeAngle * Math.PI / 180) * delta
+            pos.x -= nx * slideSpeed
+            pos.z -= nz * slideSpeed
+
+            // Suppress jump while sliding
+            controller.verticalVelocity = 0
+
+          } else if (slopeTan > slowdownTan) {
+            // ── Moderate slope: reduce speed ──────────────────────────────
+            controller.isSliding = false
+            const t = (slopeAngle - TERRAIN_CONFIG.slopeSlowdownStart)
+                    / (TERRAIN_CONFIG.slopeSlideAngle - TERRAIN_CONFIG.slopeSlowdownStart)
+            const smooth = t * t * (3 - 2 * t)
+            controller.frictionMultiplier = 1.0 - smooth * TERRAIN_CONFIG.slopeSlowdownFactor
+
+          } else {
+            controller.isSliding = false
+            controller.frictionMultiplier = 1.0
+          }
+        } else {
+          controller.isSliding = false
+          controller.frictionMultiplier = 1.0
+        }
+      } else {
+        // Exit sliding with hysteresis
+        if (controller.isSliding) {
+          const exitAngle = TERRAIN_CONFIG.slopeSlideAngle - 5
+          const exitTan = Math.tan(exitAngle * Math.PI / 180)
+          const edx = pos.x - prevPos.x, edz = pos.z - prevPos.z
+          const eHoriz = Math.sqrt(edx * edx + edz * edz)
+          if (stepUp <= AUTO_STEP_HEIGHT || (eHoriz > 0.001 && stepUp / eHoriz < exitTan)) {
+            controller.isSliding = false
           }
         }
+        controller.frictionMultiplier = 1.0
       }
+    } else {
+      controller.frictionMultiplier = 1.0
     }
 
     // ── Ground snap (smoothed) ───────────────────────────────────────────────
