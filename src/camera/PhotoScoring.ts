@@ -42,7 +42,7 @@ export function scorePhoto(
   return { variantId, species, behavior, rarityTier, rarityScore, behaviorMultiplier: behaviorMult, isNewDiscovery: isNew, finalScore, stars }
 }
 
-function scoreToStars(score: number): number {
+export function scoreToStars(score: number): number {
   if (score >= 80) return 5
   if (score >= 50) return 4
   if (score >= 25) return 3

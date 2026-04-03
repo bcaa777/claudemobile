@@ -81,6 +81,10 @@ interface SerializedFieldGuide {
 export class FieldGuide {
   private entries: Map<string, SpeciesEntry> = new Map()
   private silhouettes: Set<string> = new Set()
+  /** True if the last recordPhoto call caused a tier upgrade */
+  _lastTierChanged = false
+  private dirty = false
+  private saveTimer: ReturnType<typeof setTimeout> | null = null
 
   constructor() {
     this.load()
@@ -150,7 +154,9 @@ export class FieldGuide {
     }
 
     const entry = this.entries.get(variantId)!
+    const oldTier = entry.tier
     this.recalculateTier(entry)
+    this._lastTierChanged = entry.tier > oldTier
     this.save()
     return isNew
   }
@@ -257,8 +263,17 @@ export class FieldGuide {
     }
   }
 
-  /** Serialize entries and silhouettes to localStorage. */
+  /** Debounced save — batches multiple changes into one localStorage write. */
   private save(): void {
+    if (this.saveTimer) return // already scheduled
+    this.saveTimer = setTimeout(() => {
+      this.saveTimer = null
+      this.flushSave()
+    }, 2000)
+  }
+
+  /** Immediately write to localStorage. */
+  private flushSave(): void {
     const serialized: SerializedFieldGuide = {
       entries: Array.from(this.entries.values()).map(entry => ({
         variantId: entry.variantId,

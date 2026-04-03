@@ -27,6 +27,7 @@ export class CameraSystem {
   private fieldGuide: FieldGuide
   private currentBiome: BiomeType = BiomeType.Forest
   private worldState: WorldState | null = null
+  private sightingTimer = 0
 
   private viewfinder: HTMLDivElement
   private resultCard: HTMLDivElement
@@ -147,7 +148,11 @@ export class CameraSystem {
       this.resultCard.style.display = 'none'
     }
 
-    this.registerNearbySightings(playerPos)
+    this.sightingTimer -= delta
+    if (this.sightingTimer <= 0) {
+      this.registerNearbySightings(playerPos)
+      this.sightingTimer = 1.5
+    }
 
     if (this.input.consumeAttack() && this.cooldown <= 0) {
       this.takePhoto(playerPos)
@@ -224,7 +229,11 @@ export class CameraSystem {
 
     const entry = this.fieldGuide.getEntry(variantId)
     if (this.worldState && entry) {
-      this.worldState.addPhotoXP(result.rarityTier, result.isNewDiscovery, entry.tier)
+      this.worldState.addPhotoXP(
+        result.rarityTier,
+        result.isNewDiscovery,
+        this.fieldGuide._lastTierChanged ? entry.tier : 0,
+      )
     }
 
     this.lastResult = result

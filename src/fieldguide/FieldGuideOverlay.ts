@@ -1,6 +1,7 @@
 import { FieldGuide, SpeciesEntry, KnowledgeTier } from './FieldGuide'
 import { BodyPlan } from '../creatures/CreatureDNA'
 import { getRarityColor } from '../creatures/CreatureVariant'
+import { scoreToStars } from '../camera/PhotoScoring'
 
 const BODY_PLAN_TABS: BodyPlan[] = ['quadruped', 'insectoid', 'avian', 'aquatic', 'serpentine']
 const TAB_LABELS: Record<BodyPlan, string> = {
@@ -125,7 +126,7 @@ export class FieldGuideOverlay {
     const rarityColor = getRarityColor(entry.rarityTier)
     const tierLabel = TIER_LABELS[entry.tier]
 
-    const starCount = Math.min(5, Math.round(entry.bestScore / 20))
+    const starCount = scoreToStars(entry.bestScore)
     const stars = '★'.repeat(starCount) + '☆'.repeat(5 - starCount)
 
     let extraHtml = ''
