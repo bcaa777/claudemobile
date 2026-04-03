@@ -24,6 +24,8 @@ export class InputManager {
   private attackQueued = false
   private swapWeaponQueued = false
   private upgradeMenuQueued = false
+  private cameraToggleQueued = false
+  private toolMenuQueued = false
   crouchHeld = false
 
   // Gamepad state
@@ -53,6 +55,8 @@ export class InputManager {
       if (e.code === 'KeyV') this.muteToggleQueued = true
       if (e.code === 'KeyR') this.swapWeaponQueued = true
       if (e.code === 'KeyU') this.upgradeMenuQueued = true
+      if (e.code === 'KeyX') this.cameraToggleQueued = true
+      if (e.code === 'KeyB') this.toolMenuQueued = true
     })
     document.addEventListener('keyup', (e) => this.keys.delete(e.code))
     document.addEventListener('keydown', (e) => { if (e.code === 'ControlLeft' || e.code === 'ControlRight') this.crouchHeld = true })
@@ -208,6 +212,18 @@ export class InputManager {
   consumeUpgradeMenu(): boolean {
     const v = this.upgradeMenuQueued
     this.upgradeMenuQueued = false
+    return v
+  }
+
+  consumeCameraToggle(): boolean {
+    const v = this.cameraToggleQueued
+    this.cameraToggleQueued = false
+    return v
+  }
+
+  consumeToolMenu(): boolean {
+    const v = this.toolMenuQueued
+    this.toolMenuQueued = false
     return v
   }
 }
