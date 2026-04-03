@@ -98,8 +98,16 @@ export function continentalOffset(wx: number, wz: number): number {
   const t1 = 1 / (1 + Math.exp(-k * (spread - low)))
   const t2 = 1 / (1 + Math.exp(-k * (spread - high)))
 
-  return t1 * TERRAIN_CONFIG.midlandOffset
-       + t2 * (TERRAIN_CONFIG.mountainOffset - TERRAIN_CONFIG.midlandOffset)
+  let offset = t1 * TERRAIN_CONFIG.midlandOffset
+             + t2 * (TERRAIN_CONFIG.mountainOffset - TERRAIN_CONFIG.midlandOffset)
+
+  // Fade offset to zero near world origin so the spawn area (castle) stays at valley level.
+  // Full offset beyond 600 units, zero within 300 units, smooth transition between.
+  const distFromOrigin = Math.sqrt(wx * wx + wz * wz)
+  const spawnFade = Math.min(1, Math.max(0, (distFromOrigin - 300) / 300))
+  offset *= spawnFade * spawnFade  // quadratic easing for gentle transition
+
+  return offset
 }
 
 // ─── Per-vertex height ───────────────────────────────────────────────────────
