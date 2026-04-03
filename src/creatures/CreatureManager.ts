@@ -223,14 +223,47 @@ export class CreatureManager {
       }
     }
 
-    // Clear initializedChunks for far-away chunks so they can respawn when revisited
+    // Clear initializedChunks for far-away chunks so they can respawn when revisited.
+    // Use view radius (matches chunk unload radius) instead of draw distance so
+    // initializedChunks is always cleared when a chunk is unloaded.
     const playerCX = Math.floor(playerPos.x / CHUNK_SIZE)
     const playerCZ = Math.floor(playerPos.z / CHUNK_SIZE)
-    const cullChunkRadius = Math.ceil(dd * 1.2 / CHUNK_SIZE)
+    const viewRadius = WORLD_CONFIG.viewRadius
     for (const key of this.initializedChunks) {
       const [kcx, kcz] = key.split(',').map(Number)
-      if (Math.abs(kcx - playerCX) > cullChunkRadius || Math.abs(kcz - playerCZ) > cullChunkRadius) {
+      if (Math.abs(kcx - playerCX) > viewRadius + 1 || Math.abs(kcz - playerCZ) > viewRadius + 1) {
         this.initializedChunks.delete(key)
+      }
+    }
+
+    // Respawn creatures in nearby chunks that are loaded but empty
+    // This handles the case where creatures were culled but the chunk wasn't unloaded
+    if (this._frameCounter % 60 === 0) {
+      for (let dz = -viewRadius; dz <= viewRadius; dz++) {
+        for (let dx = -viewRadius; dx <= viewRadius; dx++) {
+          const ccx = playerCX + dx
+          const ccz = playerCZ + dz
+          const chunkKey = `${ccx},${ccz}`
+          if (!this.initializedChunks.has(chunkKey)) continue
+          // Count creatures in this chunk
+          const minX = ccx * CHUNK_SIZE
+          const maxX = minX + CHUNK_SIZE
+          const minZ = ccz * CHUNK_SIZE
+          const maxZ = minZ + CHUNK_SIZE
+          let count = 0
+          for (const c of this.creatures.values()) {
+            if (c.position.x >= minX && c.position.x < maxX &&
+                c.position.z >= minZ && c.position.z < maxZ) {
+              count++
+              if (count >= 3) break
+            }
+          }
+          if (count < 3) {
+            // Mark chunk as uninitialized so it can respawn on next generateChunk or spawnForChunk call
+            this.initializedChunks.delete(chunkKey)
+            this.spawnForChunk(ccx, ccz, world)
+          }
+        }
       }
     }
 
@@ -247,14 +280,19 @@ export class CreatureManager {
       }
     }
 
-    // Cull excess population (remove oldest first) - only when significantly over limit
+    // Cull excess population (remove farthest first) - only when significantly over limit
     if (this.creatures.size > MAX_POPULATION) {
-      // Sort the flat array by age descending (reuse grid.flat to avoid new allocation)
-      all.sort((a, b) => b.age - a.age)
+      // Sort by distance from player descending — keep nearby creatures alive
+      all.sort((a, b) => {
+        const da = (a.position.x - playerPos.x) ** 2 + (a.position.z - playerPos.z) ** 2
+        const db = (b.position.x - playerPos.x) ** 2 + (b.position.z - playerPos.z) ** 2
+        return db - da
+      })
       const target = Math.floor(MAX_POPULATION * 0.9)
-      let idx = all.length - 1
-      while (this.creatures.size > target && idx >= 0) {
-        const victim = all[idx--]
+      let idx = 0
+      while (this.creatures.size > target && idx < all.length) {
+        const victim = all[idx++]
+        if (victim.isCompanion) continue
         this.disposeMesh(victim)
         this.creatures.delete(victim.id)
       }
