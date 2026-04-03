@@ -144,6 +144,22 @@ export const TERRAIN_CONFIG = {
   enableOasisWells: true,
   enableInterBiomeRoads: true,
   enableBiomeTraversal: true,
+
+  // Continental elevation — large-scale 3-tier height field
+  continentalFrequency:      0.0004,  // noise zoom (lower = bigger regions)
+  continentalWarpFrequency:  0.0003,  // tier boundary meander zoom
+  continentalWarpStrength:   60,      // boundary meander amplitude (units)
+  continentalSigmoidSteepness: 15,    // cliff sharpness (higher = steeper walls)
+  valleyOffset:              0,       // base height for valley tier (units)
+  midlandOffset:             120,     // base height for midland tier (units)
+  mountainOffset:            250,     // base height for mountain tier (units)
+  tierThresholdLow:          0.33,    // valley→midland noise threshold
+  tierThresholdHigh:         0.66,    // midland→mountain noise threshold
+
+  // Slope physics
+  slopeSlideAngle:           70,      // degrees — above this, player slides
+  slopeSlowdownStart:        50,      // degrees — speed reduction begins
+  slopeSlowdownFactor:       0.8,     // max speed reduction at slide threshold
 }
 
 // ─── STAMINA ────────────────────────────────────────────────────────────────
