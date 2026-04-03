@@ -21,6 +21,10 @@ let riverNoise:   Noise2DFn | null = null
 function getTerrainNoise() { if (!terrainNoise) terrainNoise = makeNoise2D(12345); return terrainNoise }
 function getRiverNoise()   { if (!riverNoise)   riverNoise   = makeNoise2D(77777); return riverNoise }
 
+let continentalNoise: Noise2DFn | null = null
+
+function getContinentalNoise() { if (!continentalNoise) continentalNoise = makeNoise2D(55555); return continentalNoise }
+
 // ─── Height functions ────────────────────────────────────────────────────────
 
 // Ridge FBM — raw noise in [-1,1] → 1 – |n|, squared for sharp peaks
@@ -60,6 +64,42 @@ export function riverMask(wx: number, wz: number): number {
   const n2 = Math.abs(rn(wx * 0.003 + 100, wz * 0.003 + 50))
   const rv = Math.min(n1, n2)                 // low = near river
   return Math.min(1.0, rv / TERRAIN_CONFIG.riverWidth)
+}
+
+// ─── Continental elevation ───────────────────────────────────────────────────
+
+/**
+ * Compute the continental elevation offset at a world position.
+ * Returns a height offset (0 for valley, ~120 for midland, ~250 for mountain)
+ * with steep sigmoid transitions between tiers.
+ */
+export function continentalOffset(wx: number, wz: number): number {
+  const cn = getContinentalNoise()
+  const tn = getTerrainNoise()
+
+  // Domain warp for organic, meandering tier boundaries
+  const wf = TERRAIN_CONFIG.continentalWarpFrequency
+  const ws = TERRAIN_CONFIG.continentalWarpStrength
+  const warpX = wx + ws * fbm(tn, wx * wf,        wz * wf + 31.4, 2)
+  const warpZ = wz + ws * fbm(tn, wx * wf + 17.3, wz * wf,        2)
+
+  // Sample continental noise (0-1)
+  const raw = fbm(cn, warpX * TERRAIN_CONFIG.continentalFrequency,
+                      warpZ * TERRAIN_CONFIG.continentalFrequency, 3)
+
+  // Spread fbm output (clusters around 0.5) to use more of the 0-1 range
+  const spread = Math.min(1, Math.max(0, (raw - 0.25) * 2.0))
+
+  // Sigmoid-based tier transitions — steep = cliff faces, gradual = passes
+  const k = TERRAIN_CONFIG.continentalSigmoidSteepness
+  const low  = TERRAIN_CONFIG.tierThresholdLow
+  const high = TERRAIN_CONFIG.tierThresholdHigh
+
+  const t1 = 1 / (1 + Math.exp(-k * (spread - low)))
+  const t2 = 1 / (1 + Math.exp(-k * (spread - high)))
+
+  return t1 * TERRAIN_CONFIG.midlandOffset
+       + t2 * (TERRAIN_CONFIG.mountainOffset - TERRAIN_CONFIG.midlandOffset)
 }
 
 // ─── Per-vertex height ───────────────────────────────────────────────────────
@@ -147,6 +187,10 @@ export function generateHeightmap(cx: number, cz: number, biomeMap: BiomeMap): H
 
       let height = hA + (hB - hA) * blend.blend
 
+      // Continental elevation — large-scale tier offset
+      const contOffset = continentalOffset(wx, wz)
+      height += contOffset
+
       // Mega mountain boost — sharp conical peaks scattered across the world
       for (const mt of biomeMap.megaMountains) {
         const mdx = wx - mt.x
@@ -177,14 +221,17 @@ export function generateHeightmap(cx: number, cz: number, biomeMap: BiomeMap): H
         }
       }
 
+      // Local water level relative to continental base
+      const localWater = contOffset + WATER_LEVEL
+
       // River carving
       const rm = riverMask(wx, wz)
       if (rm < 1) {
-        const bed = WATER_LEVEL - TERRAIN_CONFIG.riverCarveDepth
-        height    = height * rm + bed * (1 - rm)
+        const bed = localWater - TERRAIN_CONFIG.riverCarveDepth
+        height = height * rm + bed * (1 - rm)
       }
 
-      if (height < WATER_LEVEL) hasWater = true
+      if (height < localWater) hasWater = true
 
       const idx = row * VERTICES + col
       heightGrid[idx]         = height
@@ -193,7 +240,7 @@ export function generateHeightmap(cx: number, cz: number, biomeMap: BiomeMap): H
       positions[idx * 3 + 2] = (row / CHUNK_SEGMENTS) * CHUNK_SIZE
 
       // Vertex colour
-      if (height < WATER_LEVEL) {
+      if (height < localWater) {
         // Sandy riverbed / lakebed
         const sand: [number,number,number] = [0.46, 0.38, 0.20]
         colors[idx*3]   = Math.round(sand[0] * 31) / 31
@@ -282,6 +329,10 @@ export function sampleWorldHeight(wx: number, wz: number, biomeMap: BiomeMap): n
 
   let height = hA + (hB - hA) * blend.blend
 
+  // Continental elevation
+  const contOffset = continentalOffset(wx, wz)
+  height += contOffset
+
   // Mega mountain boost
   for (const mt of biomeMap.megaMountains) {
     const mdx = wx - mt.x
@@ -309,14 +360,15 @@ export function sampleWorldHeight(wx: number, wz: number, biomeMap: BiomeMap): n
     }
   }
 
-  // River carving
+  // River carving — local water level relative to continental base
+  const localWater = contOffset + WATER_LEVEL
   const rm = riverMask(wx, wz)
   if (rm < 1) {
-    const bed = WATER_LEVEL - TERRAIN_CONFIG.riverCarveDepth
+    const bed = localWater - TERRAIN_CONFIG.riverCarveDepth
     height = height * rm + bed * (1 - rm)
   }
 
-  return inHellPit ? height : Math.max(height, WATER_LEVEL)
+  return inHellPit ? height : Math.max(height, localWater)
 }
 
 // ─── Height sampler (bilinear) ───────────────────────────────────────────────
