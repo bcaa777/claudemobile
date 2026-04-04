@@ -231,7 +231,7 @@ export class CreatureManager {
     const viewRadius = WORLD_CONFIG.viewRadius
     for (const key of this.initializedChunks) {
       const [kcx, kcz] = key.split(',').map(Number)
-      if (Math.abs(kcx - playerCX) > viewRadius + 1 || Math.abs(kcz - playerCZ) > viewRadius + 1) {
+      if (Math.abs(kcx - playerCX) > viewRadius || Math.abs(kcz - playerCZ) > viewRadius) {
         this.initializedChunks.delete(key)
       }
     }
