@@ -236,37 +236,6 @@ export class CreatureManager {
       }
     }
 
-    // Respawn creatures in nearby chunks that are loaded but empty
-    // This handles the case where creatures were culled but the chunk wasn't unloaded
-    if (this._frameCounter % 60 === 0) {
-      for (let dz = -viewRadius; dz <= viewRadius; dz++) {
-        for (let dx = -viewRadius; dx <= viewRadius; dx++) {
-          const ccx = playerCX + dx
-          const ccz = playerCZ + dz
-          const chunkKey = `${ccx},${ccz}`
-          if (!this.initializedChunks.has(chunkKey)) continue
-          // Count creatures in this chunk
-          const minX = ccx * CHUNK_SIZE
-          const maxX = minX + CHUNK_SIZE
-          const minZ = ccz * CHUNK_SIZE
-          const maxZ = minZ + CHUNK_SIZE
-          let count = 0
-          for (const c of this.creatures.values()) {
-            if (c.position.x >= minX && c.position.x < maxX &&
-                c.position.z >= minZ && c.position.z < maxZ) {
-              count++
-              if (count >= 3) break
-            }
-          }
-          if (count < 3) {
-            // Mark chunk as uninitialized so it can respawn on next generateChunk or spawnForChunk call
-            this.initializedChunks.delete(chunkKey)
-            this.spawnForChunk(ccx, ccz, world)
-          }
-        }
-      }
-    }
-
     // Cull creatures beyond unified draw distance (with margin for creatures near the edge)
     const cullDistSq = (dd * 1.2) ** 2
     for (let i = all.length - 1; i >= 0; i--) {
