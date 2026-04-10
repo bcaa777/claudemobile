@@ -26,6 +26,8 @@ export class InputManager {
   private upgradeMenuQueued = false
   private cameraToggleQueued = false
   private toolMenuQueued = false
+  private cameraCycleQueued = false
+  private scrollDelta = 0
   crouchHeld = false
 
   // Gamepad state
@@ -52,7 +54,8 @@ export class InputManager {
       if (e.code === 'KeyJ') this.journalToggleQueued = true
       if (e.code === 'KeyC') this.campfireQueued = true
       if (e.code === 'KeyT') this.fastTravelQueued = true
-      if (e.code === 'KeyV') this.muteToggleQueued = true
+      if (e.code === 'KeyM') this.muteToggleQueued = true
+      if (e.code === 'KeyV') this.cameraCycleQueued = true
       if (e.code === 'KeyR') this.swapWeaponQueued = true
       if (e.code === 'KeyU') this.upgradeMenuQueued = true
       if (e.code === 'KeyX') this.cameraToggleQueued = true
@@ -73,6 +76,9 @@ export class InputManager {
     document.addEventListener('pointerlockchange', () => {
       this.locked = !!document.pointerLockElement
     })
+    document.addEventListener('wheel', (e) => {
+      this.scrollDelta += e.deltaY
+    }, { passive: true })
 
     window.addEventListener('gamepadconnected', () => { this.gamepadConnected = true })
     window.addEventListener('gamepaddisconnected', () => { this.gamepadConnected = false })
@@ -224,6 +230,18 @@ export class InputManager {
   consumeToolMenu(): boolean {
     const v = this.toolMenuQueued
     this.toolMenuQueued = false
+    return v
+  }
+
+  consumeCameraCycle(): boolean {
+    const v = this.cameraCycleQueued
+    this.cameraCycleQueued = false
+    return v
+  }
+
+  consumeScrollDelta(): number {
+    const v = this.scrollDelta
+    this.scrollDelta = 0
     return v
   }
 }

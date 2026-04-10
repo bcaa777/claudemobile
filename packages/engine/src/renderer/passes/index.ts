@@ -1,0 +1,8 @@
+export { PixelatePass } from './PixelatePass'
+export { ColorGradePass } from './ColorGradePass'
+export { GodRayPass } from './GodRayPass'
+export { HeatDistortionPass } from './HeatDistortionPass'
+export { CRTPass } from './CRTPass'
+export { UnderwaterPass } from './UnderwaterPass'
+export { DamagePass } from './DamagePass'
+export { RetroPass } from './RetroPass'

@@ -1,0 +1,5 @@
+export type { CameraRig, CameraMode } from './CameraRig'
+export { FirstPersonRig } from './FirstPersonRig'
+export { ThirdPersonRig } from './ThirdPersonRig'
+export type { ThirdPersonRigOptions } from './ThirdPersonRig'
+export { TopDownRig } from './TopDownRig'

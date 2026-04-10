@@ -6,7 +6,8 @@
     "build": "pnpm --filter @retro-world/game build",
     "preview": "pnpm --filter @retro-world/game preview",
     "start": "pnpm --filter @retro-world/game start",
-    "dev:engine": "pnpm --filter @engine/core build --watch"
+    "dev:engine": "pnpm --filter @engine/core build --watch",
+    "dev:crawler": "pnpm --filter @crawler-world/game dev"
   },
   "devDependencies": {
     "typescript": "^5.4.0"
