@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { Renderer } from './Renderer'
-import { InputManager } from '@engine/core'
+import { InputManager, EventBus } from '@engine/core'
 import { World } from '../world/World'
 import { FirstPersonController } from '../player/FirstPersonController'
 import { CollisionSystem } from '../player/CollisionSystem'
@@ -58,6 +58,7 @@ import { EcologyTools } from '../ecology/EcologyTools'
 export class Engine {
   private renderer: Renderer
   private input: InputManager
+  private eventBus: EventBus
   private world: World
   private controller: FirstPersonController
   private collision: CollisionSystem
@@ -145,6 +146,7 @@ export class Engine {
   private healthBarContainer: HTMLElement | null
   private artefactHud: HTMLElement | null
   private crystalsCollected = 0
+  private lastBiomeName = ''
 
   // Castle position for respawn
   private castlePos = new THREE.Vector3()
@@ -152,6 +154,7 @@ export class Engine {
   constructor(container: HTMLElement) {
     this.renderer = new Renderer(container)
     this.input = new InputManager()
+    this.eventBus = new EventBus()
 
     this.biomeMap = new BiomeMap(WORLD_CONFIG.seed)
     this.world = new World(this.renderer.scene, this.biomeMap)
@@ -1066,8 +1069,13 @@ export class Engine {
     }
 
     // Update HUD
+    const currentBiomeName = this.biomeTransition.getCurrentBiomeName()
     if (this.biomeHud) {
-      this.biomeHud.textContent = this.biomeTransition.getCurrentBiomeName()
+      this.biomeHud.textContent = currentBiomeName
+    }
+    if (currentBiomeName !== this.lastBiomeName) {
+      this.lastBiomeName = currentBiomeName
+      this.eventBus.emit('biomeChanged', { biome: currentBiomeName })
     }
     if (this.timeHud) {
       this.timeHud.textContent = this.dayNight.getTimeString()
