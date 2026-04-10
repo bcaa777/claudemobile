@@ -19,12 +19,22 @@ export const EVOLUTIONS: EvolutionPath[] = [
   { baseWeapon: 'lightning_arc', metaRequirement: 'wisdom', metaLevel: 1, evolvedWeapon: 'storm_caller' },
   { baseWeapon: 'blade_orbit', metaRequirement: 'speed', metaLevel: 2, evolvedWeapon: 'death_spiral' },
   { baseWeapon: 'turret', metaRequirement: 'damage', metaLevel: 2, evolvedWeapon: 'fortress' },
+  { baseWeapon: 'seeker_swarm', metaRequirement: 'speed', metaLevel: 1, evolvedWeapon: 'swarm_queen' },
+  { baseWeapon: 'void_mine', metaRequirement: 'damage', metaLevel: 2, evolvedWeapon: 'mega_mine' },
+  { baseWeapon: 'sonic_boom', metaRequirement: 'wisdom', metaLevel: 1, evolvedWeapon: 'sky_beam' },
+  { baseWeapon: 'flak_cannon', metaRequirement: 'damage', metaLevel: 1, evolvedWeapon: 'flak_storm' },
+  { baseWeapon: 'homing_missile', metaRequirement: 'speed', metaLevel: 2, evolvedWeapon: 'hellfire_missile' },
+  { baseWeapon: 'chain_lightning', metaRequirement: 'wisdom', metaLevel: 2, evolvedWeapon: 'tesla_coil' },
+  { baseWeapon: 'gravity_well', metaRequirement: 'wisdom', metaLevel: 3, evolvedWeapon: 'singularity' },
+  { baseWeapon: 'drone_buddy', metaRequirement: 'speed', metaLevel: 2, evolvedWeapon: 'drone_swarm' },
 ]
 
 export const FUSIONS: FusionRecipe[] = [
   { weapon1: 'railgun', weapon2: 'death_spiral', result: 'singularity_cannon' },
   { weapon1: 'storm_caller', weapon2: 'spread_cannon', result: 'thunder_rain' },
   { weapon1: 'fortress', weapon2: 'vortex_pull', result: 'gravity_fortress' },
+  { weapon1: 'swarm_queen', weapon2: 'tesla_coil', result: 'thunder_rain' },
+  { weapon1: 'hellfire_missile', weapon2: 'mega_mine', result: 'singularity_cannon' },
 ]
 
 export const EVOLUTION_MAX_LEVEL = 5

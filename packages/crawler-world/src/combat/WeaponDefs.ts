@@ -90,6 +90,53 @@ export const WEAPON_DEFS: Record<string, WeaponDef> = {
     pullDuration: 3, pullStrength: 8,
   },
 
+  // ── New base weapons ──────────────────────────────────────────────────────
+  seeker_swarm: {
+    id: 'seeker_swarm', name: 'Seeker Swarm', category: 'projectile',
+    damage: 8, cooldown: 0.3, range: 45, projectileSpeed: 25,
+    projectileCount: 2, spreadAngle: 0.5, autoTarget: true,
+  },
+  void_mine: {
+    id: 'void_mine', name: 'Void Mine', category: 'deployable',
+    damage: 80, cooldown: 3.0, range: 6, projectileSpeed: 0,
+    projectileCount: 1, spreadAngle: 0, autoTarget: true,
+    aoeRadius: 6, deployDuration: 10,
+  },
+  sonic_boom: {
+    id: 'sonic_boom', name: 'Sonic Boom', category: 'area',
+    damage: 35, cooldown: 1.5, range: 15, projectileSpeed: 0,
+    projectileCount: 1, spreadAngle: 0, autoTarget: true,
+    aoeRadius: 15, aoeDuration: 0.5,
+  },
+  flak_cannon: {
+    id: 'flak_cannon', name: 'Flak Cannon', category: 'projectile',
+    damage: 6, cooldown: 0.8, range: 30, projectileSpeed: 30,
+    projectileCount: 8, spreadAngle: 0.6, autoTarget: false,
+  },
+  homing_missile: {
+    id: 'homing_missile', name: 'Homing Missile', category: 'projectile',
+    damage: 40, cooldown: 2.0, range: 60, projectileSpeed: 20,
+    projectileCount: 1, spreadAngle: 0, autoTarget: true,
+  },
+  chain_lightning: {
+    id: 'chain_lightning', name: 'Chain Lightning', category: 'chain',
+    damage: 22, cooldown: 1.0, range: 30, projectileSpeed: 0,
+    projectileCount: 1, spreadAngle: 0, autoTarget: true,
+    chainCount: 4, chainRange: 12,
+  },
+  gravity_well: {
+    id: 'gravity_well', name: 'Gravity Well', category: 'gravity',
+    damage: 5, cooldown: 8.0, range: 20, projectileSpeed: 0,
+    projectileCount: 1, spreadAngle: 0, autoTarget: true,
+    pullDuration: 4, pullStrength: 8,
+  },
+  drone_buddy: {
+    id: 'drone_buddy', name: 'Drone Buddy', category: 'orbital',
+    damage: 12, cooldown: 0.5, range: 25, projectileSpeed: 30,
+    projectileCount: 1, spreadAngle: 0, autoTarget: true,
+    orbitRadius: 4, orbitSpeed: 2.0, orbitCount: 1,
+  },
+
   // ---- Evolved weapons (require level 5 base + meta upgrade) ----
   railgun: {
     id: 'railgun', name: 'Railgun', category: 'projectile',
@@ -119,6 +166,53 @@ export const WEAPON_DEFS: Record<string, WeaponDef> = {
     damage: 18, cooldown: 6.0, range: 25, projectileSpeed: 38,
     projectileCount: 3, spreadAngle: 0.2, autoTarget: true,
     deployDuration: 20,
+  },
+
+  // New evolved weapons
+  swarm_queen: {
+    id: 'swarm_queen', name: 'Swarm Queen', category: 'projectile',
+    damage: 12, cooldown: 0.15, range: 40, projectileSpeed: 30,
+    projectileCount: 3, spreadAngle: 0.7, autoTarget: true,
+  },
+  mega_mine: {
+    id: 'mega_mine', name: 'Mega Mine', category: 'deployable',
+    damage: 150, cooldown: 2.5, range: 10, projectileSpeed: 0,
+    projectileCount: 1, spreadAngle: 0, autoTarget: true,
+    aoeRadius: 10, deployDuration: 12,
+  },
+  sky_beam: {
+    id: 'sky_beam', name: 'Sky Beam', category: 'area',
+    damage: 100, cooldown: 4.0, range: 12, projectileSpeed: 0,
+    projectileCount: 1, spreadAngle: 0, autoTarget: true,
+    aoeRadius: 12, aoeDuration: 1.5,
+  },
+  flak_storm: {
+    id: 'flak_storm', name: 'Flak Storm', category: 'projectile',
+    damage: 10, cooldown: 0.5, range: 35, projectileSpeed: 35,
+    projectileCount: 12, spreadAngle: 0.8, autoTarget: false,
+  },
+  hellfire_missile: {
+    id: 'hellfire_missile', name: 'Hellfire Missile', category: 'projectile',
+    damage: 70, cooldown: 1.5, range: 70, projectileSpeed: 25,
+    projectileCount: 2, spreadAngle: 0.1, autoTarget: true,
+  },
+  tesla_coil: {
+    id: 'tesla_coil', name: 'Tesla Coil', category: 'chain',
+    damage: 35, cooldown: 0.8, range: 35, projectileSpeed: 0,
+    projectileCount: 1, spreadAngle: 0, autoTarget: true,
+    chainCount: 8, chainRange: 15,
+  },
+  singularity: {
+    id: 'singularity', name: 'Singularity', category: 'gravity',
+    damage: 15, cooldown: 12.0, range: 25, projectileSpeed: 0,
+    projectileCount: 1, spreadAngle: 0, autoTarget: true,
+    pullDuration: 6, pullStrength: 15,
+  },
+  drone_swarm: {
+    id: 'drone_swarm', name: 'Drone Swarm', category: 'orbital',
+    damage: 18, cooldown: 0.35, range: 30, projectileSpeed: 35,
+    projectileCount: 2, spreadAngle: 0.3, autoTarget: true,
+    orbitRadius: 5, orbitSpeed: 2.5, orbitCount: 3,
   },
 
   // ---- Fusion weapons (require two evolved weapons at max level) ----
