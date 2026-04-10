@@ -3,7 +3,7 @@ import type { IWorld } from 'bitecs'
 import { Renderer, InputManager, EventBus, createGameWorld } from '@engine/core'
 import { BiomeType } from '@engine/core'
 import { PlayerController } from './player/PlayerController'
-import { ChunkManager, BiomeWeather, applyBiomeFog } from './expedition/BiomeSetup'
+import { ChunkManager, BiomeWeather, applyBiomeFog, getBiomeColorGrade } from './expedition/BiomeSetup'
 import { EnemyManager } from './enemies/EnemyFactory'
 import { WaveSystem } from './enemies/WaveSystem'
 import { updateEnemyAI } from './enemies/EnemyAI'
@@ -202,6 +202,11 @@ export class Game {
     // Stop expedition music when returning to hub
     this.gameAudio.stopBiomeMusic()
 
+    // Reset post-processing
+    this.renderer.colorGradePass.setBiomeColorGrade([1, 1, 1], 1, 1)
+    this.renderer.crtPass.uniforms['scanlineIntensity'].value = 0.05
+    this.renderer.damagePass.setStrength(0, 0)
+
     // Destroy minimap and combat effects DOM elements
     this.minimap?.destroy()
     this.minimap = null
@@ -274,6 +279,9 @@ export class Game {
       this.renderer.scene,
     )
 
+    // Enable subtle CRT scanlines for retro feel
+    this.renderer.crtPass.uniforms['scanlineIntensity'].value = 0.12
+
     this.corruptionSystem.check(this.metaState.cleansedBiomes.length)
     const overlay = this.corruptionSystem.getCorruptionOverlay()
     if (overlay) {
@@ -298,6 +306,10 @@ export class Game {
     if (!this.corruptionSystem.getCorruptionOverlay()) {
       applyBiomeFog(this.renderer.scene, biomeType)
     }
+
+    // Apply biome color grading to post-processing
+    const grade = getBiomeColorGrade(biomeType)
+    this.renderer.colorGradePass.setBiomeColorGrade(grade.tint, grade.contrast, grade.saturation)
 
     // Activate weather particles for this biome
     this.biomeWeather?.dispose()
@@ -544,6 +556,7 @@ export class Game {
       if (healthWrapper.current < healthBefore) {
         this.gameAudio.playPlayerHitSound()
         this.combatEffects.screenShake(this.renderer.camera, 0.2, 0.3)
+        this.renderer.damagePass.setStrength(0.6, 0)
       }
 
       if (this.gameState.health <= 0) {
@@ -575,6 +588,12 @@ export class Game {
 
       // Scale combat intensity by nearby enemy count
       this.gameAudio.setCombatIntensity(this.enemyManager.enemies.length / 50)
+
+      // Decay damage flash
+      const currentStrength = this.renderer.damagePass.uniforms['strength'].value as number
+      if (currentStrength > 0) {
+        this.renderer.damagePass.setStrength(Math.max(0, currentStrength - delta * 3), 0)
+      }
     }
 
     // Day/night cycle — always ticking (hub + combat)

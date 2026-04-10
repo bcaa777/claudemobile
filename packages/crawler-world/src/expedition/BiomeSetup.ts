@@ -198,6 +198,29 @@ export function applyBiomeFog(scene: THREE.Scene, biomeType: BiomeType): void {
   scene.background = new THREE.Color(spec.color)
 }
 
+// ─── Per-biome color grading for post-processing ────────────────────────────
+
+interface ColorGradeSpec {
+  tint: [number, number, number]
+  contrast: number
+  saturation: number
+}
+
+const BIOME_COLOR_GRADE: Partial<Record<BiomeType, ColorGradeSpec>> = {
+  [BiomeType.Forest]:   { tint: [0.95, 1.05, 0.90], contrast: 1.05, saturation: 1.1 },
+  [BiomeType.Desert]:   { tint: [1.10, 1.05, 0.85], contrast: 1.10, saturation: 0.9 },
+  [BiomeType.Snow]:     { tint: [0.90, 0.95, 1.10], contrast: 1.00, saturation: 0.8 },
+  [BiomeType.Volcanic]: { tint: [1.15, 0.85, 0.75], contrast: 1.15, saturation: 1.2 },
+  [BiomeType.Swamp]:    { tint: [0.90, 1.00, 0.80], contrast: 0.95, saturation: 0.9 },
+  [BiomeType.Crystal]:  { tint: [0.85, 0.90, 1.15], contrast: 1.05, saturation: 1.3 },
+  [BiomeType.Jungle]:   { tint: [0.85, 1.10, 0.80], contrast: 1.05, saturation: 1.2 },
+  [BiomeType.Mesa]:     { tint: [1.15, 0.95, 0.80], contrast: 1.10, saturation: 1.0 },
+}
+
+export function getBiomeColorGrade(type: BiomeType): ColorGradeSpec {
+  return BIOME_COLOR_GRADE[type] ?? { tint: [1, 1, 1], contrast: 1, saturation: 1 }
+}
+
 // ─── Sprite config per biome ─────────────────────────────────────────────────
 
 interface SpriteSpec {
