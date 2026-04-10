@@ -1,6 +1,6 @@
 # Engine Refactor Phase 1-2: Scaffolding & Extract Core
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Set up the monorepo workspace structure and extract InputManager, AudioSystem, and an event bus into the engine package — while keeping v1.0 running identically.
 
@@ -70,12 +70,12 @@ packages/retro-world/src/main.ts            <- Same content, new location
 - Create: `pnpm-workspace.yaml`
 - Modify: `package.json` (root — convert to workspace root)
 
-- [ ] **Step 1: Install pnpm if not present**
+- [x] **Step 1: Install pnpm if not present**
 
 Run: `corepack enable && corepack prepare pnpm@latest --activate`
 Expected: pnpm available globally
 
-- [ ] **Step 2: Create workspace config**
+- [x] **Step 2: Create workspace config**
 
 Create `pnpm-workspace.yaml`:
 ```yaml
@@ -83,7 +83,7 @@ packages:
   - 'packages/*'
 ```
 
-- [ ] **Step 3: Update root package.json to workspace root**
+- [x] **Step 3: Update root package.json to workspace root**
 
 Replace `package.json` with:
 ```json
@@ -101,7 +101,7 @@ Replace `package.json` with:
 }
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add pnpm-workspace.yaml package.json
@@ -119,7 +119,7 @@ git commit -m "chore: initialize pnpm workspace"
 - Create: `packages/engine/src/core/index.ts`
 - Create: `packages/engine/src/core/types.ts`
 
-- [ ] **Step 1: Create engine package.json**
+- [x] **Step 1: Create engine package.json**
 
 Create `packages/engine/package.json`:
 ```json
@@ -146,7 +146,7 @@ Create `packages/engine/package.json`:
 }
 ```
 
-- [ ] **Step 2: Create engine tsconfig.json**
+- [x] **Step 2: Create engine tsconfig.json**
 
 Create `packages/engine/tsconfig.json`:
 ```json
@@ -174,7 +174,7 @@ Create `packages/engine/tsconfig.json`:
 }
 ```
 
-- [ ] **Step 3: Create shared types**
+- [x] **Step 3: Create shared types**
 
 Create `packages/engine/src/core/types.ts`:
 ```typescript
@@ -194,7 +194,7 @@ export interface EngineConfig {
 export type EventHandler<T = unknown> = (data: T) => void
 ```
 
-- [ ] **Step 4: Create core barrel export**
+- [x] **Step 4: Create core barrel export**
 
 Create `packages/engine/src/core/index.ts`:
 ```typescript
@@ -205,14 +205,14 @@ export type { System, EngineConfig, EventHandler } from './types'
 
 Note: EventBus and GameLoop are created in Tasks 3 and 4. This file will error until then — that's fine.
 
-- [ ] **Step 5: Create engine barrel export**
+- [x] **Step 5: Create engine barrel export**
 
 Create `packages/engine/src/index.ts`:
 ```typescript
 export * from './core'
 ```
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add packages/engine/
@@ -226,7 +226,7 @@ git commit -m "chore: create engine package skeleton"
 **Files:**
 - Create: `packages/engine/src/core/EventBus.ts`
 
-- [ ] **Step 1: Implement typed event bus**
+- [x] **Step 1: Implement typed event bus**
 
 Create `packages/engine/src/core/EventBus.ts`:
 ```typescript
@@ -270,12 +270,12 @@ export class EventBus {
 }
 ```
 
-- [ ] **Step 2: Verify TypeScript compiles**
+- [x] **Step 2: Verify TypeScript compiles**
 
 Run: `cd packages/engine && npx tsc --noEmit`
 Expected: No errors (GameLoop not yet created, but barrel import will be checked later)
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add packages/engine/src/core/EventBus.ts
@@ -289,7 +289,7 @@ git commit -m "feat(engine): add typed EventBus for cross-system communication"
 **Files:**
 - Create: `packages/engine/src/core/GameLoop.ts`
 
-- [ ] **Step 1: Implement fixed-timestep game loop**
+- [x] **Step 1: Implement fixed-timestep game loop**
 
 Create `packages/engine/src/core/GameLoop.ts`:
 ```typescript
@@ -374,12 +374,12 @@ export class GameLoop {
 }
 ```
 
-- [ ] **Step 2: Verify engine package compiles**
+- [x] **Step 2: Verify engine package compiles**
 
 Run: `cd packages/engine && npx tsc --noEmit`
 Expected: No errors. All barrel exports resolve.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add packages/engine/src/core/GameLoop.ts
@@ -396,7 +396,7 @@ git commit -m "feat(engine): add fixed-timestep GameLoop"
 - Create: `packages/retro-world/vite.config.ts`
 - Create: `packages/retro-world/index.html`
 
-- [ ] **Step 1: Create retro-world package.json**
+- [x] **Step 1: Create retro-world package.json**
 
 Create `packages/retro-world/package.json`:
 ```json
@@ -424,7 +424,7 @@ Create `packages/retro-world/package.json`:
 }
 ```
 
-- [ ] **Step 2: Create retro-world tsconfig.json**
+- [x] **Step 2: Create retro-world tsconfig.json**
 
 Create `packages/retro-world/tsconfig.json`:
 ```json
@@ -452,7 +452,7 @@ Create `packages/retro-world/tsconfig.json`:
 }
 ```
 
-- [ ] **Step 3: Create retro-world vite.config.ts**
+- [x] **Step 3: Create retro-world vite.config.ts**
 
 Create `packages/retro-world/vite.config.ts`:
 ```typescript
@@ -475,13 +475,13 @@ export default defineConfig({
 })
 ```
 
-- [ ] **Step 4: Copy index.html to retro-world**
+- [x] **Step 4: Copy index.html to retro-world**
 
 Run: `cp index.html packages/retro-world/index.html`
 
 Then update the script src in `packages/retro-world/index.html` to point to `src/main.ts` (verify the current `<script>` tag path and ensure it references `src/main.ts`).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add packages/retro-world/
@@ -496,14 +496,14 @@ git commit -m "chore: create retro-world game package"
 - Move: `src/` → `packages/retro-world/src/`
 - Keep: root `src/` removed after move
 
-- [ ] **Step 1: Move source files**
+- [x] **Step 1: Move source files**
 
 Run:
 ```bash
 cp -r src/ packages/retro-world/src/
 ```
 
-- [ ] **Step 2: Install workspace dependencies**
+- [x] **Step 2: Install workspace dependencies**
 
 Run:
 ```bash
@@ -512,7 +512,7 @@ pnpm install
 
 Expected: Workspace links `@engine/core` into retro-world's node_modules.
 
-- [ ] **Step 3: Verify retro-world builds and runs**
+- [x] **Step 3: Verify retro-world builds and runs**
 
 Run:
 ```bash
@@ -521,13 +521,13 @@ cd packages/retro-world && npx vite --port 3000
 
 Open `http://localhost:3000` — v1.0 game should load and play identically (title screen → intro bridge → castle → explore). The game does not import from `@engine/core` yet — this step just verifies the move didn't break anything.
 
-- [ ] **Step 4: Update root dev script to use workspace**
+- [x] **Step 4: Update root dev script to use workspace**
 
 Verify root `package.json` script works:
 Run: `pnpm dev` (from project root)
 Expected: Vite dev server starts for retro-world.
 
-- [ ] **Step 5: Remove old root src/ and config files**
+- [x] **Step 5: Remove old root src/ and config files**
 
 Run:
 ```bash
@@ -542,12 +542,12 @@ mv debug-viewer.html packages/retro-world/debug-viewer.html 2>/dev/null || true
 mv entities.html packages/retro-world/entities.html 2>/dev/null || true
 ```
 
-- [ ] **Step 6: Verify retro-world still runs after cleanup**
+- [x] **Step 6: Verify retro-world still runs after cleanup**
 
 Run: `pnpm dev`
 Expected: Game loads and plays identically.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add -A
@@ -566,7 +566,7 @@ git commit -m "refactor: move v1.0 source into retro-world package"
 - Modify: `packages/engine/src/index.ts` (add input export)
 - Modify: `packages/retro-world/src/engine/Engine.ts` (update import)
 
-- [ ] **Step 1: Copy InputManager to engine package**
+- [x] **Step 1: Copy InputManager to engine package**
 
 Run:
 ```bash
@@ -574,14 +574,14 @@ mkdir -p packages/engine/src/input
 cp packages/retro-world/src/engine/InputManager.ts packages/engine/src/input/InputManager.ts
 ```
 
-- [ ] **Step 2: Create input barrel export**
+- [x] **Step 2: Create input barrel export**
 
 Create `packages/engine/src/input/index.ts`:
 ```typescript
 export { InputManager } from './InputManager'
 ```
 
-- [ ] **Step 3: Update engine barrel export**
+- [x] **Step 3: Update engine barrel export**
 
 Update `packages/engine/src/index.ts`:
 ```typescript
@@ -589,12 +589,12 @@ export * from './core'
 export * from './input'
 ```
 
-- [ ] **Step 4: Verify engine compiles**
+- [x] **Step 4: Verify engine compiles**
 
 Run: `cd packages/engine && npx tsc --noEmit`
 Expected: No errors.
 
-- [ ] **Step 5: Update Engine.ts import**
+- [x] **Step 5: Update Engine.ts import**
 
 In `packages/retro-world/src/engine/Engine.ts`, change:
 ```typescript
@@ -605,16 +605,16 @@ to:
 import { InputManager } from '@engine/core'
 ```
 
-- [ ] **Step 6: Remove old InputManager from retro-world**
+- [x] **Step 6: Remove old InputManager from retro-world**
 
 Run: `rm packages/retro-world/src/engine/InputManager.ts`
 
-- [ ] **Step 7: Verify retro-world builds and runs**
+- [x] **Step 7: Verify retro-world builds and runs**
 
 Run: `pnpm dev`
 Expected: Game loads and plays identically. Input (WASD, mouse, keyboard shortcuts) all work.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add -A
@@ -632,7 +632,7 @@ git commit -m "refactor(engine): extract InputManager to engine package"
 - Modify: `packages/engine/src/index.ts` (add audio export)
 - Modify: All files in retro-world that import from `../audio/AudioSystem` or `../audio/SpatialAudioHelper`
 
-- [ ] **Step 1: Copy audio files to engine package**
+- [x] **Step 1: Copy audio files to engine package**
 
 Run:
 ```bash
@@ -641,7 +641,7 @@ cp packages/retro-world/src/audio/AudioSystem.ts packages/engine/src/audio/Audio
 cp packages/retro-world/src/audio/SpatialAudioHelper.ts packages/engine/src/audio/SpatialAudioHelper.ts
 ```
 
-- [ ] **Step 2: Create audio barrel export**
+- [x] **Step 2: Create audio barrel export**
 
 Create `packages/engine/src/audio/index.ts`:
 ```typescript
@@ -649,7 +649,7 @@ export { AudioSystem } from './AudioSystem'
 export { updateListener, createSpatialPanner } from './SpatialAudioHelper'
 ```
 
-- [ ] **Step 3: Update engine barrel export**
+- [x] **Step 3: Update engine barrel export**
 
 Update `packages/engine/src/index.ts`:
 ```typescript
@@ -658,7 +658,7 @@ export * from './input'
 export * from './audio'
 ```
 
-- [ ] **Step 4: Check and fix AudioSystem internal imports**
+- [x] **Step 4: Check and fix AudioSystem internal imports**
 
 Run: `grep -n "from '\.\." packages/engine/src/audio/AudioSystem.ts`
 
@@ -669,12 +669,12 @@ This shows any relative imports reaching outside the audio directory. For each:
 
 After fixing, verify no imports reach outside `packages/engine/src/`.
 
-- [ ] **Step 5: Verify engine compiles**
+- [x] **Step 5: Verify engine compiles**
 
 Run: `cd packages/engine && npx tsc --noEmit`
 Expected: No errors.
 
-- [ ] **Step 6: Update all retro-world imports**
+- [x] **Step 6: Update all retro-world imports**
 
 Find all files importing AudioSystem or SpatialAudioHelper:
 Run: `grep -rn "from.*audio/AudioSystem\|from.*audio/SpatialAudioHelper" packages/retro-world/src/`
@@ -686,7 +686,7 @@ import { AudioSystem } from '@engine/core'
 import { updateListener, createSpatialPanner } from '@engine/core'
 ```
 
-- [ ] **Step 7: Remove old audio files from retro-world**
+- [x] **Step 7: Remove old audio files from retro-world**
 
 Run:
 ```bash
@@ -696,12 +696,12 @@ rm packages/retro-world/src/audio/SpatialAudioHelper.ts
 
 Note: Other audio files (BiomeMusic.ts, CreatureSound.ts, etc.) stay in retro-world — they are game-specific audio subsystems that depend on the engine's AudioSystem.
 
-- [ ] **Step 8: Verify retro-world builds and runs**
+- [x] **Step 8: Verify retro-world builds and runs**
 
 Run: `pnpm dev`
 Expected: Game loads. Audio works (biome music, sound effects, spatial audio). Test by walking around and listening for footsteps, biome music transitions, creature sounds.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add -A
@@ -715,7 +715,7 @@ git commit -m "refactor(engine): extract AudioSystem to engine package"
 **Files:**
 - Modify: `packages/retro-world/src/engine/Engine.ts` (create EventBus, pass to systems)
 
-- [ ] **Step 1: Import and instantiate EventBus in Engine.ts**
+- [x] **Step 1: Import and instantiate EventBus in Engine.ts**
 
 In `packages/retro-world/src/engine/Engine.ts`, add import:
 ```typescript
@@ -732,7 +732,7 @@ In the constructor, add near the top (after renderer/input creation):
 this.eventBus = new EventBus()
 ```
 
-- [ ] **Step 2: Add a test event to verify wiring**
+- [x] **Step 2: Add a test event to verify wiring**
 
 In the Engine constructor, after creating the eventBus, add:
 ```typescript
@@ -746,16 +746,16 @@ Then find where biome transitions are detected in the update loop (in Engine.ts,
 this.eventBus.emit('biomeChanged', { biome: biomeName })
 ```
 
-- [ ] **Step 3: Verify EventBus fires**
+- [x] **Step 3: Verify EventBus fires**
 
 Run: `pnpm dev`
 Open browser console. Walk to a different biome. Expected: `[EventBus] Biome changed: Desert` (or whichever biome) appears in console.
 
-- [ ] **Step 4: Remove test console.log (keep the emit)**
+- [x] **Step 4: Remove test console.log (keep the emit)**
 
 Remove the `console.log` subscriber added in Step 2. Keep the `emit` call — it's the start of event-driven architecture. Future systems will subscribe to this event.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add -A
@@ -768,22 +768,22 @@ git commit -m "feat(retro-world): wire EventBus into Engine, emit biomeChanged e
 
 **Files:** None — this is a verification task.
 
-- [ ] **Step 1: Verify workspace structure**
+- [x] **Step 1: Verify workspace structure**
 
 Run: `ls packages/engine/src/ packages/retro-world/src/`
 Expected: Engine has `core/`, `input/`, `audio/` directories. Retro-world has all game code.
 
-- [ ] **Step 2: Verify engine exports**
+- [x] **Step 2: Verify engine exports**
 
 Run: `cd packages/engine && npx tsc --noEmit`
 Expected: Clean compile, no errors.
 
-- [ ] **Step 3: Verify retro-world imports engine**
+- [x] **Step 3: Verify retro-world imports engine**
 
 Run: `grep -rn "@engine/core" packages/retro-world/src/ | head -20`
 Expected: Engine.ts (and any audio consumers) import from `@engine/core`.
 
-- [ ] **Step 4: Full play-test**
+- [x] **Step 4: Full play-test**
 
 Run: `pnpm dev`
 Verify:
@@ -797,7 +797,7 @@ Verify:
 - Creatures spawn and move
 - No console errors related to missing imports
 
-- [ ] **Step 5: Commit verification notes**
+- [x] **Step 5: Commit verification notes**
 
 ```bash
 git add -A
