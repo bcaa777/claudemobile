@@ -32,6 +32,7 @@ const ARCHETYPE_INDEX: Record<EnemyArchetype, number> = {
 export class EnemyManager {
   readonly enemies: ActiveEnemy[] = []
   private scene: THREE.Scene
+  private dying: { mesh: THREE.Group; timer: number; duration: number; baseScale: number }[] = []
 
   constructor(scene: THREE.Scene) {
     this.scene = scene
@@ -76,12 +77,38 @@ export class EnemyManager {
     const group = buildEnemyMesh(dna, archetype)
     // Override group's base scale with the archetype size multiplier on top of dna.size
     group.scale.setScalar(scale)
+    group.userData.originalScale = scale
     group.position.set(pos.x, pos.y + scale * 0.75, pos.z)
     this.scene.add(group)
 
     const damage =
       (archetype === 'tank' ? 20 : archetype === 'rusher' ? 10 : 5) + waveNumber
     this.enemies.push({ eid, mesh: group, archetype, damage })
+  }
+
+  /** Start death shrink animation. Removes from enemies array immediately but keeps mesh in scene for animation. */
+  animateDeath(index: number): void {
+    const enemy = this.enemies[index]
+    if (!enemy) return
+    const mesh = enemy.mesh
+    const baseScale = mesh.userData.originalScale ?? mesh.scale.x
+    this.enemies.splice(index, 1)
+    this.dying.push({ mesh, timer: 0.3, duration: 0.3, baseScale })
+  }
+
+  updateDeathAnimations(delta: number): void {
+    for (let i = this.dying.length - 1; i >= 0; i--) {
+      const d = this.dying[i]
+      d.timer -= delta
+      const progress = 1 - Math.max(0, d.timer / d.duration)
+      const scale = (1 - progress) * d.baseScale
+      d.mesh.scale.setScalar(Math.max(0.01, scale))
+      if (d.timer <= 0) {
+        this.scene.remove(d.mesh)
+        disposeMeshGroup(d.mesh)
+        this.dying.splice(i, 1)
+      }
+    }
   }
 
   remove(index: number): void {

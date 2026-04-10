@@ -154,6 +154,9 @@ export class Game {
         this.companionSystem.addXp(10)
       }
       this.gameAudio.playKillSound()
+      if (data.archetype === 'tank') {
+        this.combatEffects.freezeFrame(0.06)
+      }
       this.combatEffects.deathParticles(
         this.renderer.scene,
         data.position,
@@ -400,6 +403,14 @@ export class Game {
       this.hubScene.updateLabels()
       this.hubScene.updateTorchFlicker(delta)
     } else if (this.expeditionManager.isInCombat() && !this.paused) {
+      // Freeze frame — skip simulation but still render
+      if (this.combatEffects.isFrozen()) {
+        this.combatEffects.update(delta, this.renderer.camera)
+        this.renderer.render(delta)
+        requestAnimationFrame((t) => this.loop(t))
+        return
+      }
+
       this.player.update(delta)
 
       const pos = this.player.getPosition()
@@ -505,7 +516,11 @@ export class Game {
           hit.damage,
           this.eventBus,
         )
-        if (!killed) this.gameAudio.playHitSound()
+        if (!killed) {
+          this.gameAudio.playHitSound()
+          const enemy = this.enemyManager.enemies[hit.enemyIndex]
+          if (enemy) this.combatEffects.hitFlash(enemy.mesh)
+        }
       }
 
       // Boss projectile hits
@@ -515,6 +530,7 @@ export class Game {
       }
 
       this.damageSystem.update(delta)
+      this.enemyManager.updateDeathAnimations(delta)
 
       const healthBefore = this.gameState.health
       const healthWrapper = { current: this.gameState.health }

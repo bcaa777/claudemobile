@@ -37,6 +37,11 @@ interface ShakeState {
 const _scratchVec = new THREE.Vector3()
 const _particleGeo = new THREE.BoxGeometry(0.2, 0.2, 0.2)
 
+// ─── Hit flash ──────────────────────────────────────────────────────────────
+
+const HIT_FLASH_DURATION = 0.1
+const _whiteMat = new THREE.MeshBasicMaterial({ color: 0xffffff })
+
 export class CombatEffects {
   // Damage labels
   private labelPool: DamageLabel[] = []
@@ -47,6 +52,12 @@ export class CombatEffects {
 
   // Shake
   private shake: ShakeState | null = null
+
+  // Hit flashes
+  private hitFlashes: { group: THREE.Group; originalMats: Map<THREE.Mesh, THREE.Material>; timer: number }[] = []
+
+  // Freeze frame
+  private freezeTimer = 0
 
   // Vignette
   private vignetteEl: HTMLElement | null = null
@@ -154,12 +165,39 @@ export class CombatEffects {
     }
   }
 
+  /** Flash an enemy group white for a brief moment */
+  hitFlash(group: THREE.Group): void {
+    const originals = new Map<THREE.Mesh, THREE.Material>()
+    group.traverse((child) => {
+      const mesh = child as THREE.Mesh
+      if (mesh.isMesh && !originals.has(mesh)) {
+        originals.set(mesh, mesh.material as THREE.Material)
+        mesh.material = _whiteMat
+      }
+    })
+    this.hitFlashes.push({ group, originalMats: originals, timer: HIT_FLASH_DURATION })
+  }
+
+  /** Brief time-freeze for impactful kills */
+  freezeFrame(duration: number): void {
+    this.freezeTimer = Math.max(this.freezeTimer, duration)
+  }
+
+  /** Returns true if the game should skip this frame's simulation */
+  isFrozen(): boolean {
+    return this.freezeTimer > 0
+  }
+
   // ── Update ────────────────────────────────────────────────────────────────
 
   update(delta: number, camera: THREE.Camera): void {
+    if (this.freezeTimer > 0) {
+      this.freezeTimer -= delta
+    }
     this.updateLabels(delta, camera)
     this.updateParticles(delta)
     this.updateShake(delta, camera)
+    this.updateHitFlashes(delta)
   }
 
   private updateLabels(delta: number, camera: THREE.Camera): void {
@@ -240,6 +278,19 @@ export class CombatEffects {
     )
   }
 
+  private updateHitFlashes(delta: number): void {
+    for (let i = this.hitFlashes.length - 1; i >= 0; i--) {
+      const flash = this.hitFlashes[i]
+      flash.timer -= delta
+      if (flash.timer <= 0) {
+        for (const [mesh, mat] of flash.originalMats) {
+          if (mesh.parent) mesh.material = mat
+        }
+        this.hitFlashes.splice(i, 1)
+      }
+    }
+  }
+
   dispose(): void {
     for (const label of this.labelPool) {
       label.el.parentElement?.removeChild(label.el)
@@ -252,6 +303,14 @@ export class CombatEffects {
       ;(p.mesh.material as THREE.Material).dispose()
     }
     this.particles.length = 0
+
+    // Restore hit flash materials
+    for (const flash of this.hitFlashes) {
+      for (const [mesh, mat] of flash.originalMats) {
+        if (mesh.parent) mesh.material = mat
+      }
+    }
+    this.hitFlashes.length = 0
 
     this.vignetteEl?.parentElement?.removeChild(this.vignetteEl)
     this.vignetteEl = null
