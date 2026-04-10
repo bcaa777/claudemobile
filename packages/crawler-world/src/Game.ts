@@ -201,6 +201,8 @@ export class Game {
 
     // Stop expedition music when returning to hub
     this.gameAudio.stopBiomeMusic()
+    this.gameAudio.init()
+    this.gameAudio.startHubMusic()
 
     // Reset post-processing
     this.renderer.colorGradePass.setBiomeColorGrade([1, 1, 1], 1, 1)
@@ -233,6 +235,7 @@ export class Game {
     this.waveSystem.currentBiome = BiomeType.Forest
     this.waveSystem.currentUndergroundId = undergroundId
 
+    this.gameAudio.stopHubMusic()
     this.gameAudio.init()
     this.gameAudio.startBiomeMusic(BiomeType.Volcanic) // dark music for underground
 
@@ -317,6 +320,7 @@ export class Game {
     this.biomeWeather.activate(biomeType)
 
     // Init audio on first expedition (requires user gesture — pointer lock click)
+    this.gameAudio.stopHubMusic()
     this.gameAudio.init()
     this.gameAudio.startBiomeMusic(biomeType)
 

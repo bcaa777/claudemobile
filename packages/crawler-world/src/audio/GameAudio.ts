@@ -5,6 +5,9 @@ export class GameAudio extends AudioSystem {
   private biomeFifth: OscillatorNode | null = null
   private combatLayer: OscillatorNode | null = null
   private threatLevel = 0
+  private hubPad: OscillatorNode | null = null
+  private percLoop: OscillatorNode | null = null
+  private percGain: GainNode | null = null
 
   init(): void {
     super.init()
@@ -63,9 +66,69 @@ export class GameAudio extends AudioSystem {
     this.biomeFifth = null
   }
 
+  startHubMusic(): void {
+    this.stopHubMusic()
+    const ctx = this.getContext()
+    if (!ctx) return
+    const gain = this.getAmbienceGain()
+    if (!gain) return
+
+    const osc = ctx.createOscillator()
+    osc.type = 'sine'
+    osc.frequency.value = 174.61 // F3 - warm low pad
+    const g = ctx.createGain()
+    g.gain.value = 0.03
+    osc.connect(g)
+    g.connect(gain)
+    osc.start()
+    this.hubPad = osc
+  }
+
+  stopHubMusic(): void {
+    try { this.hubPad?.stop() } catch { /* already stopped */ }
+    this.hubPad = null
+  }
+
   /** Adjust combat intensity (0-1) based on nearby enemy count */
   setCombatIntensity(intensity: number): void {
     this.threatLevel = Math.max(0, Math.min(1, intensity))
+    const ctx = this.getContext()
+    if (!ctx) return
+    const sfxGain = this.getSfxGain()
+    if (!sfxGain) return
+
+    if (this.threatLevel > 0.3 && !this.percLoop) {
+      const osc = ctx.createOscillator()
+      osc.type = 'square'
+      osc.frequency.value = 80
+      const g = ctx.createGain()
+      g.gain.value = 0.015 * this.threatLevel
+      osc.connect(g)
+      g.connect(sfxGain)
+      osc.start()
+      this.percLoop = osc
+      this.percGain = g
+    } else if (this.threatLevel <= 0.3 && this.percLoop) {
+      try { this.percLoop.stop() } catch { /* ok */ }
+      this.percLoop = null
+      this.percGain = null
+    }
+
+    // Modulate volume with intensity
+    if (this.percGain) {
+      this.percGain.gain.value = 0.015 * this.threatLevel
+    }
+  }
+
+  playShootSound(category: string): void {
+    switch (category) {
+      case 'projectile': this.playTone(900, 0.04, 0.08, 'square'); break
+      case 'area':       this.playNoise(0.06, 0.2); break
+      case 'chain':      this.playTone(1400, 0.03, 0.12, 'sawtooth'); break
+      case 'deployable': this.playTone(400, 0.05, 0.15, 'triangle'); break
+      case 'gravity':    this.playTone(150, 0.04, 0.3, 'sine'); break
+      default:           this.playTone(800, 0.04, 0.1, 'square'); break
+    }
   }
 
   // SFX methods — short oscillator bursts
@@ -85,6 +148,28 @@ export class GameAudio extends AudioSystem {
     // Stop biome drone and replace with ominous boss tone
     this.stopBiomeMusic()
     this.playTone(110, 0.06, 999, 'sawtooth')
+  }
+
+  private playNoise(volume: number, duration: number): void {
+    const ctx = this.getContext()
+    if (!ctx) return
+    const sfxGain = this.getSfxGain()
+    if (!sfxGain) return
+
+    const bufferSize = Math.floor(ctx.sampleRate * duration)
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate)
+    const data = buffer.getChannelData(0)
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = (Math.random() * 2 - 1) * volume * (1 - i / bufferSize)
+    }
+    const source = ctx.createBufferSource()
+    source.buffer = buffer
+    const g = ctx.createGain()
+    g.gain.setValueAtTime(volume, ctx.currentTime)
+    g.gain.linearRampToValueAtTime(0, ctx.currentTime + duration)
+    source.connect(g)
+    g.connect(sfxGain)
+    source.start()
   }
 
   private playTone(freq: number, volume: number, duration: number, type: OscillatorType): void {
