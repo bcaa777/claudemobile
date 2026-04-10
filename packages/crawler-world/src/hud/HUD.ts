@@ -278,10 +278,27 @@ export class HUD {
     this.goldEl.textContent = `GOLD: ${gameState.gold}`
 
     // Weapons
+    // Known evolved and fused weapon IDs for tagging
+    const EVOLVED_IDS = new Set([
+      'railgun', 'spread_cannon', 'storm_caller', 'death_spiral', 'fortress',
+      'swarm_queen', 'mega_mine', 'sky_beam', 'flak_storm', 'hellfire_missile',
+      'tesla_coil', 'singularity', 'drone_swarm',
+    ])
+    const FUSED_IDS = new Set([
+      'singularity_cannon', 'thunder_rain', 'gravity_fortress',
+    ])
+
     this.weaponListEl.innerHTML = gameState.weapons
       .map((id) => {
         const lvl = gameState.weaponLevels[id] ?? 1
-        return `▸ ${id.replace(/_/g, ' ').toUpperCase()} Lv${lvl}`
+        const name = id.replace(/_/g, ' ').toUpperCase()
+        let tag = ''
+        if (FUSED_IDS.has(id)) {
+          tag = ' <span style="color:#ff44ff;font-size:10px;">★FUSED</span>'
+        } else if (EVOLVED_IDS.has(id)) {
+          tag = ' <span style="color:#44ffaa;font-size:10px;">↑EVOLVED</span>'
+        }
+        return `▸ ${name} Lv${lvl}${tag}`
       })
       .join('<br>')
   }

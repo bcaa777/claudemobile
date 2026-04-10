@@ -125,6 +125,20 @@ export class CombatEffects {
     label.duration = LABEL_DURATION
     label.worldPos.copy(worldPos)
     label.el.textContent = `-${Math.round(amount)}`
+    // Color by damage amount
+    if (amount >= 100) {
+      label.el.style.color = '#ff44ff'
+      label.el.style.fontSize = '22px'
+    } else if (amount >= 50) {
+      label.el.style.color = '#ff4444'
+      label.el.style.fontSize = '18px'
+    } else if (amount >= 25) {
+      label.el.style.color = '#ffaa44'
+      label.el.style.fontSize = '16px'
+    } else {
+      label.el.style.color = '#ffdd44'
+      label.el.style.fontSize = '14px'
+    }
     label.el.style.display = 'block'
   }
 

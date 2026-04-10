@@ -74,7 +74,7 @@ export class EnemyManager {
 
     // Build procedural mesh from DNA
     const scale = dna.size * (archetype === 'tank' ? 1.5 : 1.0)
-    const group = buildEnemyMesh(dna, archetype)
+    const group = buildEnemyMesh(dna, archetype, biome)
     // Override group's base scale with the archetype size multiplier on top of dna.size
     group.scale.setScalar(scale)
     group.userData.originalScale = scale

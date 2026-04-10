@@ -2,10 +2,28 @@ import * as THREE from 'three'
 import type { CreatureDNA } from '@engine/core'
 import { quantizeLegCount } from '@engine/core'
 
-export function buildEnemyMesh(dna: CreatureDNA, archetype: string): THREE.Group {
+export function buildEnemyMesh(dna: CreatureDNA, archetype: string, biome?: number): THREE.Group {
   const group = new THREE.Group()
   const color = new THREE.Color(dna.bodyColor[0], dna.bodyColor[1], dna.bodyColor[2])
   const accentColor = new THREE.Color(dna.accentColor[0], dna.accentColor[1], dna.accentColor[2])
+
+  // Tint toward biome palette
+  if (biome !== undefined) {
+    const biomeTints: Record<number, number> = {
+      0: 0x336633, // Forest: greenish
+      1: 0x998855, // Desert: sandy
+      2: 0x445544, // Swamp: murky
+      3: 0x8888aa, // Snow: icy
+      4: 0x993322, // Volcanic: reddish
+      5: 0x6677aa, // Crystal: bluish
+      6: 0x337722, // Jungle: deep green
+      7: 0x886644, // Mesa: terracotta
+    }
+    const tint = biomeTints[biome]
+    if (tint) {
+      color.lerp(new THREE.Color(tint), 0.25)
+    }
+  }
 
   // Body: sphere scaled by DNA body dimensions
   const bodyGeo = new THREE.SphereGeometry(0.5, 8, 6)
