@@ -139,6 +139,8 @@ const NPC_DEFS: NPCDef[] = [
 export class HubScene {
   private hubObjects: THREE.Object3D[] = []
   private npcs: NPC[] = []
+  private torchLights: THREE.PointLight[] = []
+  private torchTime = 0
   private raycaster = new THREE.Raycaster()
   private mouse = new THREE.Vector2()
   private clickHandler: ((e: MouseEvent) => void) | null = null
@@ -181,6 +183,7 @@ export class HubScene {
     this.hubGrowth.build(this.renderer.scene, this.hubObjects, cleansedCount)
 
     // ── Torches (always present baseline) ────────────────────────────────────
+    this.torchLights = []
     const torchPositions: [number, number, number][] = [[-6, 3, -8], [6, 3, -8]]
     for (const [x, y, z] of torchPositions) {
       const torchGeo = new THREE.BoxGeometry(0.2, 0.6, 0.2)
@@ -192,6 +195,7 @@ export class HubScene {
       const light = new THREE.PointLight(0xffaa44, 5, 20)
       light.position.set(x, y + 0.5, z)
       this.addObject(light)
+      this.torchLights.push(light)
     }
 
     // ── NPCs (unlocked by cleansed count) ────────────────────────────────────
@@ -210,16 +214,21 @@ export class HubScene {
     }
 
     // ── Ambient + directional light ───────────────────────────────────────────
-    const ambient = new THREE.AmbientLight(0x8899bb, 0.8)
+    const ambient = new THREE.AmbientLight(0xaabbdd, 1.2)
     this.addObject(ambient)
 
-    const sun = new THREE.DirectionalLight(0xffeedd, 1.0)
+    const sun = new THREE.DirectionalLight(0xffeedd, 1.8)
     sun.position.set(30, 50, 20)
     this.addObject(sun)
 
+    // Warm fill light from below-front to lift shadows
+    const fill = new THREE.DirectionalLight(0xffddaa, 0.4)
+    fill.position.set(-10, -5, 30)
+    this.addObject(fill)
+
     // ── Scene background and fog ──────────────────────────────────────────────
-    this.renderer.scene.background = new THREE.Color(0x223344)
-    this.renderer.scene.fog = new THREE.FogExp2(0x223344, 0.015)
+    this.renderer.scene.background = new THREE.Color(0x1a2a3a)
+    this.renderer.scene.fog = new THREE.FogExp2(0x1a2a3a, 0.008)
 
     // ── Fixed hub camera ──────────────────────────────────────────────────────
     this.renderer.camera.position.set(8, 6, 12)
@@ -432,6 +441,16 @@ export class HubScene {
     this.labelEls.push(el)
   }
 
+  updateTorchFlicker(delta: number): void {
+    this.torchTime += delta
+    for (let i = 0; i < this.torchLights.length; i++) {
+      const base = 5
+      const flicker = Math.sin(this.torchTime * 8 + i * 2.1) * 0.8
+        + Math.sin(this.torchTime * 13 + i * 4.3) * 0.4
+      this.torchLights[i].intensity = base + flicker
+    }
+  }
+
   updateLabels(): void {
     const proj = new THREE.Vector3()
     for (const el of this.labelEls) {
@@ -470,6 +489,8 @@ export class HubScene {
     }
     this.hubObjects = []
     this.npcs = []
+    this.torchLights = []
+    this.torchTime = 0
 
     for (const el of this.labelEls) {
       el.parentElement?.removeChild(el)

@@ -398,11 +398,12 @@ export class Game {
     if (this.expeditionManager.isInHub()) {
       // Hub phase: just update label positions
       this.hubScene.updateLabels()
+      this.hubScene.updateTorchFlicker(delta)
     } else if (this.expeditionManager.isInCombat() && !this.paused) {
       this.player.update(delta)
 
       const pos = this.player.getPosition()
-      this.chunkManager.update(pos.x, pos.z)
+      this.chunkManager.update(pos.x, pos.z, timestamp / 1000)
 
       // Update weather particles
       this.biomeWeather?.update(delta, pos.x, pos.y, pos.z)
