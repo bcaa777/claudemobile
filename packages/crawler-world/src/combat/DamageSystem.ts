@@ -93,10 +93,13 @@ export class DamageSystem {
       const entry = this.flashing[i]
       entry.timer -= delta
       if (entry.timer <= 0) {
-        const bodyMesh = entry.enemy.mesh.children.find((c): c is THREE.Mesh => c instanceof THREE.Mesh)
-        const mat = bodyMesh ? (bodyMesh.material as THREE.MeshLambertMaterial) : null
-        if (mat) {
-          mat.emissive.copy(entry.originalEmissive)
+        // Guard: enemy mesh may have been removed/disposed already
+        if (entry.enemy.mesh.parent) {
+          const bodyMesh = entry.enemy.mesh.children.find((c): c is THREE.Mesh => c instanceof THREE.Mesh)
+          const mat = bodyMesh ? (bodyMesh.material as THREE.MeshLambertMaterial) : null
+          if (mat) {
+            mat.emissive.copy(entry.originalEmissive)
+          }
         }
         this.flashing.splice(i, 1)
       }
