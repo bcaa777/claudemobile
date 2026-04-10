@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { InputManager } from '../engine/InputManager'
+import { InputManager } from '@engine/core'
 import { PLAYER_CONFIG, STAMINA_CONFIG } from '../config'
 import type { PlayerState } from './PlayerState'
 

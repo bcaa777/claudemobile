@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { Renderer } from './Renderer'
-import { InputManager } from './InputManager'
+import { InputManager } from '@engine/core'
 import { World } from '../world/World'
 import { FirstPersonController } from '../player/FirstPersonController'
 import { CollisionSystem } from '../player/CollisionSystem'

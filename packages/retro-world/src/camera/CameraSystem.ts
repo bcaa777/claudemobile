@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { Creature } from '../creatures/Creature'
 import { CreatureManager } from '../creatures/CreatureManager'
-import { InputManager } from '../engine/InputManager'
+import { InputManager } from '@engine/core'
 import { FieldGuide } from '../fieldguide/FieldGuide'
 import { getVariantId, getRarityColor } from '../creatures/CreatureVariant'
 import { scorePhoto, PhotoResult } from './PhotoScoring'

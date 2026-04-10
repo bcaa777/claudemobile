@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { InputManager } from '../engine/InputManager'
+import { InputManager } from '@engine/core'
 import { FieldGuide } from '../fieldguide/FieldGuide'
 import { BiomeType } from '../biomes/types'
 
