@@ -2,21 +2,13 @@
   "name": "claudemobile",
   "private": true,
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview",
-    "start": "vite preview --host 0.0.0.0 --port ${PORT:-4173}",
-    "dev:retro": "pnpm --filter @retro-world/game dev",
-    "build:retro": "pnpm --filter @retro-world/game build",
+    "dev": "pnpm --filter @retro-world/game dev",
+    "build": "pnpm --filter @retro-world/game build",
+    "preview": "pnpm --filter @retro-world/game preview",
+    "start": "pnpm --filter @retro-world/game start",
     "dev:engine": "pnpm --filter @engine/core build --watch"
   },
-  "dependencies": {
-    "three": "^0.165.0",
-    "simplex-noise": "^4.0.3"
-  },
   "devDependencies": {
-    "@types/three": "^0.165.0",
-    "typescript": "^5.4.0",
-    "vite": "^5.2.0"
+    "typescript": "^5.4.0"
   }
 }

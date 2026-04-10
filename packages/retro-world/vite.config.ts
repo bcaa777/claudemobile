@@ -11,6 +11,8 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'index.html'),
+        'debug-viewer': resolve(__dirname, 'debug-viewer.html'),
+        entities: resolve(__dirname, 'entities.html'),
       },
     },
   },
