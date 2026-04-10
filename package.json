@@ -1,12 +1,14 @@
 {
-  "name": "retro-procedural-engine",
-  "version": "0.1.0",
+  "name": "claudemobile",
   "private": true,
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "start": "vite preview --host 0.0.0.0 --port ${PORT:-4173}"
+    "start": "vite preview --host 0.0.0.0 --port ${PORT:-4173}",
+    "dev:retro": "pnpm --filter @retro-world/game dev",
+    "build:retro": "pnpm --filter @retro-world/game build",
+    "dev:engine": "pnpm --filter @engine/core build --watch"
   },
   "dependencies": {
     "three": "^0.165.0",
