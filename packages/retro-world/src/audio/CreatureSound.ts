@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import { Creature } from '../creatures/Creature'
 import { SPECIES, SpeciesId } from '../creatures/Species'
 import { EnvironmentReverb } from './EnvironmentReverb'
-import { createSpatialPanner } from './SpatialAudioHelper'
+import { createSpatialPanner } from '@engine/core'
 import { WorldState } from '../systems/WorldState'
 
 const MAX_CREATURES = 3

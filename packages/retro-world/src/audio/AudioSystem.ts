@@ -1,4 +1,6 @@
 import * as THREE from 'three'
+import { AudioSystem as EngineAudioSystem, updateListener } from '@engine/core'
+import type { AudioLayerConfig } from '@engine/core'
 import { BiomeType } from '../biomes/types'
 import { WeatherType } from '../systems/WeatherSystem'
 import { Creature } from '../creatures/Creature'
@@ -12,28 +14,20 @@ import { BiomeMusic, MusicContext } from './BiomeMusic'
 import { SpatialMelody } from './SpatialMelody'
 import { EnvironmentReverb } from './EnvironmentReverb'
 import { AmbienceSound } from './AmbienceSound'
-import { updateListener } from './SpatialAudioHelper'
 
 const MUTE_KEY = 'audio_muted'
 
-export class AudioSystem {
-  private ctx: AudioContext | null = null
-  private masterGain: GainNode | null = null
+const AUDIO_LAYERS: AudioLayerConfig[] = [
+  { name: 'ambience', gain: 1.0 },
+  { name: 'music', gain: 0.7 },
+  { name: 'creatures', gain: 0.8 },
+  { name: 'sfx', gain: 0.8 },
+  { name: 'harmonic', gain: 0.3 },
+  { name: 'uiChimes', gain: 0.8 },
+]
 
-  // ── Per-layer gain nodes ──────────────────────────────
-  // Master gain: 1.0
-  // ├── Ambience:        0.6
-  // ├── Music:           0.35
-  // ├── Creatures:       0.4
-  // ├── SFX:             0.5  (footsteps, weather, interactions)
-  // ├── Harmonic tones:  0.15
-  // └── UI chimes:       0.6
-  private ambienceGain: GainNode | null = null
-  private musicGain: GainNode | null = null
-  private creaturesGain: GainNode | null = null
-  private sfxGain: GainNode | null = null
-  private harmonicGain: GainNode | null = null
-  private uiChimesGain: GainNode | null = null
+export class AudioSystem {
+  private engine = new EngineAudioSystem()
 
   private wind: WindSound | null = null
   private footstep: FootstepSound | null = null
@@ -44,8 +38,6 @@ export class AudioSystem {
   private spatialMelody: SpatialMelody | null = null
   private environmentReverb: EnvironmentReverb | null = null
   private ambience: AmbienceSound | null = null
-  private initialized = false
-  private muted = false
   private muteEl: HTMLElement | null
 
   /** Debug volume multipliers (0–1, default 1) */
@@ -53,82 +45,67 @@ export class AudioSystem {
   public ambientVolume = 1
 
   /** Expose AudioContext and master gain for external tone systems (e.g., HarmonicTone) */
-  getContext(): AudioContext | null { return this.ctx }
-  getMasterGain(): GainNode | null { return this.masterGain }
+  getContext(): AudioContext | null { return this.engine.getContext() }
+  getMasterGain(): GainNode | null { return this.engine.getMasterGain() }
   /** Expose the harmonic-tone layer gain so HarmonicTone routes through it */
-  getHarmonicGain(): GainNode | null { return this.harmonicGain }
+  getHarmonicGain(): GainNode | null { return this.engine.getLayer('harmonic') }
 
   constructor() {
     this.muteEl = document.getElementById('mute-hud')
-    this.muted = localStorage.getItem(MUTE_KEY) === '1'
+    const wasMuted = localStorage.getItem(MUTE_KEY) === '1'
+    if (wasMuted) this.engine.setMuted(true)
     this.updateMuteDisplay()
   }
 
   /** Must be called from a user gesture (e.g., overlay click) */
   init() {
-    if (this.initialized) return
-    try {
-      this.ctx = new AudioContext()
-      this.masterGain = this.ctx.createGain()
-      this.masterGain.gain.value = this.muted ? 0 : 1
-      this.masterGain.connect(this.ctx.destination)
+    if (this.engine.initialized) return
+    this.engine.init(AUDIO_LAYERS)
 
-      // ── Create per-layer gain nodes and connect to master ──
-      const makeLayer = (gain: number): GainNode => {
-        const node = this.ctx!.createGain()
-        node.gain.value = gain
-        node.connect(this.masterGain!)
-        return node
-      }
-      this.ambienceGain  = makeLayer(1.0)
-      this.musicGain     = makeLayer(0.7)
-      this.creaturesGain = makeLayer(0.8)
-      this.sfxGain       = makeLayer(0.8)
-      this.harmonicGain  = makeLayer(0.3)
-      this.uiChimesGain  = makeLayer(0.8)
+    const ctx = this.engine.getContext()
+    const masterGain = this.engine.getMasterGain()
+    if (!ctx || !masterGain) return
 
-      // Environment reverb routes through master directly (it's a send bus)
-      this.environmentReverb = new EnvironmentReverb(this.ctx, this.masterGain)
+    const sfxGain = this.engine.getLayer('sfx')!
+    const creaturesGain = this.engine.getLayer('creatures')!
+    const musicGain = this.engine.getLayer('music')!
+    const ambienceGain = this.engine.getLayer('ambience')!
+    const uiChimesGain = this.engine.getLayer('uiChimes')!
 
-      // SFX layer: wind, footsteps, weather
-      this.wind     = new WindSound(this.ctx, this.sfxGain)
-      this.footstep = new FootstepSound(this.ctx, this.sfxGain, this.environmentReverb)
-      this.weather  = new WeatherSound(this.ctx, this.sfxGain)
+    // Environment reverb routes through master directly (it's a send bus)
+    this.environmentReverb = new EnvironmentReverb(ctx, masterGain)
 
-      // Creatures layer
-      this.creatureSound = new CreatureSound(this.ctx, this.creaturesGain, this.environmentReverb)
+    // SFX layer: wind, footsteps, weather
+    this.wind = new WindSound(ctx, sfxGain)
+    this.footstep = new FootstepSound(ctx, sfxGain, this.environmentReverb)
+    this.weather = new WeatherSound(ctx, sfxGain)
 
-      // UI chimes layer
-      this.chime = new ChimeSound(this.ctx, this.uiChimesGain)
+    // Creatures layer
+    this.creatureSound = new CreatureSound(ctx, creaturesGain, this.environmentReverb)
 
-      // Music layer (BiomeMusic manages its own internal gain on top of musicGain)
-      this.music = new BiomeMusic(this.ctx, this.musicGain)
+    // UI chimes layer
+    this.chime = new ChimeSound(ctx, uiChimesGain)
 
-      // SpatialMelody — discovery/landmark melodies, part of ambience layer
-      this.spatialMelody = new SpatialMelody(this.ctx, this.ambienceGain, this.environmentReverb)
+    // Music layer
+    this.music = new BiomeMusic(ctx, musicGain)
 
-      // Ambience layer
-      this.ambience = new AmbienceSound(this.ctx, this.ambienceGain, this.environmentReverb)
+    // SpatialMelody — discovery/landmark melodies, part of ambience layer
+    this.spatialMelody = new SpatialMelody(ctx, ambienceGain, this.environmentReverb)
 
-      this.initialized = true
-    } catch {
-      // Web Audio not available
-    }
+    // Ambience layer
+    this.ambience = new AmbienceSound(ctx, ambienceGain, this.environmentReverb)
   }
 
   toggleMute() {
-    this.muted = !this.muted
-    if (this.masterGain) {
-      this.masterGain.gain.value = this.muted ? 0 : 1
-    }
-    localStorage.setItem(MUTE_KEY, this.muted ? '1' : '0')
+    this.engine.toggleMute()
+    localStorage.setItem(MUTE_KEY, this.engine.muted ? '1' : '0')
     this.updateMuteDisplay()
   }
 
   private updateMuteDisplay() {
     if (this.muteEl) {
-      this.muteEl.textContent = this.muted ? '🔇 MUTED' : ''
-      this.muteEl.style.display = this.muted ? 'block' : 'none'
+      this.muteEl.textContent = this.engine.muted ? '🔇 MUTED' : ''
+      this.muteEl.style.display = this.engine.muted ? 'block' : 'none'
     }
   }
 
@@ -147,13 +124,13 @@ export class AudioSystem {
     runePositions?: THREE.Vector3[],
     worldState?: WorldState,
   ) {
-    if (!this.initialized || !this.ctx) return
-    if (this.ctx.state === 'suspended') {
-      this.ctx.resume()
-    }
+    if (!this.engine.initialized) return
+    const ctx = this.engine.getContext()
+    if (!ctx) return
+    this.engine.resume()
 
     // Update listener position/orientation for HRTF spatial audio
-    updateListener(this.ctx, camera)
+    updateListener(ctx, camera)
 
     // Update biome-specific reverb
     this.environmentReverb?.update(biome)
@@ -180,8 +157,8 @@ export class AudioSystem {
       creatures,
     }
     // Apply debug volume multipliers to layer gain nodes
-    if (this.musicGain) this.musicGain.gain.value = 0.7 * this.musicVolume
-    if (this.ambienceGain) this.ambienceGain.gain.value = 1.0 * this.ambientVolume
+    this.engine.setLayerGain('music', 0.7 * this.musicVolume)
+    this.engine.setLayerGain('ambience', 1.0 * this.ambientVolume)
     this.music?.update(delta, biome, musicContext)
     this.ambience?.update(delta, biome)
     if (landmarks) {

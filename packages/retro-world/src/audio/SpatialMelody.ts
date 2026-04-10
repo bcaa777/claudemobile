@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { BiomeType } from '../biomes/types'
 import { EnvironmentReverb } from './EnvironmentReverb'
-import { createSpatialPanner } from './SpatialAudioHelper'
+import { createSpatialPanner } from '@engine/core'
 
 /**
  * Soft, mysterious melodies that emanate from landmarks and artifacts.
