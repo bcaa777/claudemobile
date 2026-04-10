@@ -94,7 +94,7 @@ export class DamageSystem {
       entry.timer -= delta
       if (entry.timer <= 0) {
         // Guard: enemy mesh may have been removed/disposed already
-        if (entry.enemy.mesh.parent) {
+        if (entry.enemy?.mesh?.parent) {
           const bodyMesh = entry.enemy.mesh.children.find((c): c is THREE.Mesh => c instanceof THREE.Mesh)
           const mat = bodyMesh ? (bodyMesh.material as THREE.MeshLambertMaterial) : null
           if (mat) {
