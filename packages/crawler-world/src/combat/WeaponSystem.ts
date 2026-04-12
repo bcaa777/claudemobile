@@ -133,27 +133,20 @@ export class WeaponSystem {
     def: WeaponDef,
     weapon: ActiveWeapon,
     playerPosition: THREE.Vector3,
-    camera: THREE.Camera,
+    _camera: THREE.Camera,
     enemyManager: EnemyManager,
     projectileSystem: ProjectileSystem,
   ): void {
-    if (!def.autoTarget) {
-      // In third-person/top-down, use player facing direction instead of camera direction
-      const aimDir = this._playerFacingDir
-        ? this._playerFacingDir.clone().normalize()
-        : getCameraDirection(camera)
-      this.fire(def, playerPosition, aimDir, projectileSystem)
-      weapon.cooldownRemaining = def.cooldown
-    } else {
-      const target = findNearestEnemy(playerPosition, enemyManager, def.range)
-      if (target) {
-        const dir = target.clone().sub(playerPosition)
-        dir.y = 0
-        dir.normalize()
-        this.fire(def, playerPosition, dir, projectileSystem)
-        weapon.cooldownRemaining = def.cooldown
-      }
-    }
+    // All weapons auto-target nearest enemy
+    const target = findNearestEnemy(playerPosition, enemyManager, def.range)
+    if (!target) return
+
+    const dir = target.clone().sub(playerPosition)
+    dir.y = 0
+    dir.normalize()
+
+    this.fire(def, playerPosition, dir, projectileSystem)
+    weapon.cooldownRemaining = def.cooldown
   }
 
   private fire(

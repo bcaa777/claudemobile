@@ -33,7 +33,7 @@ export const WEAPON_DEFS: Record<string, WeaponDef> = {
   bolt_caster: {
     id: 'bolt_caster', name: 'Bolt Caster', category: 'projectile',
     damage: 15, cooldown: 0.4, range: 50, projectileSpeed: 40,
-    projectileCount: 1, spreadAngle: 0, autoTarget: false,
+    projectileCount: 1, spreadAngle: 0, autoTarget: true,
   },
   tri_shot: {
     id: 'tri_shot', name: 'Tri-Shot', category: 'projectile',
@@ -111,7 +111,7 @@ export const WEAPON_DEFS: Record<string, WeaponDef> = {
   flak_cannon: {
     id: 'flak_cannon', name: 'Flak Cannon', category: 'projectile',
     damage: 6, cooldown: 0.8, range: 30, projectileSpeed: 30,
-    projectileCount: 8, spreadAngle: 0.6, autoTarget: false,
+    projectileCount: 8, spreadAngle: 0.6, autoTarget: true,
   },
   homing_missile: {
     id: 'homing_missile', name: 'Homing Missile', category: 'projectile',
@@ -141,7 +141,7 @@ export const WEAPON_DEFS: Record<string, WeaponDef> = {
   railgun: {
     id: 'railgun', name: 'Railgun', category: 'projectile',
     damage: 60, cooldown: 1.2, range: 80, projectileSpeed: 80,
-    projectileCount: 1, spreadAngle: 0, autoTarget: false,
+    projectileCount: 1, spreadAngle: 0, autoTarget: true,
     bounceCount: 0,
   },
   spread_cannon: {
@@ -189,7 +189,7 @@ export const WEAPON_DEFS: Record<string, WeaponDef> = {
   flak_storm: {
     id: 'flak_storm', name: 'Flak Storm', category: 'projectile',
     damage: 10, cooldown: 0.5, range: 35, projectileSpeed: 35,
-    projectileCount: 12, spreadAngle: 0.8, autoTarget: false,
+    projectileCount: 12, spreadAngle: 0.8, autoTarget: true,
   },
   hellfire_missile: {
     id: 'hellfire_missile', name: 'Hellfire Missile', category: 'projectile',
@@ -219,7 +219,7 @@ export const WEAPON_DEFS: Record<string, WeaponDef> = {
   singularity_cannon: {
     id: 'singularity_cannon', name: 'Singularity Cannon', category: 'projectile',
     damage: 120, cooldown: 2.0, range: 90, projectileSpeed: 100,
-    projectileCount: 1, spreadAngle: 0, autoTarget: false,
+    projectileCount: 1, spreadAngle: 0, autoTarget: true,
   },
   thunder_rain: {
     id: 'thunder_rain', name: 'Thunder Rain', category: 'chain',

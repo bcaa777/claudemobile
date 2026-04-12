@@ -123,14 +123,13 @@ export class ProjectileSystem {
         }
       }
 
-      // Collision check against enemies
+      // Collision check against enemies (2D — ignore Y so ground projectiles hit flyers)
       let hit = false
       for (let i = 0; i < enemyManager.enemies.length; i++) {
         const enemy = enemyManager.enemies[i]
         const dx = proj.mesh.position.x - enemy.mesh.position.x
-        const dy = proj.mesh.position.y - enemy.mesh.position.y
         const dz = proj.mesh.position.z - enemy.mesh.position.z
-        const distSq = dx * dx + dy * dy + dz * dz
+        const distSq = dx * dx + dz * dz
         if (distSq < HIT_RADIUS * HIT_RADIUS) {
           this.pendingDamage.push({ enemyIndex: i, damage: proj.damage })
           this.spawnImpact(proj.mesh.position.clone(), (proj.mesh.material as THREE.MeshStandardMaterial).color.getHex())
@@ -147,9 +146,8 @@ export class ProjectileSystem {
         const bossPos = bossSystem.getPosition()
         if (bossPos) {
           const bx = proj.mesh.position.x - bossPos.x
-          const by = proj.mesh.position.y - bossPos.y
           const bz = proj.mesh.position.z - bossPos.z
-          const bDistSq = bx * bx + by * by + bz * bz
+          const bDistSq = bx * bx + bz * bz
           const BOSS_HIT_RADIUS = 3.5
           if (bDistSq < BOSS_HIT_RADIUS * BOSS_HIT_RADIUS) {
             this.pendingBossDamage.push({ damage: proj.damage })
