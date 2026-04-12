@@ -132,8 +132,17 @@ export class PlayerController {
     }
 
     // Project movement along yaw direction (ignore pitch for walking)
-    const forward = new THREE.Vector3(-Math.sin(moveYaw), 0, -Math.cos(moveYaw))
-    const right = new THREE.Vector3(Math.cos(moveYaw), 0, -Math.sin(moveYaw))
+    let forward = new THREE.Vector3(-Math.sin(moveYaw), 0, -Math.cos(moveYaw))
+    let right = new THREE.Vector3(Math.cos(moveYaw), 0, -Math.sin(moveYaw))
+
+    // In third-person/top-down the camera is behind the player, so the
+    // forward vector derived from the orbit yaw points toward the camera
+    // instead of away from it.  Negate both axes so W walks *away* from
+    // the camera and A/D strafe correctly.
+    if (this.currentMode !== 'first-person') {
+      forward.negate()
+      right.negate()
+    }
 
     this.position.addScaledVector(forward, -moveZ * speed * delta)
     this.position.addScaledVector(right, moveX * speed * delta)

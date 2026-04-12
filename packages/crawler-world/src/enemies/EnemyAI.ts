@@ -44,6 +44,9 @@ export function updateEnemyAI(
     // Sync mesh
     enemy.mesh.position.set(Position.x[eid], Position.y[eid], Position.z[eid])
 
+    // Face toward player
+    enemy.mesh.rotation.y = Math.atan2(dx, dz)
+
     // Idle bob animation
     animateEnemy(enemy.mesh, _aiTime + eid * 0.7)
   }
