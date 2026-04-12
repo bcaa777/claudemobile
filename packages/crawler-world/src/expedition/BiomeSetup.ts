@@ -8,7 +8,10 @@ import {
   BiomeType,
   BiomeConfig,
   WATER_LEVEL,
+  BillboardBatch,
+  SpriteAtlas,
 } from '@engine/core'
+import type { SpriteTypeConfig } from '@engine/core'
 import type { UndergroundConfig } from './UndergroundBiomes'
 
 // ─── Minimal biome configs for the crawler game ──────────────────────────────
@@ -221,34 +224,56 @@ export function getBiomeColorGrade(type: BiomeType): ColorGradeSpec {
   return BIOME_COLOR_GRADE[type] ?? { tint: [1, 1, 1], contrast: 1, saturation: 1 }
 }
 
-// ─── Sprite config per biome ─────────────────────────────────────────────────
+// ─── Sprite configurations per biome (engine billboard system) ──────────────
 
-interface SpriteSpec {
-  /** Base color for this vegetation type */
-  color: number
-  /** Secondary color variant (e.g. trunk for trees) */
-  color2?: number
-  width: number
-  height: number
-  count: number
-  /** Sprite type for height offset logic */
-  type: 'tree' | 'bush' | 'rock' | 'generic'
+const BIOME_SPRITE_TYPES: Partial<Record<BiomeType, SpriteTypeConfig[]>> = {
+  [BiomeType.Forest]: [
+    { category: 'tree', weight: 6, minScale: 3, maxScale: 7, isBillboard: true },
+    { category: 'bush', weight: 6, minScale: 1, maxScale: 2, isBillboard: true },
+    { category: 'rock', weight: 3, minScale: 1, maxScale: 2.5, isBillboard: false },
+    { category: 'grass', weight: 4, minScale: 0.5, maxScale: 1.2, isBillboard: false },
+  ],
+  [BiomeType.Desert]: [
+    { category: 'structure', weight: 2, minScale: 2, maxScale: 5, isBillboard: true },
+    { category: 'bush', weight: 3, minScale: 0.5, maxScale: 1.5, isBillboard: true },
+    { category: 'rock', weight: 5, minScale: 1, maxScale: 3, isBillboard: false },
+  ],
+  [BiomeType.Swamp]: [
+    { category: 'tree', weight: 5, minScale: 2, maxScale: 5, isBillboard: true },
+    { category: 'bush', weight: 4, minScale: 0.8, maxScale: 1.5, isBillboard: true },
+    { category: 'grass', weight: 3, minScale: 0.3, maxScale: 0.8, isBillboard: false },
+  ],
+  [BiomeType.Snow]: [
+    { category: 'tree', weight: 5, minScale: 3, maxScale: 6, isBillboard: true },
+    { category: 'rock', weight: 4, minScale: 1, maxScale: 3, isBillboard: false },
+    { category: 'bush', weight: 2, minScale: 0.5, maxScale: 1.5, isBillboard: true },
+  ],
+  [BiomeType.Volcanic]: [
+    { category: 'tree', weight: 2, minScale: 2, maxScale: 4, isBillboard: true },
+    { category: 'rock', weight: 6, minScale: 1.5, maxScale: 4, isBillboard: false },
+    { category: 'structure', weight: 1, minScale: 2, maxScale: 4, isBillboard: true },
+  ],
+  [BiomeType.Crystal]: [
+    { category: 'structure', weight: 5, minScale: 2, maxScale: 6, isBillboard: true },
+    { category: 'rock', weight: 3, minScale: 1, maxScale: 3, isBillboard: false },
+    { category: 'bush', weight: 2, minScale: 1, maxScale: 2, isBillboard: true },
+  ],
+  [BiomeType.Jungle]: [
+    { category: 'tree', weight: 7, minScale: 4, maxScale: 8, isBillboard: true },
+    { category: 'bush', weight: 5, minScale: 1, maxScale: 2.5, isBillboard: true },
+    { category: 'grass', weight: 3, minScale: 0.5, maxScale: 1.0, isBillboard: false },
+  ],
+  [BiomeType.Mesa]: [
+    { category: 'rock', weight: 6, minScale: 2, maxScale: 5, isBillboard: false },
+    { category: 'structure', weight: 2, minScale: 2, maxScale: 4, isBillboard: true },
+    { category: 'bush', weight: 3, minScale: 0.5, maxScale: 1.5, isBillboard: true },
+  ],
+  [BiomeType.CoralReef]: [
+    { category: 'bush', weight: 5, minScale: 1, maxScale: 3, isBillboard: true },
+    { category: 'structure', weight: 3, minScale: 1, maxScale: 3, isBillboard: true },
+    { category: 'grass', weight: 4, minScale: 0.3, maxScale: 0.8, isBillboard: false },
+  ],
 }
-
-const BIOME_SPRITES: Partial<Record<BiomeType, SpriteSpec>> = {
-  [BiomeType.Forest]:   { color: 0x2d7a2d, color2: 0x5c3a1a, width: 1.5, height: 4.0, count: 22, type: 'tree' },
-  [BiomeType.Desert]:   { color: 0x8fcc44, color2: 0xaa8833,  width: 0.8, height: 0.8, count: 12, type: 'bush' },
-  [BiomeType.Snow]:     { color: 0x2a5e2a, color2: 0xaabbcc,  width: 1.4, height: 3.5, count: 18, type: 'tree' },
-  [BiomeType.Swamp]:    { color: 0x4a7a1a, color2: 0x5c3a1a,  width: 0.9, height: 3.0, count: 16, type: 'tree' },
-  [BiomeType.Volcanic]: { color: 0x555555, color2: 0x444444,  width: 1.2, height: 1.2, count: 10, type: 'rock' },
-  [BiomeType.Crystal]:  { color: 0x66ddff, color2: 0x8844ff,  width: 0.6, height: 2.5, count: 15, type: 'generic' },
-  [BiomeType.Jungle]:   { color: 0x1a6606, color2: 0x2d7a2d,  width: 1.8, height: 4.5, count: 28, type: 'tree' },
-  [BiomeType.Mesa]:     { color: 0xbb6622, color2: 0x996633,  width: 1.3, height: 1.0, count: 12, type: 'rock' },
-  [BiomeType.CoralReef]:{ color: 0xcc3366, color2: 0xff6699,  width: 0.7, height: 1.2, count: 20, type: 'bush' },
-}
-
-// Size variation scales per sprite type
-const SIZE_VARIANTS = [0.75, 1.0, 1.3] as const
 
 // ─── Weather particles ────────────────────────────────────────────────────────
 
@@ -399,7 +424,7 @@ const VIEW_RADIUS = 2
 
 interface ChunkObjects {
   terrain: THREE.Mesh
-  vegMeshes: THREE.Object3D[]
+  batches: BillboardBatch[]
   water: THREE.Mesh | null
   rocks: THREE.Mesh[]
   fogPlane: THREE.Mesh | null
@@ -499,89 +524,10 @@ export function setupUndergroundScene(
   }
 }
 
-// ─── 3D vegetation mesh builders ─────────────────────────────────────────────
-
-function buildTreeMesh(color: number, trunkColor: number, w: number, h: number): THREE.Group {
-  const group = new THREE.Group()
-
-  // Trunk
-  const trunkH = h * 0.35
-  const trunkGeo = new THREE.CylinderGeometry(w * 0.08, w * 0.12, trunkH, 5)
-  const trunkMat = new THREE.MeshLambertMaterial({ color: trunkColor })
-  const trunk = new THREE.Mesh(trunkGeo, trunkMat)
-  trunk.position.y = trunkH / 2
-  group.add(trunk)
-
-  // Canopy — 2-3 stacked cones for a layered look
-  const canopyMat = new THREE.MeshLambertMaterial({ color })
-  const layers = 2 + Math.floor(Math.random() * 2)
-  for (let i = 0; i < layers; i++) {
-    const layerH = (h - trunkH) / layers * 1.3
-    const layerR = w * 0.5 * (1 - i * 0.15)
-    const coneGeo = new THREE.ConeGeometry(layerR, layerH, 6)
-    const cone = new THREE.Mesh(coneGeo, canopyMat)
-    cone.position.y = trunkH + i * layerH * 0.6 + layerH / 2
-    group.add(cone)
-  }
-
-  return group
-}
-
-function buildBushMesh(color: number, w: number, h: number): THREE.Group {
-  const group = new THREE.Group()
-  const mat = new THREE.MeshLambertMaterial({ color })
-
-  // Central sphere
-  const mainGeo = new THREE.SphereGeometry(w * 0.4, 6, 4)
-  const main = new THREE.Mesh(mainGeo, mat)
-  main.position.y = h * 0.4
-  group.add(main)
-
-  // 2-3 smaller offset spheres
-  for (let i = 0; i < 2; i++) {
-    const smallGeo = new THREE.SphereGeometry(w * 0.25, 5, 3)
-    const small = new THREE.Mesh(smallGeo, mat)
-    const angle = (i / 2) * Math.PI * 2 + Math.random()
-    small.position.set(
-      Math.cos(angle) * w * 0.3,
-      h * 0.3,
-      Math.sin(angle) * w * 0.3,
-    )
-    group.add(small)
-  }
-
-  return group
-}
-
-function buildCrystalMesh(color: number, w: number, h: number): THREE.Group {
-  const group = new THREE.Group()
-  const mat = new THREE.MeshStandardMaterial({
-    color,
-    emissive: color,
-    emissiveIntensity: 0.3,
-    transparent: true,
-    opacity: 0.8,
-  })
-
-  // Main crystal column
-  const mainGeo = new THREE.ConeGeometry(w * 0.3, h, 5)
-  const main = new THREE.Mesh(mainGeo, mat)
-  main.position.y = h / 2
-  group.add(main)
-
-  // Smaller tilted crystal
-  const smallGeo = new THREE.ConeGeometry(w * 0.15, h * 0.5, 4)
-  const small = new THREE.Mesh(smallGeo, mat)
-  small.position.set(w * 0.25, h * 0.3, 0)
-  small.rotation.z = 0.4
-  group.add(small)
-
-  return group
-}
-
 export class ChunkManager {
   private loadedChunks = new Map<string, ChunkObjects>()
   private biomeMap: BiomeMap
+  private atlas = new SpriteAtlas()
   /** Active underground config overrides terrain colors during chunk generation. */
   undergroundConfig: UndergroundConfig | null = null
 
@@ -738,40 +684,64 @@ export class ChunkManager {
       }
     }
 
-    // ── 3D Vegetation meshes ────────────────────────────────────────────────
-    const vegMeshes: THREE.Object3D[] = []
-    const spriteSpec = BIOME_SPRITES[biomeType]
-    if (spriteSpec && !this.undergroundConfig) {
-      for (let i = 0; i < spriteSpec.count; i++) {
-        const lx = chunkRand() * CHUNK_SIZE
-        const lz = chunkRand() * CHUNK_SIZE
-        const wx = originX + lx
-        const wz = originZ + lz
-        const wy = sampleWorldHeight(wx, wz, this.biomeMap, getBiomeConfig)
-        if (wy <= WATER_LEVEL) continue
+    // ── Instanced billboard vegetation (engine sprite system) ───────────────
+    const batches: BillboardBatch[] = []
+    const spriteTypes = BIOME_SPRITE_TYPES[biomeType]
+    if (spriteTypes && !this.undergroundConfig) {
+      // Get biome palette for texture generation
+      const biomeConfig = getBiomeConfig(biomeType)
+      const palette = biomeConfig.palette
 
-        const sizeVariant = SIZE_VARIANTS[Math.floor(chunkRand() * SIZE_VARIANTS.length)]
-        const w = spriteSpec.width * sizeVariant
-        const h = spriteSpec.height * sizeVariant
+      // Compute total weight for weighted random selection
+      const totalWeight = spriteTypes.reduce((sum, st) => sum + st.weight, 0)
 
-        let mesh: THREE.Object3D
-        const color = chunkRand() < 0.3 ? (spriteSpec.color2 ?? spriteSpec.color) : spriteSpec.color
+      // Group sprites by texture key for batching
+      const groups = new Map<string, { tex: THREE.CanvasTexture; entries: { x: number; y: number; z: number; scale: number; seed: number }[]; billboard: boolean }>()
 
-        if (spriteSpec.type === 'tree') {
-          mesh = buildTreeMesh(spriteSpec.color, spriteSpec.color2 ?? 0x5c3a1a, w, h)
-        } else if (spriteSpec.type === 'bush') {
-          mesh = buildBushMesh(color, w, h)
-        } else if (spriteSpec.type === 'generic') {
-          mesh = buildCrystalMesh(color, w, h)
-        } else {
-          // 'rock' type - skip, rocks are handled separately
-          continue
+      const GRID_STEP = 2.0
+      const SPAWN_DENSITY = 0.60
+      const stepsX = Math.ceil(CHUNK_SIZE / GRID_STEP)
+      const stepsZ = Math.ceil(CHUNK_SIZE / GRID_STEP)
+
+      for (let gz = 0; gz < stepsZ; gz++) {
+        for (let gx = 0; gx < stepsX; gx++) {
+          if (chunkRand() > SPAWN_DENSITY) continue
+
+          const lx = gx * GRID_STEP + chunkRand() * GRID_STEP
+          const lz = gz * GRID_STEP + chunkRand() * GRID_STEP
+          const wx = originX + lx
+          const wz = originZ + lz
+          const wy = sampleWorldHeight(wx, wz, this.biomeMap, getBiomeConfig)
+          if (wy <= WATER_LEVEL + 0.3) continue
+
+          // Weighted random sprite type selection
+          let roll = chunkRand() * totalWeight
+          let selectedType = spriteTypes[0]
+          for (const st of spriteTypes) {
+            roll -= st.weight
+            if (roll <= 0) { selectedType = st; break }
+          }
+
+          const variant = Math.floor(chunkRand() * 4) // 4 variants
+          const scale = selectedType.minScale + chunkRand() * (selectedType.maxScale - selectedType.minScale)
+          const seed = wx * 127.1 + wz * 311.7
+
+          const tex = this.atlas.getTexture(biomeType, selectedType.category, variant, palette)
+          const key = `${biomeType}_${selectedType.category}_${variant}_${selectedType.isBillboard ? 'b' : 'd'}`
+
+          if (!groups.has(key)) {
+            groups.set(key, { tex, entries: [], billboard: selectedType.isBillboard })
+          }
+          groups.get(key)!.entries.push({ x: wx, y: wy, z: wz, scale, seed })
         }
+      }
 
-        mesh.position.set(wx, wy, wz)
-        mesh.rotation.y = chunkRand() * Math.PI * 2
-        this.scene.add(mesh)
-        vegMeshes.push(mesh)
+      // Create BillboardBatch per group
+      for (const [, group] of groups) {
+        if (group.entries.length === 0) continue
+        const batch = new BillboardBatch(group.tex, group.entries, group.billboard)
+        this.scene.add(batch.mesh)
+        batches.push(batch)
       }
     }
 
@@ -792,7 +762,7 @@ export class ChunkManager {
       this.scene.add(fogPlane)
     }
 
-    this.loadedChunks.set(key, { terrain, vegMeshes, water, rocks, fogPlane })
+    this.loadedChunks.set(key, { terrain, batches, water, rocks, fogPlane })
   }
 
   private unloadChunk(key: string, objects: ChunkObjects): void {
@@ -800,17 +770,9 @@ export class ChunkManager {
     objects.terrain.geometry.dispose()
     ;(objects.terrain.material as THREE.Material).dispose()
 
-    for (const veg of objects.vegMeshes) {
-      this.scene.remove(veg)
-      veg.traverse((child) => {
-        const m = child as THREE.Mesh
-        if (m.isMesh) {
-          m.geometry?.dispose()
-          const mat = m.material
-          if (Array.isArray(mat)) mat.forEach(mm => mm.dispose())
-          else (mat as THREE.Material).dispose()
-        }
-      })
+    for (const batch of objects.batches) {
+      this.scene.remove(batch.mesh)
+      batch.dispose()
     }
 
     if (objects.water) {
@@ -843,5 +805,6 @@ export class ChunkManager {
     for (const [key, objects] of this.loadedChunks) {
       this.unloadChunk(key, objects)
     }
+    this.atlas.dispose()
   }
 }
