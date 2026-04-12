@@ -30,22 +30,23 @@ export class DamageSystem {
     const eid = enemy.eid
     Health.current[eid] = Math.max(0, Health.current[eid] - amount)
 
-    // Flash red — find the first Mesh child in the Group (the body)
-    let mat: THREE.MeshLambertMaterial | null = null
-    let originalEmissive = new THREE.Color(0, 0, 0)
+    // Flash red — all material access is guarded since the mesh may be
+    // partially disposed if multiple damage sources hit the same frame.
+    let bodyColor = new THREE.Color(1, 0, 0)
     try {
       const bodyMesh = enemy.mesh.children.find((c): c is THREE.Mesh => c instanceof THREE.Mesh)
-      mat = bodyMesh ? (bodyMesh.material as THREE.MeshLambertMaterial) : null
-      originalEmissive = mat?.emissive ? mat.emissive.clone() : new THREE.Color(0, 0, 0)
+      const mat = bodyMesh?.material as THREE.MeshLambertMaterial | undefined
+      if (mat?.emissive) {
+        const originalEmissive = mat.emissive.clone()
+        bodyColor = mat.color?.clone() ?? bodyColor
+        mat.emissive.setHex(0xff0000)
+        this.flashing.push({ enemy, timer: FLASH_DURATION, originalEmissive })
+      }
     } catch {
-      // mesh may have been partially disposed
+      // mesh disposed mid-frame — skip flash
     }
-    if (mat) mat.emissive.setHex(0xff0000)
-    this.flashing.push({ enemy, timer: FLASH_DURATION, originalEmissive })
 
     if (Health.current[eid] <= 0) {
-      // Capture body color before removal
-      const bodyColor = mat ? mat.color.clone() : new THREE.Color(1, 0, 0)
 
       // Remove flash entry for this enemy before disposal
       const flashIdx = this.flashing.findIndex(f => f.enemy === enemy)
