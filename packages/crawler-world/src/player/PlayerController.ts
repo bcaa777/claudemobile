@@ -25,8 +25,9 @@ export class PlayerController {
     this.thirdPersonRig = new ThirdPersonRig({ distance: 8, height: 4 }, sampleHeight)
     this.topDownRig = new TopDownRig()
 
-    // Start at a modest height so we don't clip before first terrain sample
-    this.position = new THREE.Vector3(0, 5, 0)
+    // Spawn on terrain surface
+    const spawnY = sampleHeight(0, 0) + GAME_CONFIG.playerHeight
+    this.position = new THREE.Vector3(0, spawnY, 0)
     this.camera.position.copy(this.position)
 
     if (scene) {
