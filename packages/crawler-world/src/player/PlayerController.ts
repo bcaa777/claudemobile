@@ -144,7 +144,7 @@ export class PlayerController {
       // Camera-relative: forward = from camera toward target
       const yaw = this.thirdPersonRig.getYaw()
       forward = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw))
-      right = new THREE.Vector3(Math.cos(yaw), 0, -Math.sin(yaw))
+      right = new THREE.Vector3(-Math.cos(yaw), 0, Math.sin(yaw))
       this.position.addScaledVector(forward, -moveZ * speed * delta)
       this.position.addScaledVector(right, moveX * speed * delta)
     } else {
