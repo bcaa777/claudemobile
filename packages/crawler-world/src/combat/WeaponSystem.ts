@@ -490,6 +490,17 @@ export class WeaponSystem {
 function getCameraDirection(camera: THREE.Camera): THREE.Vector3 {
   const dir = new THREE.Vector3()
   camera.getWorldDirection(dir)
+
+  // For top-down/overhead cameras, the camera looks straight down so
+  // world direction is mostly (0,-1,0).  Project onto XZ and use that;
+  // if the horizontal component is too small, fall back to the camera's
+  // local -Z projected onto XZ (the direction the camera "faces" ignoring pitch).
+  if (Math.abs(dir.y) > 0.9) {
+    // Extract forward from the camera's rotation ignoring pitch
+    dir.set(0, 0, -1).applyQuaternion(camera.quaternion)
+  }
+  dir.y = 0
+  dir.normalize()
   return dir
 }
 
