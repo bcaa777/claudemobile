@@ -62,78 +62,14 @@ function buildNPCMesh(color: number): THREE.Group {
 }
 
 const NPC_DEFS: NPCDef[] = [
-  {
-    id: 'commander',
-    label: 'COMMANDER',
-    subLabel: '[Click to embark]',
-    color: 0x2244aa,
-    labelColor: 0x6688ff,
-    pos: [-3, 0.8, -4],
-    minCleansed: 0,
-  },
-  {
-    id: 'merchant',
-    label: 'MERCHANT',
-    subLabel: '[Click to shop]',
-    color: 0xaa8811,
-    labelColor: 0xffcc44,
-    pos: [3, 0.8, -4],
-    minCleansed: 0,
-  },
-  {
-    id: 'companion',
-    label: 'COMPANION',
-    subLabel: '[Click to choose]',
-    color: 0x228833,
-    labelColor: 0x88ff88,
-    pos: [0, 0.8, -2],
-    minCleansed: 0,
-  },
-  {
-    id: 'weaponsmith',
-    label: 'WEAPON SMITH',
-    subLabel: '[Click to reforge]',
-    color: 0xcc3311,
-    labelColor: 0xff7755,
-    pos: [-6, 0.8, -7],
-    minCleansed: 1,
-  },
-  {
-    id: 'companiontrainer',
-    label: 'TRAINER',
-    subLabel: '[Click to train]',
-    color: 0x228844,
-    labelColor: 0x66ffaa,
-    pos: [0, 0.8, 1],
-    minCleansed: 2,
-  },
-  {
-    id: 'mutationlab',
-    label: 'MUTATION LAB',
-    subLabel: '[Click to research]',
-    color: 0x882299,
-    labelColor: 0xcc66ff,
-    pos: [-5, 0.8, -8],
-    minCleansed: 4,
-  },
-  {
-    id: 'archivist',
-    label: 'ARCHIVIST',
-    subLabel: '[Click to browse]',
-    color: 0xddddee,
-    labelColor: 0xffffff,
-    pos: [6, 0.8, -8],
-    minCleansed: 6,
-  },
-  {
-    id: 'portalmaster',
-    label: 'PORTAL MASTER',
-    subLabel: '[Click to travel]',
-    color: 0x00cccc,
-    labelColor: 0x44ffff,
-    pos: [0, 0.8, -9],
-    minCleansed: 8,
-  },
+  { id: 'commander',        label: 'COMMANDER',    subLabel: '[E] Embark',    color: 0x2244aa, labelColor: 0x6688ff, pos: [0, 0.8, -12],   minCleansed: 0 },
+  { id: 'merchant',         label: 'MERCHANT',     subLabel: '[E] Shop',      color: 0xaa8811, labelColor: 0xffcc44, pos: [10, 0.8, -6],   minCleansed: 0 },
+  { id: 'companion',        label: 'COMPANION',    subLabel: '[E] Choose',    color: 0x228833, labelColor: 0x88ff88, pos: [-10, 0.8, -6],  minCleansed: 0 },
+  { id: 'weaponsmith',      label: 'WEAPON SMITH', subLabel: '[E] Reforge',   color: 0xcc3311, labelColor: 0xff7755, pos: [-15, 0.8, -14], minCleansed: 1 },
+  { id: 'companiontrainer', label: 'TRAINER',      subLabel: '[E] Train',     color: 0x228844, labelColor: 0x66ffaa, pos: [0, 0.8, 8],     minCleansed: 2 },
+  { id: 'mutationlab',      label: 'MUTATION LAB', subLabel: '[E] Research',  color: 0x882299, labelColor: 0xcc66ff, pos: [-12, 0.8, -18], minCleansed: 4 },
+  { id: 'archivist',        label: 'ARCHIVIST',    subLabel: '[E] Browse',    color: 0xddddee, labelColor: 0xffffff, pos: [15, 0.8, -14],  minCleansed: 6 },
+  { id: 'portalmaster',     label: 'PORTAL MASTER',subLabel: '[E] Travel',    color: 0x00cccc, labelColor: 0x44ffff, pos: [0, 0.8, -22],   minCleansed: 8 },
 ]
 
 export class HubScene {
@@ -141,9 +77,6 @@ export class HubScene {
   private npcs: NPC[] = []
   private torchLights: THREE.PointLight[] = []
   private torchTime = 0
-  private raycaster = new THREE.Raycaster()
-  private mouse = new THREE.Vector2()
-  private clickHandler: ((e: MouseEvent) => void) | null = null
   private worldMap: WorldMap
   private shopUI: ShopUI
   private companionPickerUI: CompanionPickerUI
@@ -153,6 +86,11 @@ export class HubScene {
   private hubGrowth: HubGrowth
   private labelEls: HTMLElement[] = []
   private uiOpen = false
+  private nearbyNpc: string | null = null
+  private interactPrompt: HTMLElement | null = null
+  private storedMetaState: MetaState | null = null
+  private storedOnBiomeSelected: ((biome: BiomeType) => void) | null = null
+  private storedOnUndergroundSelected: ((id: number) => void) | null = null
 
   /** Companion id chosen in this hub visit — empty string means solo */
   selectedCompanionId: string = 'wolf'
@@ -177,14 +115,32 @@ export class HubScene {
   ): void {
     this.clearScene()
 
+    // Store callbacks for proximity-based interaction
+    this.storedMetaState = metaState
+    this.storedOnBiomeSelected = onBiomeSelected
+    this.storedOnUndergroundSelected = onUndergroundSelected ?? null
+
     const cleansedCount = metaState.cleansedBiomes.length
+
+    // ── Large ground plane ───────────────────────────────────────────────────
+    const groundGeo = new THREE.PlaneGeometry(100, 100)
+    const groundMat = new THREE.MeshLambertMaterial({ color: 0x556644 })
+    const ground = new THREE.Mesh(groundGeo, groundMat)
+    ground.rotation.x = -Math.PI / 2
+    ground.position.y = -0.01
+    this.addObject(ground)
 
     // ── Hub structures (progressive) ─────────────────────────────────────────
     this.hubGrowth.build(this.renderer.scene, this.hubObjects, cleansedCount)
 
     // ── Torches (always present baseline) ────────────────────────────────────
     this.torchLights = []
-    const torchPositions: [number, number, number][] = [[-6, 3, -8], [6, 3, -8]]
+    const torchPositions: [number, number, number][] = [
+      [-6, 3, -8], [6, 3, -8],
+      [-12, 3, -12], [12, 3, -12],
+      [-8, 3, 0], [8, 3, 0],
+      [0, 3, -18],
+    ]
     for (const [x, y, z] of torchPositions) {
       const torchGeo = new THREE.BoxGeometry(0.2, 0.6, 0.2)
       const torchMat = new THREE.MeshLambertMaterial({ color: 0x553311 })
@@ -198,6 +154,22 @@ export class HubScene {
       this.torchLights.push(light)
     }
 
+    // ── Path markers (ground strips leading to NPCs) ─────────────────────────
+    const pathMat = new THREE.MeshLambertMaterial({ color: 0x665533 })
+    for (const def of NPC_DEFS) {
+      if (cleansedCount < def.minCleansed) continue
+      const [nx, , nz] = def.pos
+      const dx = nx
+      const dz = nz
+      const dist = Math.sqrt(dx * dx + dz * dz)
+      if (dist < 1) continue
+      const pathGeo = new THREE.BoxGeometry(1.2, 0.02, dist)
+      const pathMesh = new THREE.Mesh(pathGeo, pathMat)
+      pathMesh.position.set(dx / 2, 0, dz / 2)
+      pathMesh.rotation.y = Math.atan2(dx, dz)
+      this.addObject(pathMesh)
+    }
+
     // ── NPCs (unlocked by cleansed count) ────────────────────────────────────
     for (const def of NPC_DEFS) {
       if (cleansedCount < def.minCleansed) continue
@@ -206,8 +178,6 @@ export class HubScene {
       mesh.position.set(...def.pos)
       mesh.scale.setScalar(1.5)
       mesh.userData = { npc: def.id }
-      // Mark all child meshes for raycasting
-      mesh.traverse(child => { if ((child as THREE.Mesh).isMesh) child.userData.npc = def.id })
       this.addObject(mesh)
       this.npcs.push({ mesh, label: def.label })
       this.addLabel(`${def.label}\n${def.subLabel}`, mesh.position, def.labelColor)
@@ -235,33 +205,16 @@ export class HubScene {
     this.renderer.scene.background = new THREE.Color(0x2a3a4a)
     this.renderer.scene.fog = new THREE.FogExp2(0x2a3a4a, 0.005)
 
-    // ── Fixed hub camera ──────────────────────────────────────────────────────
-    this.renderer.camera.position.set(8, 6, 12)
-    this.renderer.camera.lookAt(0, 1, 0)
-
-    // ── Click handler for NPC interaction ────────────────────────────────────
-    this.clickHandler = (e: MouseEvent) => {
-      if (this.uiOpen) return
-      this.mouse.x = (e.clientX / window.innerWidth) * 2 - 1
-      this.mouse.y = -(e.clientY / window.innerHeight) * 2 + 1
-      this.raycaster.setFromCamera(this.mouse, this.renderer.camera)
-      const meshes = this.npcs.map(n => n.mesh)
-      const hits = this.raycaster.intersectObjects(meshes, true)
-      if (hits.length === 0) return
-
-      // Walk up to find the npc id (may be on group or on a child mesh)
-      let npcId = hits[0].object.userData.npc as string | undefined
-      if (!npcId) {
-        let obj: THREE.Object3D | null = hits[0].object.parent
-        while (obj) {
-          if (obj.userData.npc) { npcId = obj.userData.npc as string; break }
-          obj = obj.parent
-        }
-      }
-      if (!npcId) return
-      this.handleNPCClick(npcId, metaState, onBiomeSelected, onUndergroundSelected)
-    }
-    this.container.addEventListener('click', this.clickHandler)
+    // ── Interact prompt (shown when near an NPC) ─────────────────────────────
+    this.interactPrompt = document.createElement('div')
+    this.interactPrompt.style.cssText = `
+      position: fixed; z-index: 100; bottom: 100px; left: 50%;
+      transform: translateX(-50%);
+      font-family: 'Courier New', monospace; font-size: 14px;
+      color: #ffcc44; text-shadow: 0 0 8px #ff880088;
+      pointer-events: none; display: none; letter-spacing: 2px;
+    `
+    document.body.appendChild(this.interactPrompt)
   }
 
   private handleNPCClick(
@@ -405,11 +358,40 @@ export class HubScene {
     document.body.appendChild(overlay)
   }
 
-  deactivate(): void {
-    if (this.clickHandler) {
-      this.container.removeEventListener('click', this.clickHandler)
-      this.clickHandler = null
+  /** Check which NPC is closest to the player and show/hide the interact prompt. */
+  checkProximity(playerPos: THREE.Vector3): void {
+    let closestId: string | null = null
+    let closestDist = 4.0 // interaction range
+
+    for (const npc of this.npcs) {
+      const dist = playerPos.distanceTo(npc.mesh.position)
+      if (dist < closestDist) {
+        closestDist = dist
+        closestId = npc.mesh.userData.npc as string
+      }
     }
+
+    this.nearbyNpc = closestId
+
+    if (this.interactPrompt) {
+      if (closestId) {
+        const def = NPC_DEFS.find(d => d.id === closestId)
+        this.interactPrompt.textContent = `[ E ] ${def?.label ?? closestId}`
+        this.interactPrompt.style.display = 'block'
+      } else {
+        this.interactPrompt.style.display = 'none'
+      }
+    }
+  }
+
+  /** Call when player presses E. Returns true if interaction happened. */
+  tryInteract(): boolean {
+    if (!this.nearbyNpc || this.uiOpen || !this.storedMetaState || !this.storedOnBiomeSelected) return false
+    this.handleNPCClick(this.nearbyNpc, this.storedMetaState, this.storedOnBiomeSelected, this.storedOnUndergroundSelected ?? undefined)
+    return true
+  }
+
+  deactivate(): void {
     this.worldMap.hide()
     this.shopUI.hide()
     this.companionPickerUI.hide()
@@ -501,5 +483,12 @@ export class HubScene {
       el.parentElement?.removeChild(el)
     }
     this.labelEls = []
+
+    this.interactPrompt?.parentElement?.removeChild(this.interactPrompt)
+    this.interactPrompt = null
+    this.nearbyNpc = null
+    this.storedMetaState = null
+    this.storedOnBiomeSelected = null
+    this.storedOnUndergroundSelected = null
   }
 }

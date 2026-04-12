@@ -69,13 +69,8 @@ function torchLight(
 export class HubGrowth {
   /** Build progressive hub meshes based on cleansed biome count. */
   build(scene: THREE.Scene, objects: THREE.Object3D[], cleansedCount: number): void {
-    // ── Tier 0: always present — ground plane + 2 ruined walls ──────────────
-    const groundGeo = new THREE.PlaneGeometry(50, 50)
-    const groundMat = new THREE.MeshLambertMaterial({ color: 0x888888 })
-    const ground = new THREE.Mesh(groundGeo, groundMat)
-    ground.rotation.x = -Math.PI / 2
-    scene.add(ground)
-    objects.push(ground)
+    // ── Tier 0: always present — 2 ruined walls ─────────────────────────────
+    // (ground plane is provided by HubScene)
 
     // 2 ruined back walls
     box(scene, objects, -8, 2, -10, 1, 4, 8, STONE)

@@ -217,6 +217,14 @@ export class Game {
     this.combatEffects.dispose()
     this.combatEffects = new CombatEffects()
 
+    // Reset player position for hub exploration (flat ground)
+    this.player = new PlayerController(
+      this.renderer.camera,
+      this.input,
+      () => 0,
+      this.renderer.scene,
+    )
+
     this.hubScene.activate(
       this.metaState,
       (biome: BiomeType) => {
@@ -226,6 +234,9 @@ export class Game {
         this.startUndergroundCombat(undergroundId)
       },
     )
+
+    // Request pointer lock for hub exploration
+    document.body.requestPointerLock()
   }
 
   private startUndergroundCombat(undergroundId: number): void {
@@ -415,9 +426,17 @@ export class Game {
     }
 
     if (this.expeditionManager.isInHub()) {
-      // Hub phase: just update label positions
+      // Hub phase: player walks around and interacts with NPCs
+      this.input.pollGamepad()
+      this.player.update(delta)
       this.hubScene.updateLabels()
       this.hubScene.updateTorchFlicker(delta)
+      this.hubScene.checkProximity(this.player.getPosition())
+
+      // E key to interact with nearby NPC
+      if (this.input.consumeInteract()) {
+        this.hubScene.tryInteract()
+      }
     } else if (this.expeditionManager.isInCombat() && !this.paused) {
       // Freeze frame — skip simulation but still render
       if (this.combatEffects.isFrozen()) {
