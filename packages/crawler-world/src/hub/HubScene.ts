@@ -86,6 +86,15 @@ export class HubScene {
   private hubGrowth: HubGrowth
   private labelEls: HTMLElement[] = []
   private uiOpen = false
+
+  private setUiOpen(open: boolean): void {
+    this.uiOpen = open
+    if (open) {
+      document.exitPointerLock()
+    } else {
+      document.body.requestPointerLock()
+    }
+  }
   private nearbyNpc: string | null = null
   private interactPrompt: HTMLElement | null = null
   private storedMetaState: MetaState | null = null
@@ -225,17 +234,17 @@ export class HubScene {
   ): void {
     switch (npcId) {
       case 'commander':
-        this.uiOpen = true
+        this.setUiOpen(true)
         this.worldMap.show(
           metaState,
           (biome) => {
-            this.uiOpen = false
+            this.setUiOpen(false)
             onBiomeSelected(biome)
           },
-          () => { this.uiOpen = false },
+          () => { this.setUiOpen(false) },
           onUndergroundSelected
             ? (id) => {
-                this.uiOpen = false
+                this.setUiOpen(false)
                 onUndergroundSelected(id)
               }
             : undefined,
@@ -243,41 +252,41 @@ export class HubScene {
         break
 
       case 'merchant':
-        this.uiOpen = true
-        this.shopUI.show(metaState, () => { this.uiOpen = false })
+        this.setUiOpen(true)
+        this.shopUI.show(metaState, () => { this.setUiOpen(false) })
         break
 
       case 'companion':
-        this.uiOpen = true
+        this.setUiOpen(true)
         this.companionPickerUI.show(
           this.selectedCompanionId,
           (id) => { this.selectedCompanionId = id },
-          () => { this.uiOpen = false },
+          () => { this.setUiOpen(false) },
         )
         break
 
       case 'weaponsmith':
-        this.uiOpen = true
-        this.weaponSmithUI.show(metaState, () => { this.uiOpen = false })
+        this.setUiOpen(true)
+        this.weaponSmithUI.show(metaState, () => { this.setUiOpen(false) })
         break
 
       case 'companiontrainer':
-        this.uiOpen = true
-        this.companionTrainerUI.show(metaState, () => { this.uiOpen = false })
+        this.setUiOpen(true)
+        this.companionTrainerUI.show(metaState, () => { this.setUiOpen(false) })
         break
 
       case 'mutationlab':
-        this.uiOpen = true
-        this.mutationLabUI.show(metaState, () => { this.uiOpen = false })
+        this.setUiOpen(true)
+        this.mutationLabUI.show(metaState, () => { this.setUiOpen(false) })
         break
 
       case 'archivist':
-        this.uiOpen = true
+        this.setUiOpen(true)
         this.showArchivistUI(metaState)
         break
 
       case 'portalmaster':
-        this.uiOpen = true
+        this.setUiOpen(true)
         this.showPortalMasterUI()
         break
     }
@@ -314,7 +323,7 @@ export class HubScene {
     `
     closeBtn.addEventListener('click', () => {
       overlay.parentElement?.removeChild(overlay)
-      this.uiOpen = false
+      this.setUiOpen(false)
     })
     panel.appendChild(closeBtn)
     overlay.appendChild(panel)
@@ -351,7 +360,7 @@ export class HubScene {
     `
     closeBtn.addEventListener('click', () => {
       overlay.parentElement?.removeChild(overlay)
-      this.uiOpen = false
+      this.setUiOpen(false)
     })
     panel.appendChild(closeBtn)
     overlay.appendChild(panel)
