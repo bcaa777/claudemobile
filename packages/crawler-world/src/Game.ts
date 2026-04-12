@@ -2,8 +2,9 @@ import * as THREE from 'three'
 import type { IWorld } from 'bitecs'
 import { Renderer, InputManager, EventBus, createGameWorld } from '@engine/core'
 import { BiomeType } from '@engine/core'
+import { SkyDome, GroundFog, AtmosphereParticles } from '@engine/core'
 import { PlayerController } from './player/PlayerController'
-import { ChunkManager, BiomeWeather, applyBiomeFog, getBiomeColorGrade } from './expedition/BiomeSetup'
+import { ChunkManager, BiomeWeather, applyBiomeFog, getBiomeColorGrade, getBiomeVisualIdentity } from './expedition/BiomeSetup'
 import { EnemyManager } from './enemies/EnemyFactory'
 import { WaveSystem } from './enemies/WaveSystem'
 import { updateEnemyAI } from './enemies/EnemyAI'
@@ -55,6 +56,9 @@ export class Game {
   private combatEffects: CombatEffects
   private minimap: Minimap | null = null
   private biomeWeather: BiomeWeather | null = null
+  private skyDome: SkyDome | null = null
+  private groundFog: GroundFog | null = null
+  private atmosphereParticles: AtmosphereParticles | null = null
   private dayNight = new DayNightSystem()
   private lastTime = 0
   private paused = false
@@ -214,6 +218,12 @@ export class Game {
     this.minimap = null
     this.biomeWeather?.dispose()
     this.biomeWeather = null
+    this.skyDome?.dispose()
+    this.skyDome = null
+    this.groundFog?.dispose()
+    this.groundFog = null
+    this.atmosphereParticles?.dispose()
+    this.atmosphereParticles = null
     this.combatEffects.dispose()
     this.combatEffects = new CombatEffects()
 
@@ -291,6 +301,12 @@ export class Game {
     this.renderer.scene.background = new THREE.Color(0x4488cc)
     this.renderer.scene.fog = new THREE.FogExp2(0x4488cc, 0.01)
 
+    // Sky dome
+    this.skyDome = new SkyDome(this.renderer.scene)
+
+    // Ground fog
+    this.groundFog = new GroundFog(this.renderer.scene)
+
     // Wire day/night system — drives sun position, intensity, sky colour, and god rays
     this.dayNight = new DayNightSystem()
     this.dayNight.init(
@@ -337,6 +353,16 @@ export class Game {
     this.biomeWeather?.dispose()
     this.biomeWeather = new BiomeWeather(this.renderer.scene)
     this.biomeWeather.activate(biomeType)
+
+    // Atmosphere particles for this biome
+    this.atmosphereParticles?.dispose()
+    this.atmosphereParticles = new AtmosphereParticles(this.renderer.scene)
+
+    // Set biome-specific god ray intensity
+    const biomeVi = getBiomeVisualIdentity(biomeType)
+    if (biomeVi.godRayIntensity > 0) {
+      this.dayNight.setBiomeGodRayIntensity(biomeVi.godRayIntensity)
+    }
 
     // Init audio on first expedition (requires user gesture — pointer lock click)
     this.gameAudio.stopHubMusic()
@@ -469,6 +495,29 @@ export class Game {
 
       // Update weather particles
       this.biomeWeather?.update(delta, pos.x, pos.y, pos.z)
+
+      // Update sky dome with day/night
+      if (this.skyDome) {
+        this.skyDome.update(
+          this.renderer.camera,
+          this.dayNight.getDayFraction(),
+          this.dayNight.sunDirection,
+          this.dayNight.sunColor,
+          delta,
+        )
+      }
+
+      // Update ground fog
+      if (this.groundFog) {
+        const biomeVisual = getBiomeVisualIdentity(this.expeditionManager.currentBiome ?? BiomeType.Forest)
+        this.groundFog.update(delta, pos, biomeVisual, this.dayNight.getDayFraction())
+      }
+
+      // Update atmosphere particles
+      if (this.atmosphereParticles) {
+        const biomeVisual = getBiomeVisualIdentity(this.expeditionManager.currentBiome ?? BiomeType.Forest)
+        this.atmosphereParticles.update(delta, pos, this.renderer.camera, biomeVisual)
+      }
 
       this.gameState.wave = this.waveSystem.currentWave
 

@@ -11,11 +11,29 @@ import {
   BillboardBatch,
   SpriteAtlas,
 } from '@engine/core'
-import type { SpriteTypeConfig } from '@engine/core'
+import type { SpriteTypeConfig, VisualIdentity } from '@engine/core'
 import type { UndergroundConfig } from './UndergroundBiomes'
 
 // ─── Minimal biome configs for the crawler game ──────────────────────────────
 // Only the fields used by generateHeightmap / sampleWorldHeight are needed.
+
+function defaultVisualIdentity(): VisualIdentity {
+  return {
+    colorGrade: { tint: [1, 1, 1], contrast: 1, saturation: 1 },
+    fog: { nearDistance: 60, farDistance: 300, color: [0.5, 0.5, 0.5], density: 0.3 },
+    ambientLight: { color: [0.2, 0.2, 0.2], intensity: 0.8 },
+    atmosphere: {
+      particleType: 'none',
+      particleCount: 0,
+      particleColor: [1, 1, 1],
+      particleSize: 0.2,
+      particleSpeed: 0.1,
+    },
+    godRayIntensity: 0,
+    heatDistortion: 0,
+    groundFogDensity: 0,
+  }
+}
 
 function makeBiomeConfig(
   type: BiomeType,
@@ -25,8 +43,17 @@ function makeBiomeConfig(
   terraceStrength: number,
   terraceStep: number,
   groundColors: [number, number, number][],
+  visualOverride?: Partial<VisualIdentity>,
 ): BiomeConfig {
   const dummy = new THREE.Color(0x000000)
+  const vi = defaultVisualIdentity()
+  if (visualOverride) {
+    Object.assign(vi, visualOverride)
+    if (visualOverride.atmosphere) vi.atmosphere = { ...vi.atmosphere, ...visualOverride.atmosphere }
+    if (visualOverride.fog) vi.fog = { ...vi.fog, ...visualOverride.fog }
+    if (visualOverride.colorGrade) vi.colorGrade = { ...vi.colorGrade, ...visualOverride.colorGrade }
+    if (visualOverride.ambientLight) vi.ambientLight = { ...vi.ambientLight, ...visualOverride.ambientLight }
+  }
   return {
     type,
     name: BiomeType[type],
@@ -59,41 +86,51 @@ function makeBiomeConfig(
     particleType: null,
     particleColor: dummy,
     particleCount: 0,
-    visualIdentity: {
-      colorGrade: { tint: [1, 1, 1], contrast: 1, saturation: 1 },
-      fog: { nearDistance: 60, farDistance: 300, color: [0.5, 0.5, 0.5], density: 0.3 },
-      ambientLight: { color: [0.2, 0.2, 0.2], intensity: 0.8 },
-      atmosphere: {
-        particleType: 'none',
-        particleCount: 0,
-        particleColor: [1, 1, 1],
-        particleSize: 0.2,
-        particleSpeed: 0.1,
-      },
-      godRayIntensity: 0,
-      heatDistortion: 0,
-      groundFogDensity: 0,
-    },
+    visualIdentity: vi,
   }
 }
 
 const BIOME_CONFIGS: Map<BiomeType, BiomeConfig> = new Map([
   [BiomeType.Forest,    makeBiomeConfig(BiomeType.Forest,   24, 0.022, 3.0, 0.30, 4.5,
-    [[0.18,0.36,0.18],[0.24,0.45,0.15],[0.12,0.27,0.09],[0.30,0.54,0.24]])],
+    [[0.18,0.36,0.18],[0.24,0.45,0.15],[0.12,0.27,0.09],[0.30,0.54,0.24]],
+    { godRayIntensity: 0.6, groundFogDensity: 0.3,
+      atmosphere: { particleType: 'dust', particleCount: 60, particleColor: [0.8, 0.9, 0.5], particleSize: 0.12, particleSpeed: 0.3 },
+      fog: { nearDistance: 40, farDistance: 250, color: [0.53, 0.67, 0.40], density: 0.3 } })],
   [BiomeType.Desert,    makeBiomeConfig(BiomeType.Desert,   14, 0.018, 1.5, 0.10, 6,
-    [[0.76,0.65,0.27],[0.82,0.70,0.30],[0.68,0.58,0.22]])],
+    [[0.76,0.65,0.27],[0.82,0.70,0.30],[0.68,0.58,0.22]],
+    { heatDistortion: 0.3, godRayIntensity: 0.8,
+      atmosphere: { particleType: 'sand', particleCount: 80, particleColor: [0.8, 0.7, 0.4], particleSize: 0.1, particleSpeed: 2.0 },
+      fog: { nearDistance: 80, farDistance: 400, color: [0.8, 0.67, 0.47], density: 0.15 } })],
   [BiomeType.Swamp,     makeBiomeConfig(BiomeType.Swamp,    12, 0.015, 1.2, 0.15, 4,
-    [[0.23,0.29,0.18],[0.28,0.35,0.20],[0.18,0.24,0.14]])],
+    [[0.23,0.29,0.18],[0.28,0.35,0.20],[0.18,0.24,0.14]],
+    { groundFogDensity: 0.5,
+      atmosphere: { particleType: 'spores', particleCount: 50, particleColor: [0.5, 0.7, 0.3], particleSize: 0.15, particleSpeed: 0.2 },
+      fog: { nearDistance: 20, farDistance: 150, color: [0.27, 0.33, 0.20], density: 0.5 } })],
   [BiomeType.Snow,      makeBiomeConfig(BiomeType.Snow,     30, 0.020, 4.0, 0.40, 7,
-    [[0.85,0.86,0.91],[0.90,0.90,0.95],[0.78,0.80,0.86]])],
+    [[0.85,0.86,0.91],[0.90,0.90,0.95],[0.78,0.80,0.86]],
+    { groundFogDensity: 0.2,
+      atmosphere: { particleType: 'snow', particleCount: 120, particleColor: [1, 1, 1], particleSize: 0.18, particleSpeed: 1.5 },
+      fog: { nearDistance: 50, farDistance: 280, color: [0.8, 0.87, 0.93], density: 0.25 } })],
   [BiomeType.Volcanic,  makeBiomeConfig(BiomeType.Volcanic, 35, 0.025, 4.5, 0.50, 8,
-    [[0.16,0.10,0.10],[0.22,0.12,0.10],[0.28,0.15,0.10]])],
+    [[0.16,0.10,0.10],[0.22,0.12,0.10],[0.28,0.15,0.10]],
+    { heatDistortion: 0.6, godRayIntensity: 0.4,
+      atmosphere: { particleType: 'embers', particleCount: 70, particleColor: [1, 0.3, 0.05], particleSize: 0.2, particleSpeed: 1.0 },
+      fog: { nearDistance: 30, farDistance: 200, color: [0.2, 0.07, 0.0], density: 0.4 } })],
   [BiomeType.Crystal,   makeBiomeConfig(BiomeType.Crystal,  28, 0.022, 3.5, 0.60, 6,
-    [[0.33,0.47,0.67],[0.40,0.55,0.72],[0.28,0.42,0.62]])],
+    [[0.33,0.47,0.67],[0.40,0.55,0.72],[0.28,0.42,0.62]],
+    { godRayIntensity: 0.5,
+      atmosphere: { particleType: 'motes', particleCount: 80, particleColor: [0.5, 0.3, 1], particleSize: 0.1, particleSpeed: 0.4 },
+      fog: { nearDistance: 60, farDistance: 300, color: [0.13, 0.2, 0.33], density: 0.2 } })],
   [BiomeType.Jungle,    makeBiomeConfig(BiomeType.Jungle,   26, 0.024, 3.2, 0.25, 5,
-    [[0.10,0.30,0.06],[0.14,0.36,0.08],[0.08,0.24,0.05]])],
+    [[0.10,0.30,0.06],[0.14,0.36,0.08],[0.08,0.24,0.05]],
+    { groundFogDensity: 0.4,
+      atmosphere: { particleType: 'spores', particleCount: 60, particleColor: [0.3, 1, 0.3], particleSize: 0.12, particleSpeed: 0.25 },
+      fog: { nearDistance: 25, farDistance: 180, color: [0.20, 0.33, 0.13], density: 0.4 } })],
   [BiomeType.Mesa,      makeBiomeConfig(BiomeType.Mesa,     22, 0.020, 2.5, 0.80, 9,
-    [[0.72,0.45,0.20],[0.80,0.52,0.24],[0.64,0.38,0.16]])],
+    [[0.72,0.45,0.20],[0.80,0.52,0.24],[0.64,0.38,0.16]],
+    { heatDistortion: 0.2, godRayIntensity: 0.7,
+      atmosphere: { particleType: 'dust', particleCount: 50, particleColor: [0.7, 0.5, 0.3], particleSize: 0.15, particleSpeed: 0.5 },
+      fog: { nearDistance: 70, farDistance: 350, color: [0.67, 0.47, 0.27], density: 0.15 } })],
   [BiomeType.CoralReef, makeBiomeConfig(BiomeType.CoralReef,10, 0.014, 1.0, 0.05, 3,
     [[0.23,0.54,0.48],[0.28,0.60,0.52],[0.20,0.50,0.44]])],
   [BiomeType.Heaven,    makeBiomeConfig(BiomeType.Heaven,   18, 0.016, 2.0, 0.10, 4,
@@ -104,6 +141,11 @@ const BIOME_CONFIGS: Map<BiomeType, BiomeConfig> = new Map([
 
 function getBiomeConfig(type: BiomeType): BiomeConfig {
   return BIOME_CONFIGS.get(type) ?? BIOME_CONFIGS.get(BiomeType.Forest)!
+}
+
+export function getBiomeVisualIdentity(type: BiomeType): VisualIdentity {
+  const config = getBiomeConfig(type)
+  return config.visualIdentity
 }
 
 // ─── Per-biome water colors ───────────────────────────────────────────────────

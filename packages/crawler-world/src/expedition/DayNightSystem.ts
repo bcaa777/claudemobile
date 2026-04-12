@@ -31,9 +31,29 @@ export class DayNightSystem {
   private camera: THREE.PerspectiveCamera | null = null
   private scene: THREE.Scene | null = null
 
+  /** Cached sun direction (normalised) — updated every frame */
+  private _sunDirection = new THREE.Vector3(0, 1, 0)
+  /** Cached sun color — updated every frame */
+  private _sunColor = new THREE.Color(0xfff8e0)
+  /** Biome-specific god ray intensity multiplier (default 1.0) */
+  private _biomeGodRayIntensity = 1.0
+
+  get sunDirection(): THREE.Vector3 { return this._sunDirection }
+  get sunColor(): THREE.Color { return this._sunColor }
+
+  /** Set a per-biome multiplier for god ray intensity */
+  setBiomeGodRayIntensity(value: number): void {
+    this._biomeGodRayIntensity = value
+  }
+
   /** normalised time-of-day [0..1], 0 = midnight, 0.25 = dawn, 0.5 = noon, 0.75 = dusk */
   get timeOfDay(): number {
     return (this.elapsed % DAY_DURATION) / DAY_DURATION
+  }
+
+  /** Alias for timeOfDay — returns 0-1 where 0=midnight, 0.25=sunrise, 0.5=noon, 0.75=sunset */
+  getDayFraction(): number {
+    return this.timeOfDay
   }
 
   init(
@@ -65,6 +85,7 @@ export class DayNightSystem {
     const sunY = Math.sin(angle) * 200
     const sunZ = 60
     this.sun.position.set(sunX, sunY, sunZ)
+    this._sunDirection.set(sunX, sunY, sunZ).normalize()
 
     // --- Sun intensity: bright at noon, dim at dawn/dusk, dark at night
     const dayFraction = Math.max(0, Math.sin(angle)) // 0 at night, 1 at noon
@@ -81,6 +102,7 @@ export class DayNightSystem {
       sunColor = SUN_NOON.clone()
     }
     this.sun.color.set(sunColor)
+    this._sunColor.copy(sunColor)
 
     // --- Ambient: dim at night, bright at noon — never below 0.2
     const ambientIntensity = 0.20 + dayFraction * 0.45
@@ -111,8 +133,8 @@ export class DayNightSystem {
       }
     }
 
-    // --- God rays: project sun world-position to screen UV
-    const godRayIntensity = dayFraction > 0.05 ? dayFraction * 0.9 : 0
+    // --- God rays: project sun world-position to screen UV (modulated by biome)
+    const godRayIntensity = dayFraction > 0.05 ? dayFraction * 0.9 * this._biomeGodRayIntensity : 0
     this.godRayPass.setIntensity(godRayIntensity)
 
     if (godRayIntensity > 0) {
