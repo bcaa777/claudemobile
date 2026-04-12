@@ -250,6 +250,14 @@ export class Game {
     this.gameAudio.init()
     this.gameAudio.startBiomeMusic(BiomeType.Volcanic) // dark music for underground
 
+    // Reset player for combat terrain
+    this.player = new PlayerController(
+      this.renderer.camera,
+      this.input,
+      (x, z) => this.chunkManager.sampleHeight(x, z),
+      this.renderer.scene,
+    )
+
     this.expeditionManager.startUndergroundExpedition(undergroundId)
 
     const companionId = this.hubScene.selectedCompanionId
@@ -334,6 +342,14 @@ export class Game {
     this.gameAudio.stopHubMusic()
     this.gameAudio.init()
     this.gameAudio.startBiomeMusic(biomeType)
+
+    // Reset player for combat terrain
+    this.player = new PlayerController(
+      this.renderer.camera,
+      this.input,
+      (x, z) => this.chunkManager.sampleHeight(x, z),
+      this.renderer.scene,
+    )
 
     this.expeditionManager.startExpedition(biomeType)
 
