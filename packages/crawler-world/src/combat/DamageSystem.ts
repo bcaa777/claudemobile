@@ -40,6 +40,11 @@ export class DamageSystem {
     if (Health.current[eid] <= 0) {
       // Capture body color before removal
       const bodyColor = mat ? mat.color.clone() : new THREE.Color(1, 0, 0)
+
+      // Remove flash entry for this enemy before disposal
+      const flashIdx = this.flashing.findIndex(f => f.enemy === enemy)
+      if (flashIdx !== -1) this.flashing.splice(flashIdx, 1)
+
       // Emit death event before removing
       eventBus.emit('enemyDied', {
         position: enemy.mesh.position.clone(),
@@ -94,12 +99,16 @@ export class DamageSystem {
       entry.timer -= delta
       if (entry.timer <= 0) {
         // Guard: enemy mesh may have been removed/disposed already
-        if (entry.enemy?.mesh?.parent) {
-          const bodyMesh = entry.enemy.mesh.children.find((c): c is THREE.Mesh => c instanceof THREE.Mesh)
-          const mat = bodyMesh ? (bodyMesh.material as THREE.MeshLambertMaterial) : null
-          if (mat) {
-            mat.emissive.copy(entry.originalEmissive)
+        try {
+          if (entry.enemy?.mesh?.parent) {
+            const bodyMesh = entry.enemy.mesh.children.find((c): c is THREE.Mesh => c instanceof THREE.Mesh)
+            const mat = bodyMesh?.material as THREE.MeshLambertMaterial | undefined
+            if (mat?.emissive) {
+              mat.emissive.copy(entry.originalEmissive)
+            }
           }
+        } catch {
+          // Enemy was disposed — skip restore
         }
         this.flashing.splice(i, 1)
       }
