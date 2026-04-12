@@ -1,0 +1,40 @@
+[     373ms] [LOG] [Traversal] RoadNetwork: 13 edges, 642 waypoints @ http://localhost:3000/src/engine/Engine.ts:208
+[     381ms] [LOG] [Intro] introComplete: true @ http://localhost:3000/src/engine/Engine.ts:254
+[     404ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/favicon.ico:0
+[   23788ms] [LOG] [Traversal] RoadNetwork: 13 edges, 665 waypoints @ http://localhost:3000/src/engine/Engine.ts:208
+[   23793ms] [LOG] [Intro] introComplete: true @ http://localhost:3000/src/engine/Engine.ts:254
+[   27260ms] TypeError: this.engine.getLayer is not a function
+    at AudioSystem.init (http://localhost:3000/src/audio/AudioSystem.ts:60:33)
+    at HTMLDivElement.<anonymous> (http://localhost:3000/src/engine/Engine.ts:335:24)
+[   27260ms] The root document of this element is not valid for pointer lock.
+[  159634ms] [WARNING] The AudioContext was not allowed to start. It must be resumed (or created) after a user gesture on the page. https://developer.chrome.com/blog/autoplay/#web_audio @ http://localhost:3001/src/audio/GameAudio.ts:84
+[  159826ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3001/favicon.ico:0
+[  651809ms] [WARNING] The AudioContext was not allowed to start. It must be resumed (or created) after a user gesture on the page. https://developer.chrome.com/blog/autoplay/#web_audio @ http://localhost:3001/src/audio/GameAudio.ts:84
+[  844265ms] [WARNING] The AudioContext was not allowed to start. It must be resumed (or created) after a user gesture on the page. https://developer.chrome.com/blog/autoplay/#web_audio @ http://localhost:3001/src/audio/GameAudio.ts:84
+[  916240ms] [LOG] [ExpeditionManager] Expedition started: Forest @ http://localhost:3001/src/expedition/ExpeditionManager.ts:63
+[  916241ms] [LOG] [CompanionSystem] Spawned Wolf @ http://localhost:3001/src/companion/CompanionSystem.ts:209
+[  916241ms] [LOG] [CompanionSystem] Applied passive damage_mult=1.1 from Wolf @ http://localhost:3001/src/companion/CompanionSystem.ts:385
+[  916509ms] The root document of this element is not valid for pointer lock.
+[  921437ms] [LOG] [WaveSystem] Wave 1 started — 12 enemies (Forest) @ http://localhost:3001/src/enemies/WaveSystem.ts:81
+[  925217ms] TypeError: Cannot read properties of undefined (reading 'copy')
+    at DamageSystem.update (http://localhost:3001/src/combat/DamageSystem.ts:66:26)
+    at Game.loop (http://localhost:3001/src/Game.ts:425:25)
+    at http://localhost:3001/src/Game.ts:467:39
+[ 2629399ms] The root document of this element is not valid for pointer lock.
+[ 2635953ms] The root document of this element is not valid for pointer lock.
+[ 2646881ms] The root document of this element is not valid for pointer lock.
+[ 2907664ms] The root document of this element is not valid for pointer lock.
+[ 3036337ms] The root document of this element is not valid for pointer lock.
+[ 3190128ms] The root document of this element is not valid for pointer lock.
+[ 3234469ms] The root document of this element is not valid for pointer lock.
+[ 3656178ms] The root document of this element is not valid for pointer lock.
+[ 3694823ms] The root document of this element is not valid for pointer lock.
+[ 3728446ms] The root document of this element is not valid for pointer lock.
+[ 3743460ms] The root document of this element is not valid for pointer lock.
+[ 3784181ms] The root document of this element is not valid for pointer lock.
+[ 3809208ms] The root document of this element is not valid for pointer lock.
+[ 4403956ms] The root document of this element is not valid for pointer lock.
+[ 4444138ms] The root document of this element is not valid for pointer lock.
+[ 4476948ms] The root document of this element is not valid for pointer lock.
+[ 4536839ms] The root document of this element is not valid for pointer lock.
+[ 4777187ms] The root document of this element is not valid for pointer lock.

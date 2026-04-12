@@ -1,0 +1,9 @@
+- generic [active] [ref=e1]:
+  - generic:
+    - generic: "HP: 100/100"
+  - generic:
+    - generic: LVL 1
+  - generic: WAVE 0
+  - generic: "GOLD: 0"
+  - generic: ▸ BOLT CASTER Lv1
+  - button "RETREAT" [ref=e60] [cursor=pointer]

@@ -1,0 +1,25 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic: ◆ 0 / 30
+    - generic: DISCOVERED 0 / 201
+    - generic: RUNES 0 / 11
+  - generic:
+    - generic:
+      - generic:
+        - generic: "N"
+        - generic: NE
+        - generic: E
+        - generic: SE
+        - generic: S
+        - generic: SW
+        - generic: W
+        - generic: NW
+        - generic: "N"
+        - generic: NE
+        - generic: E
+        - generic: SE
+        - generic: S
+        - generic: SW
+        - generic: W
+        - generic: NW
+    - generic: Journal Updated [ J ]

@@ -1,0 +1,23 @@
+[    2673ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/chunk-6GSFWH52.js?v=dbb79b59:21550
+[    2713ms] [WARNING] ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition. @ http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=dbb79b59:4435
+[    2714ms] [WARNING] ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath. @ http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=dbb79b59:4435
+[    2714ms] [WARNING] WebSocket connection to 'ws://localhost:3001/socket.io/?EIO=4&transport=websocket' failed: WebSocket is closed before the connection is established. @ http://localhost:5173/node_modules/.vite/deps/socket__io-client.js?v=dbb79b59:1499
+[    2729ms] [LOG] Socket connected: P-71Yjsc41FqcevRAAAH @ http://localhost:5173/src/hooks/useSocket.js:21
+[    2730ms] [LOG] Emitting event: join-room with data: {roomCode: DJP7J6, playerName: Player} @ http://localhost:5173/src/hooks/useSocket.js:56
+[    2735ms] [LOG] Response from join-room : {success: true, roomCode: DJP7J6, reconnected: false, gameState: Object, hostId: _lMrWlhA8SVgKFIVAAAE} @ http://localhost:5173/src/hooks/useSocket.js:59
+[    8628ms] [LOG] Received hole cards: [2d, 5d] for player: P-71Yjsc41FqcevRAAAH @ http://localhost:5173/src/components/PokerTable.jsx:115
+[    8678ms] [WARNING] The AudioContext was not allowed to start. It must be resumed (or created) after a user gesture on the page. https://developer.chrome.com/blog/autoplay/#web_audio @ http://localhost:5173/src/utils/sounds.js:17
+[    8733ms] [WARNING] The AudioContext was not allowed to start. It must be resumed (or created) after a user gesture on the page. https://developer.chrome.com/blog/autoplay/#web_audio @ http://localhost:5173/src/utils/sounds.js:17
+[   33075ms] [WARNING] The AudioContext was not allowed to start. It must be resumed (or created) after a user gesture on the page. https://developer.chrome.com/blog/autoplay/#web_audio @ http://localhost:5173/src/utils/sounds.js:17
+[   33136ms] [WARNING] The AudioContext was not allowed to start. It must be resumed (or created) after a user gesture on the page. https://developer.chrome.com/blog/autoplay/#web_audio @ http://localhost:5173/src/utils/sounds.js:17
+[   36559ms] [LOG] Emitting event: player-action with data: {roomCode: DJP7J6, action: check, amount: 0} @ http://localhost:5173/src/hooks/useSocket.js:56
+[   36569ms] [LOG] Response from player-action : {success: true} @ http://localhost:5173/src/hooks/useSocket.js:59
+[   87107ms] [LOG] Emitting event: player-action with data: {roomCode: DJP7J6, action: check, amount: 0} @ http://localhost:5173/src/hooks/useSocket.js:56
+[   87118ms] [LOG] Response from player-action : {success: true} @ http://localhost:5173/src/hooks/useSocket.js:59
+[  160674ms] [LOG] Received hole cards: [3d, Tc] for player: P-71Yjsc41FqcevRAAAH @ http://localhost:5173/src/components/PokerTable.jsx:115
+[  166409ms] [LOG] Emitting event: player-action with data: {roomCode: DJP7J6, action: call, amount: 10} @ http://localhost:5173/src/hooks/useSocket.js:56
+[  166418ms] [LOG] Response from player-action : {success: true} @ http://localhost:5173/src/hooks/useSocket.js:59
+[  204923ms] [LOG] Emitting event: player-action with data: {roomCode: DJP7J6, action: bet, amount: 20} @ http://localhost:5173/src/hooks/useSocket.js:56
+[  204929ms] [LOG] Response from player-action : {success: true} @ http://localhost:5173/src/hooks/useSocket.js:59
+[  240941ms] [LOG] Received hole cards: [Jd, 7c] for player: P-71Yjsc41FqcevRAAAH @ http://localhost:5173/src/components/PokerTable.jsx:115
+[  276951ms] [LOG] Received hole cards: [2c, 3c] for player: P-71Yjsc41FqcevRAAAH @ http://localhost:5173/src/components/PokerTable.jsx:115

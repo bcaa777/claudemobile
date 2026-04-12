@@ -1,0 +1,2 @@
+- [Crawler Game Context](project_crawler_context.md) — Crawler-world is a port of Echoes of the Veil (Code/Crawler), needs massive visual/content upgrades
+- [User Workflow Preferences](feedback_workflow.md) — User prefers action over planning, gets frustrated by lost context and redundant refactors

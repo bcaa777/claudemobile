@@ -212,6 +212,7 @@ export class Game {
     this.renderer.colorGradePass.setBiomeColorGrade([1, 1, 1], 1, 1)
     this.renderer.crtPass.uniforms['scanlineIntensity'].value = 0.05
     this.renderer.damagePass.setStrength(0, 0)
+    this.renderer.heatDistortionPass.setIntensity(0)
 
     // Destroy minimap and combat effects DOM elements
     this.minimap?.destroy()
@@ -358,11 +359,12 @@ export class Game {
     this.atmosphereParticles?.dispose()
     this.atmosphereParticles = new AtmosphereParticles(this.renderer.scene)
 
-    // Set biome-specific god ray intensity
+    // Set biome-specific post-processing
     const biomeVi = getBiomeVisualIdentity(biomeType)
     if (biomeVi.godRayIntensity > 0) {
       this.dayNight.setBiomeGodRayIntensity(biomeVi.godRayIntensity)
     }
+    this.renderer.heatDistortionPass.setIntensity(biomeVi.heatDistortion)
 
     // Init audio on first expedition (requires user gesture — pointer lock click)
     this.gameAudio.stopHubMusic()

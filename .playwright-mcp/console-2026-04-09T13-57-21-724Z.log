@@ -1,0 +1,6 @@
+[     497ms] [LOG] [Traversal] RoadNetwork: 13 edges, 559 waypoints @ http://localhost:3000/src/engine/Engine.ts:205
+[     504ms] [LOG] [Intro] introComplete: false @ http://localhost:3000/src/engine/Engine.ts:251
+[     529ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/favicon.ico:0
+[    4843ms] [LOG] [vite] server connection lost. Polling for restart... @ http://localhost:3000/@vite/client:559
+[    5244ms] [LOG] [Traversal] RoadNetwork: 13 edges, 589 waypoints @ http://localhost:3000/src/engine/Engine.ts?t=1775330134531:205
+[    5250ms] [LOG] [Intro] introComplete: false @ http://localhost:3000/src/engine/Engine.ts?t=1775330134531:251

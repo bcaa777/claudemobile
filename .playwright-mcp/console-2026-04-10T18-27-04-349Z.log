@@ -1,0 +1,3 @@
+[     344ms] [LOG] [Traversal] RoadNetwork: 11 edges, 467 waypoints @ http://localhost:3000/src/engine/Engine.ts:208
+[     349ms] [LOG] [Intro] introComplete: true @ http://localhost:3000/src/engine/Engine.ts:254
+[   10651ms] The root document of this element is not valid for pointer lock.

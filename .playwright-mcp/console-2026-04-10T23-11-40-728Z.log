@@ -1,0 +1,12 @@
+[     448ms] [WARNING] The AudioContext was not allowed to start. It must be resumed (or created) after a user gesture on the page. https://developer.chrome.com/blog/autoplay/#web_audio @ http://localhost:3004/src/audio/GameAudio.ts?t=1775862383457:84
+[     519ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3004/favicon.ico:0
+[  165322ms] [LOG] [ExpeditionManager] Expedition started: Forest @ http://localhost:3004/src/expedition/ExpeditionManager.ts?t=1775862207597:63
+[  165323ms] [LOG] [CompanionSystem] Spawned Wolf @ http://localhost:3004/src/companion/CompanionSystem.ts:209
+[  165323ms] [LOG] [CompanionSystem] Applied passive damage_mult=1.1 from Wolf @ http://localhost:3004/src/companion/CompanionSystem.ts:385
+[  165494ms] The root document of this element is not valid for pointer lock.
+[  170430ms] [LOG] [WaveSystem] Wave 1 started — 12 enemies (Forest) @ http://localhost:3004/src/enemies/WaveSystem.ts:81
+[  175806ms] [LOG] [DamageSystem] Player hit by rusher for 11 — HP: 89 @ http://localhost:3004/src/combat/DamageSystem.ts:50
+[  176075ms] TypeError: Cannot read properties of undefined (reading 'copy')
+    at DamageSystem.update (http://localhost:3004/src/combat/DamageSystem.ts:65:24)
+    at Game.loop (http://localhost:3004/src/Game.ts?t=1775862630619:425:25)
+    at http://localhost:3004/src/Game.ts?t=1775862630619:467:39

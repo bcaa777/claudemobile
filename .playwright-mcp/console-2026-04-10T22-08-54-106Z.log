@@ -1,0 +1,150 @@
+[  293492ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3001/:0
+[  299185ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3001/:0
+[  324313ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/chunk-6GSFWH52.js?v=dbb79b59:21550
+[  324360ms] [WARNING] ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition. @ http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=dbb79b59:4435
+[  324360ms] [WARNING] ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath. @ http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=dbb79b59:4435
+[  324361ms] [WARNING] WebSocket connection to 'ws://localhost:3001/socket.io/?EIO=4&transport=websocket' failed: WebSocket is closed before the connection is established. @ http://localhost:5173/node_modules/.vite/deps/socket__io-client.js?v=dbb79b59:1499
+[  324385ms] [LOG] Socket connected: kL0F-l7i7s_Tj_7mAAAC @ http://localhost:5173/src/hooks/useSocket.js:21
+[  448855ms] [LOG] Emitting event: create-room with data: {playerName: michal, settings: Object} @ http://localhost:5173/src/hooks/useSocket.js:56
+[  448868ms] [LOG] Response from create-room : {success: true, roomCode: DJP7J6, settings: Object} @ http://localhost:5173/src/hooks/useSocket.js:59
+[  448873ms] [LOG] Socket disconnected @ http://localhost:5173/src/hooks/useSocket.js:26
+[  448874ms] [WARNING] WebSocket connection to 'ws://localhost:3001/socket.io/?EIO=4&transport=websocket' failed: WebSocket is closed before the connection is established. @ http://localhost:5173/node_modules/.vite/deps/socket__io-client.js?v=dbb79b59:1499
+[  448931ms] [LOG] Socket connected: _lMrWlhA8SVgKFIVAAAE @ http://localhost:5173/src/hooks/useSocket.js:21
+[  448932ms] [LOG] Emitting event: join-room with data: {roomCode: DJP7J6, playerName: michal} @ http://localhost:5173/src/hooks/useSocket.js:56
+[  448934ms] [LOG] Response from join-room : {success: true, roomCode: DJP7J6, reconnected: true, gameState: Object, hostId: _lMrWlhA8SVgKFIVAAAE} @ http://localhost:5173/src/hooks/useSocket.js:59
+[  462993ms] [LOG] Emitting event: start-game with data: {roomCode: DJP7J6} @ http://localhost:5173/src/hooks/useSocket.js:56
+[  463005ms] [LOG] Received hole cards: [Ah, 3d] for player: _lMrWlhA8SVgKFIVAAAE @ http://localhost:5173/src/components/PokerTable.jsx:115
+[  463016ms] [LOG] Response from start-game : {success: true} @ http://localhost:5173/src/hooks/useSocket.js:59
+[  487457ms] [LOG] Emitting event: player-action with data: {roomCode: DJP7J6, action: call, amount: 10} @ http://localhost:5173/src/hooks/useSocket.js:56
+[  487466ms] [LOG] Response from player-action : {success: true} @ http://localhost:5173/src/hooks/useSocket.js:59
+[  523340ms] [LOG] Emitting event: player-action with data: {roomCode: DJP7J6, action: check, amount: 0} @ http://localhost:5173/src/hooks/useSocket.js:56
+[  523347ms] [LOG] Response from player-action : {success: true} @ http://localhost:5173/src/hooks/useSocket.js:59
+[  544026ms] [LOG] Emitting event: player-action with data: {roomCode: DJP7J6, action: check, amount: 0} @ http://localhost:5173/src/hooks/useSocket.js:56
+[  544033ms] [LOG] Response from player-action : {success: true} @ http://localhost:5173/src/hooks/useSocket.js:59
+[  615060ms] [LOG] Received hole cards: [7d, 5c] for player: _lMrWlhA8SVgKFIVAAAE @ http://localhost:5173/src/components/PokerTable.jsx:115
+[  658009ms] [LOG] Emitting event: player-action with data: {roomCode: DJP7J6, action: check, amount: 0} @ http://localhost:5173/src/hooks/useSocket.js:56
+[  658016ms] [LOG] Response from player-action : {success: true} @ http://localhost:5173/src/hooks/useSocket.js:59
+[  695326ms] [LOG] Received hole cards: [Kc, As] for player: _lMrWlhA8SVgKFIVAAAE @ http://localhost:5173/src/components/PokerTable.jsx:115
+[  731337ms] [LOG] Received hole cards: [5d, 6d] for player: _lMrWlhA8SVgKFIVAAAE @ http://localhost:5173/src/components/PokerTable.jsx:115
+[  736033ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/chunk-6GSFWH52.js?v=dbb79b59:21550
+[  736046ms] [WARNING] ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition. @ http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=dbb79b59:4435
+[  736047ms] [WARNING] ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath. @ http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=dbb79b59:4435
+[  736047ms] [WARNING] WebSocket connection to 'ws://localhost:3001/socket.io/?EIO=4&transport=websocket' failed: WebSocket is closed before the connection is established. @ http://localhost:5173/node_modules/.vite/deps/socket__io-client.js?v=dbb79b59:1499
+[  736061ms] [LOG] Socket connected: 8Tr9nPilyNJyOhg2AAAK @ http://localhost:5173/src/hooks/useSocket.js:21
+[  736062ms] [LOG] Emitting event: join-room with data: {roomCode: DJP7J6, playerName: michal} @ http://localhost:5173/src/hooks/useSocket.js:56
+[  736063ms] [LOG] Response from join-room : {success: true, roomCode: DJP7J6, reconnected: true, gameState: Object, hostId: 8Tr9nPilyNJyOhg2AAAK} @ http://localhost:5173/src/hooks/useSocket.js:59
+[  736165ms] [LOG] Received hole cards: [5d, 6d] for player: 8Tr9nPilyNJyOhg2AAAK @ http://localhost:5173/src/components/PokerTable.jsx:115
+[  736169ms] [WARNING] The AudioContext was not allowed to start. It must be resumed (or created) after a user gesture on the page. https://developer.chrome.com/blog/autoplay/#web_audio @ http://localhost:5173/src/utils/sounds.js:17
+[  736221ms] [WARNING] The AudioContext was not allowed to start. It must be resumed (or created) after a user gesture on the page. https://developer.chrome.com/blog/autoplay/#web_audio @ http://localhost:5173/src/utils/sounds.js:17
+[  736482ms] [WARNING] The AudioContext was not allowed to start. It must be resumed (or created) after a user gesture on the page. https://developer.chrome.com/blog/autoplay/#web_audio @ http://localhost:5173/src/utils/sounds.js:17
+[  736482ms] [WARNING] The AudioContext was not allowed to start. It must be resumed (or created) after a user gesture on the page. https://developer.chrome.com/blog/autoplay/#web_audio @ http://localhost:5173/src/utils/sounds.js:44
+[  736493ms] [WARNING] The AudioContext was not allowed to start. It must be resumed (or created) after a user gesture on the page. https://developer.chrome.com/blog/autoplay/#web_audio @ http://localhost:5173/src/utils/sounds.js:17
+[  736493ms] [WARNING] The AudioContext was not allowed to start. It must be resumed (or created) after a user gesture on the page. https://developer.chrome.com/blog/autoplay/#web_audio @ http://localhost:5173/src/utils/sounds.js:44
+[  736598ms] [WARNING] The AudioContext was not allowed to start. It must be resumed (or created) after a user gesture on the page. https://developer.chrome.com/blog/autoplay/#web_audio @ http://localhost:5173/src/utils/sounds.js:17
+[  736598ms] [WARNING] The AudioContext was not allowed to start. It must be resumed (or created) after a user gesture on the page. https://developer.chrome.com/blog/autoplay/#web_audio @ http://localhost:5173/src/utils/sounds.js:44
+[  736611ms] [WARNING] The AudioContext was not allowed to start. It must be resumed (or created) after a user gesture on the page. https://developer.chrome.com/blog/autoplay/#web_audio @ http://localhost:5173/src/utils/sounds.js:17
+[  736611ms] [WARNING] The AudioContext was not allowed to start. It must be resumed (or created) after a user gesture on the page. https://developer.chrome.com/blog/autoplay/#web_audio @ http://localhost:5173/src/utils/sounds.js:44
+[  736718ms] [WARNING] The AudioContext was not allowed to start. It must be resumed (or created) after a user gesture on the page. https://developer.chrome.com/blog/autoplay/#web_audio @ http://localhost:5173/src/utils/sounds.js:17
+[  736719ms] [WARNING] The AudioContext was not allowed to start. It must be resumed (or created) after a user gesture on the page. https://developer.chrome.com/blog/autoplay/#web_audio @ http://localhost:5173/src/utils/sounds.js:44
+[  736731ms] [WARNING] The AudioContext was not allowed to start. It must be resumed (or created) after a user gesture on the page. https://developer.chrome.com/blog/autoplay/#web_audio @ http://localhost:5173/src/utils/sounds.js:17
+[  736731ms] [WARNING] The AudioContext was not allowed to start. It must be resumed (or created) after a user gesture on the page. https://developer.chrome.com/blog/autoplay/#web_audio @ http://localhost:5173/src/utils/sounds.js:44
+[  736838ms] [WARNING] The AudioContext was not allowed to start. It must be resumed (or created) after a user gesture on the page. https://developer.chrome.com/blog/autoplay/#web_audio @ http://localhost:5173/src/utils/sounds.js:17
+[  736839ms] [WARNING] The AudioContext was not allowed to start. It must be resumed (or created) after a user gesture on the page. https://developer.chrome.com/blog/autoplay/#web_audio @ http://localhost:5173/src/utils/sounds.js:44
+[  736850ms] [WARNING] The AudioContext was not allowed to start. It must be resumed (or created) after a user gesture on the page. https://developer.chrome.com/blog/autoplay/#web_audio @ http://localhost:5173/src/utils/sounds.js:17
+[  736850ms] [WARNING] The AudioContext was not allowed to start. It must be resumed (or created) after a user gesture on the page. https://developer.chrome.com/blog/autoplay/#web_audio @ http://localhost:5173/src/utils/sounds.js:44
+[  739484ms] [WARNING] The AudioContext was not allowed to start. It must be resumed (or created) after a user gesture on the page. https://developer.chrome.com/blog/autoplay/#web_audio @ http://localhost:5173/src/utils/sounds.js:17
+[  739484ms] [WARNING] The AudioContext was not allowed to start. It must be resumed (or created) after a user gesture on the page. https://developer.chrome.com/blog/autoplay/#web_audio @ http://localhost:5173/src/utils/sounds.js:44
+[  739599ms] [WARNING] The AudioContext was not allowed to start. It must be resumed (or created) after a user gesture on the page. https://developer.chrome.com/blog/autoplay/#web_audio @ http://localhost:5173/src/utils/sounds.js:17
+[  739599ms] [WARNING] The AudioContext was not allowed to start. It must be resumed (or created) after a user gesture on the page. https://developer.chrome.com/blog/autoplay/#web_audio @ http://localhost:5173/src/utils/sounds.js:44
+[  739720ms] [WARNING] The AudioContext was not allowed to start. It must be resumed (or created) after a user gesture on the page. https://developer.chrome.com/blog/autoplay/#web_audio @ http://localhost:5173/src/utils/sounds.js:17
+[  739720ms] [WARNING] The AudioContext was not allowed to start. It must be resumed (or created) after a user gesture on the page. https://developer.chrome.com/blog/autoplay/#web_audio @ http://localhost:5173/src/utils/sounds.js:44
+[  739841ms] [WARNING] The AudioContext was not allowed to start. It must be resumed (or created) after a user gesture on the page. https://developer.chrome.com/blog/autoplay/#web_audio @ http://localhost:5173/src/utils/sounds.js:17
+[  739841ms] [WARNING] The AudioContext was not allowed to start. It must be resumed (or created) after a user gesture on the page. https://developer.chrome.com/blog/autoplay/#web_audio @ http://localhost:5173/src/utils/sounds.js:44
+[  741219ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/chunk-6GSFWH52.js?v=dbb79b59:21550
+[  741227ms] [WARNING] ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition. @ http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=dbb79b59:4435
+[  741227ms] [WARNING] ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath. @ http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=dbb79b59:4435
+[  741227ms] [WARNING] WebSocket connection to 'ws://localhost:3001/socket.io/?EIO=4&transport=websocket' failed: WebSocket is closed before the connection is established. @ http://localhost:5173/node_modules/.vite/deps/socket__io-client.js?v=dbb79b59:1499
+[  741262ms] [LOG] Socket connected: ROW6jYpHBz0ZMwBmAAAM @ http://localhost:5173/src/hooks/useSocket.js:21
+[  918908ms] [LOG] Emitting event: create-room with data: {playerName: dfsaf, settings: Object} @ http://localhost:5173/src/hooks/useSocket.js:56
+[  918915ms] [LOG] Response from create-room : {success: true, roomCode: 42TSFS, settings: Object} @ http://localhost:5173/src/hooks/useSocket.js:59
+[  918921ms] [LOG] Socket disconnected @ http://localhost:5173/src/hooks/useSocket.js:26
+[  918922ms] [WARNING] WebSocket connection to 'ws://localhost:3001/socket.io/?EIO=4&transport=websocket' failed: WebSocket is closed before the connection is established. @ http://localhost:5173/node_modules/.vite/deps/socket__io-client.js?v=dbb79b59:1499
+[  919008ms] [LOG] Socket connected: ZJtziIXb2gPtvR1AAAAO @ http://localhost:5173/src/hooks/useSocket.js:21
+[  919008ms] [LOG] Emitting event: join-room with data: {roomCode: 42TSFS, playerName: dfsaf} @ http://localhost:5173/src/hooks/useSocket.js:56
+[  919009ms] [LOG] Response from join-room : {success: true, roomCode: 42TSFS, reconnected: true, gameState: Object, hostId: ZJtziIXb2gPtvR1AAAAO} @ http://localhost:5173/src/hooks/useSocket.js:59
+[  927630ms] [LOG] Emitting event: start-game with data: {roomCode: 42TSFS} @ http://localhost:5173/src/hooks/useSocket.js:56
+[  927639ms] [LOG] Received hole cards: [2c, Qc] for player: ZJtziIXb2gPtvR1AAAAO @ http://localhost:5173/src/components/PokerTable.jsx:115
+[  927644ms] [LOG] Response from start-game : {success: true} @ http://localhost:5173/src/hooks/useSocket.js:59
+[  963707ms] [LOG] Received hole cards: [Kh, 4c] for player: ZJtziIXb2gPtvR1AAAAO @ http://localhost:5173/src/components/PokerTable.jsx:115
+[  999737ms] [LOG] Received hole cards: [8c, As] for player: ZJtziIXb2gPtvR1AAAAO @ http://localhost:5173/src/components/PokerTable.jsx:115
+[ 1012679ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/chunk-6GSFWH52.js?v=dbb79b59:21550
+[ 1012695ms] [WARNING] ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition. @ http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=dbb79b59:4435
+[ 1012695ms] [WARNING] ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath. @ http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=dbb79b59:4435
+[ 1012695ms] [WARNING] WebSocket connection to 'ws://localhost:3001/socket.io/?EIO=4&transport=websocket' failed: WebSocket is closed before the connection is established. @ http://localhost:5173/node_modules/.vite/deps/socket__io-client.js?v=dbb79b59:1499
+[ 1012709ms] [LOG] Socket connected: Cnli6SZGM4ZNawmuAAAU @ http://localhost:5173/src/hooks/useSocket.js:21
+[ 1012710ms] [LOG] Emitting event: join-room with data: {roomCode: 42TSFS, playerName: dfsaf} @ http://localhost:5173/src/hooks/useSocket.js:56
+[ 1012711ms] [LOG] Response from join-room : {success: true, roomCode: 42TSFS, reconnected: true, gameState: Object, hostId: Cnli6SZGM4ZNawmuAAAU} @ http://localhost:5173/src/hooks/useSocket.js:59
+[ 1012812ms] [LOG] Received hole cards: [8c, As] for player: Cnli6SZGM4ZNawmuAAAU @ http://localhost:5173/src/components/PokerTable.jsx:115
+[ 1012819ms] [WARNING] The AudioContext was not allowed to start. It must be resumed (or created) after a user gesture on the page. https://developer.chrome.com/blog/autoplay/#web_audio @ http://localhost:5173/src/utils/sounds.js:17
+[ 1012871ms] [WARNING] The AudioContext was not allowed to start. It must be resumed (or created) after a user gesture on the page. https://developer.chrome.com/blog/autoplay/#web_audio @ http://localhost:5173/src/utils/sounds.js:17
+[ 1014507ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/chunk-6GSFWH52.js?v=dbb79b59:21550
+[ 1014514ms] [WARNING] ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition. @ http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=dbb79b59:4435
+[ 1014514ms] [WARNING] ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath. @ http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=dbb79b59:4435
+[ 1014515ms] [WARNING] WebSocket connection to 'ws://localhost:3001/socket.io/?EIO=4&transport=websocket' failed: WebSocket is closed before the connection is established. @ http://localhost:5173/node_modules/.vite/deps/socket__io-client.js?v=dbb79b59:1499
+[ 1014546ms] [LOG] Socket connected: 9MXR1yfWEeCELMNLAAAW @ http://localhost:5173/src/hooks/useSocket.js:21
+[ 1532845ms] [LOG] Emitting event: create-room with data: {playerName: ssss, settings: Object} @ http://localhost:5173/src/hooks/useSocket.js:56
+[ 1532855ms] [LOG] Response from create-room : {success: true, roomCode: 8AH7RC, settings: Object} @ http://localhost:5173/src/hooks/useSocket.js:59
+[ 1532859ms] [LOG] Socket disconnected @ http://localhost:5173/src/hooks/useSocket.js:26
+[ 1532861ms] [WARNING] WebSocket connection to 'ws://localhost:3001/socket.io/?EIO=4&transport=websocket' failed: WebSocket is closed before the connection is established. @ http://localhost:5173/node_modules/.vite/deps/socket__io-client.js?v=dbb79b59:1499
+[ 1532941ms] [LOG] Socket connected: P26WLjj8ybUiy0TOAAAY @ http://localhost:5173/src/hooks/useSocket.js:21
+[ 1532942ms] [LOG] Emitting event: join-room with data: {roomCode: 8AH7RC, playerName: ssss} @ http://localhost:5173/src/hooks/useSocket.js:56
+[ 1532945ms] [LOG] Response from join-room : {success: true, roomCode: 8AH7RC, reconnected: true, gameState: Object, hostId: P26WLjj8ybUiy0TOAAAY} @ http://localhost:5173/src/hooks/useSocket.js:59
+[ 1541036ms] [LOG] Emitting event: start-game with data: {roomCode: 8AH7RC} @ http://localhost:5173/src/hooks/useSocket.js:56
+[ 1541044ms] [LOG] Received hole cards: [Kh, 9d] for player: P26WLjj8ybUiy0TOAAAY @ http://localhost:5173/src/components/PokerTable.jsx:115
+[ 1541050ms] [LOG] Response from start-game : {success: true} @ http://localhost:5173/src/hooks/useSocket.js:59
+[ 1577052ms] [LOG] Received hole cards: [4d, 7d] for player: P26WLjj8ybUiy0TOAAAY @ http://localhost:5173/src/components/PokerTable.jsx:115
+[ 1613061ms] [LOG] Received hole cards: [Qs, 6c] for player: P26WLjj8ybUiy0TOAAAY @ http://localhost:5173/src/components/PokerTable.jsx:115
+[ 1618051ms] [LOG] Emitting event: player-action with data: {roomCode: 8AH7RC, action: all_in, amount: 1000} @ http://localhost:5173/src/hooks/useSocket.js:56
+[ 1618057ms] [LOG] Response from player-action : {success: true} @ http://localhost:5173/src/hooks/useSocket.js:59
+[ 1665922ms] [LOG] Emitting event: start-game with data: {roomCode: 8AH7RC} @ http://localhost:5173/src/hooks/useSocket.js:56
+[ 1665925ms] [LOG] Response from start-game : {success: true} @ http://localhost:5173/src/hooks/useSocket.js:59
+[ 1667140ms] [LOG] Emitting event: start-game with data: {roomCode: 8AH7RC} @ http://localhost:5173/src/hooks/useSocket.js:56
+[ 1667145ms] [LOG] Response from start-game : {success: true} @ http://localhost:5173/src/hooks/useSocket.js:59
+[ 1668061ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/chunk-6GSFWH52.js?v=dbb79b59:21550
+[ 1668070ms] [WARNING] ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition. @ http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=dbb79b59:4435
+[ 1668070ms] [WARNING] ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath. @ http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=dbb79b59:4435
+[ 1668070ms] [WARNING] WebSocket connection to 'ws://localhost:3001/socket.io/?EIO=4&transport=websocket' failed: WebSocket is closed before the connection is established. @ http://localhost:5173/node_modules/.vite/deps/socket__io-client.js?v=dbb79b59:1499
+[ 1668085ms] [LOG] Socket connected: 7vmlv8apcICGzrW5AAAh @ http://localhost:5173/src/hooks/useSocket.js:21
+[ 1668085ms] [LOG] Emitting event: join-room with data: {roomCode: 8AH7RC, playerName: ssss} @ http://localhost:5173/src/hooks/useSocket.js:56
+[ 1668089ms] [LOG] Response from join-room : {success: true, roomCode: 8AH7RC, reconnected: true, gameState: Object, hostId: 7vmlv8apcICGzrW5AAAh} @ http://localhost:5173/src/hooks/useSocket.js:59
+[ 1668802ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/chunk-6GSFWH52.js?v=dbb79b59:21550
+[ 1668807ms] [WARNING] ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition. @ http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=dbb79b59:4435
+[ 1668807ms] [WARNING] ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath. @ http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=dbb79b59:4435
+[ 1668807ms] [WARNING] WebSocket connection to 'ws://localhost:3001/socket.io/?EIO=4&transport=websocket' failed: WebSocket is closed before the connection is established. @ http://localhost:5173/node_modules/.vite/deps/socket__io-client.js?v=dbb79b59:1499
+[ 1668822ms] [LOG] Socket connected: gh4nXpRwhkv8yXswAAAk @ http://localhost:5173/src/hooks/useSocket.js:21
+[ 1668822ms] [LOG] Emitting event: join-room with data: {roomCode: 8AH7RC, playerName: ssss} @ http://localhost:5173/src/hooks/useSocket.js:56
+[ 1668824ms] [LOG] Response from join-room : {success: true, roomCode: 8AH7RC, reconnected: true, gameState: Object, hostId: gh4nXpRwhkv8yXswAAAk} @ http://localhost:5173/src/hooks/useSocket.js:59
+[ 1669004ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/chunk-6GSFWH52.js?v=dbb79b59:21550
+[ 1669009ms] [WARNING] ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition. @ http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=dbb79b59:4435
+[ 1669010ms] [WARNING] ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath. @ http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=dbb79b59:4435
+[ 1669010ms] [WARNING] WebSocket connection to 'ws://localhost:3001/socket.io/?EIO=4&transport=websocket' failed: WebSocket is closed before the connection is established. @ http://localhost:5173/node_modules/.vite/deps/socket__io-client.js?v=dbb79b59:1499
+[ 1669023ms] [LOG] Socket connected: 7aASJMWZF9bNCJJVAAAn @ http://localhost:5173/src/hooks/useSocket.js:21
+[ 1669024ms] [LOG] Emitting event: join-room with data: {roomCode: 8AH7RC, playerName: ssss} @ http://localhost:5173/src/hooks/useSocket.js:56
+[ 1669026ms] [LOG] Response from join-room : {success: true, roomCode: 8AH7RC, reconnected: true, gameState: Object, hostId: 7aASJMWZF9bNCJJVAAAn} @ http://localhost:5173/src/hooks/useSocket.js:59
+[ 1672339ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/chunk-6GSFWH52.js?v=dbb79b59:21550
+[ 1672346ms] [WARNING] ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition. @ http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=dbb79b59:4435
+[ 1672346ms] [WARNING] ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath. @ http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=dbb79b59:4435
+[ 1672347ms] [WARNING] WebSocket connection to 'ws://localhost:3001/socket.io/?EIO=4&transport=websocket' failed: WebSocket is closed before the connection is established. @ http://localhost:5173/node_modules/.vite/deps/socket__io-client.js?v=dbb79b59:1499
+[ 1672376ms] [LOG] Socket connected: 6pVgzrdwpCQ0wn51AAAp @ http://localhost:5173/src/hooks/useSocket.js:21
+[ 1675463ms] [LOG] Emitting event: create-room with data: {playerName: ffff, settings: Object} @ http://localhost:5173/src/hooks/useSocket.js:56
+[ 1675466ms] [LOG] Response from create-room : {success: true, roomCode: M92D9A, settings: Object} @ http://localhost:5173/src/hooks/useSocket.js:59
+[ 1675470ms] [LOG] Socket disconnected @ http://localhost:5173/src/hooks/useSocket.js:26
+[ 1675471ms] [WARNING] WebSocket connection to 'ws://localhost:3001/socket.io/?EIO=4&transport=websocket' failed: WebSocket is closed before the connection is established. @ http://localhost:5173/node_modules/.vite/deps/socket__io-client.js?v=dbb79b59:1499
+[ 1675538ms] [LOG] Socket connected: kmPSy8yH4clQn2ZeAAAr @ http://localhost:5173/src/hooks/useSocket.js:21
+[ 1675539ms] [LOG] Emitting event: join-room with data: {roomCode: M92D9A, playerName: ffff} @ http://localhost:5173/src/hooks/useSocket.js:56
+[ 1675540ms] [LOG] Response from join-room : {success: true, roomCode: M92D9A, reconnected: true, gameState: Object, hostId: kmPSy8yH4clQn2ZeAAAr} @ http://localhost:5173/src/hooks/useSocket.js:59
+[ 1680487ms] [LOG] Emitting event: start-game with data: {roomCode: M92D9A} @ http://localhost:5173/src/hooks/useSocket.js:56
+[ 1680497ms] [LOG] Received hole cards: [8d, Ah] for player: kmPSy8yH4clQn2ZeAAAr @ http://localhost:5173/src/components/PokerTable.jsx:115
+[ 1680501ms] [LOG] Response from start-game : {success: true} @ http://localhost:5173/src/hooks/useSocket.js:59
+[ 1716506ms] [LOG] Received hole cards: [5c, 7h] for player: kmPSy8yH4clQn2ZeAAAr @ http://localhost:5173/src/components/PokerTable.jsx:115
+[ 1752512ms] [LOG] Received hole cards: [Th, Kc] for player: kmPSy8yH4clQn2ZeAAAr @ http://localhost:5173/src/components/PokerTable.jsx:115

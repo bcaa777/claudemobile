@@ -1,0 +1,3 @@
+[     507ms] [LOG] [Traversal] RoadNetwork: 14 edges, 650 waypoints @ http://localhost:3000/src/engine/Engine.ts:208
+[     516ms] [LOG] [Intro] introComplete: false @ http://localhost:3000/src/engine/Engine.ts:254
+[     547ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/favicon.ico:0

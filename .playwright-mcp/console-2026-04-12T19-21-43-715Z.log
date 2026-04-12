@@ -1,0 +1,7 @@
+[    2432ms] [WARNING] The AudioContext was not allowed to start. It must be resumed (or created) after a user gesture on the page. https://developer.chrome.com/blog/autoplay/#web_audio @ http://localhost:3001/src/audio/GameAudio.ts:84
+[    2529ms] The root document of this element is not valid for pointer lock.
+[    2545ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3001/favicon.ico:0
+[  565842ms] The root document of this element is not valid for pointer lock.
+[  597379ms] The root document of this element is not valid for pointer lock.
+[  610144ms] The root document of this element is not valid for pointer lock.
+[  910817ms] The root document of this element is not valid for pointer lock.

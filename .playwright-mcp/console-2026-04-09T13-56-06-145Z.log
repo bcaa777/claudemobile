@@ -1,0 +1,113 @@
+[      47ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3001/:0
+[  209073ms] [LOG] [Traversal] RoadNetwork: 13 edges, 556 waypoints @ http://localhost:3001/src/engine/Engine.ts:205
+[  209081ms] [LOG] [Intro] introComplete: false @ http://localhost:3001/src/engine/Engine.ts:251
+[  209120ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3001/favicon.ico:0
+[  213389ms] [LOG] [vite] server connection lost. Polling for restart... @ http://localhost:3001/@vite/client:559
+[  213409ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3001/:0
+[  213455ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3001/:0
+[  475056ms] [LOG] [Traversal] RoadNetwork: 14 edges, 654 waypoints @ http://localhost:3001/src/engine/Engine.ts:205
+[  475064ms] [LOG] [Intro] introComplete: false @ http://localhost:3001/src/engine/Engine.ts:251
+[  481917ms] [LOG] [vite] server connection lost. Polling for restart... @ http://localhost:3001/@vite/client:559
+[  481931ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3001/:0
+[  481971ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3001/:0
+[  676088ms] [LOG] [Traversal] RoadNetwork: 13 edges, 664 waypoints @ http://localhost:3001/src/engine/Engine.ts:208
+[  676092ms] [LOG] [Intro] introComplete: false @ http://localhost:3001/src/engine/Engine.ts:254
+[  683021ms] [LOG] [vite] server connection lost. Polling for restart... @ http://localhost:3001/@vite/client:559
+[  683028ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3001/:0
+[  683067ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3001/:0
+[ 1750135ms] [LOG] [Traversal] RoadNetwork: 15 edges, 715 waypoints @ http://localhost:3001/src/engine/Engine.ts:208
+[ 1750141ms] [LOG] [Intro] introComplete: false @ http://localhost:3001/src/engine/Engine.ts:254
+[ 1872805ms] [LOG] [Traversal] RoadNetwork: 13 edges, 674 waypoints @ http://localhost:3001/src/engine/Engine.ts?t=1775744838597:208
+[ 1872810ms] [LOG] [Intro] introComplete: false @ http://localhost:3001/src/engine/Engine.ts?t=1775744838597:254
+[ 1926029ms] [LOG] [Traversal] RoadNetwork: 14 edges, 627 waypoints @ http://localhost:3001/src/engine/Engine.ts?t=1775744891890:208
+[ 1926034ms] [LOG] [Intro] introComplete: false @ http://localhost:3001/src/engine/Engine.ts?t=1775744891890:254
+[ 1926788ms] [LOG] [Traversal] RoadNetwork: 13 edges, 587 waypoints @ http://localhost:3001/src/engine/Engine.ts?t=1775744892683:208
+[ 1926792ms] [LOG] [Intro] introComplete: false @ http://localhost:3001/src/engine/Engine.ts?t=1775744892683:254
+[ 1927356ms] [LOG] [Traversal] RoadNetwork: 15 edges, 815 waypoints @ http://localhost:3001/src/engine/Engine.ts?t=1775744893267:208
+[ 1927360ms] [LOG] [Intro] introComplete: false @ http://localhost:3001/src/engine/Engine.ts?t=1775744893267:254
+[ 1928400ms] [LOG] [Traversal] RoadNetwork: 14 edges, 767 waypoints @ http://localhost:3001/src/engine/Engine.ts?t=1775744894325:208
+[ 1928405ms] [LOG] [Intro] introComplete: false @ http://localhost:3001/src/engine/Engine.ts?t=1775744894325:254
+[ 1934560ms] [LOG] [Traversal] RoadNetwork: 15 edges, 701 waypoints @ http://localhost:3001/src/engine/Engine.ts?t=1775744900340:208
+[ 1934564ms] [LOG] [Intro] introComplete: false @ http://localhost:3001/src/engine/Engine.ts?t=1775744900340:254
+[ 1935500ms] [LOG] [Traversal] RoadNetwork: 16 edges, 863 waypoints @ http://localhost:3001/src/engine/Engine.ts?t=1775744901390:208
+[ 1935505ms] [LOG] [Intro] introComplete: false @ http://localhost:3001/src/engine/Engine.ts?t=1775744901390:254
+[ 1936695ms] [LOG] [Traversal] RoadNetwork: 13 edges, 606 waypoints @ http://localhost:3001/src/engine/Engine.ts?t=1775744902587:208
+[ 1936700ms] [LOG] [Intro] introComplete: false @ http://localhost:3001/src/engine/Engine.ts?t=1775744902587:254
+[ 1937620ms] [LOG] [Traversal] RoadNetwork: 14 edges, 657 waypoints @ http://localhost:3001/src/engine/Engine.ts?t=1775744903404:208
+[ 1937625ms] [LOG] [Intro] introComplete: false @ http://localhost:3001/src/engine/Engine.ts?t=1775744903404:254
+[ 1941062ms] [LOG] [Traversal] RoadNetwork: 13 edges, 571 waypoints @ http://localhost:3001/src/engine/Engine.ts?t=1775744906875:208
+[ 1941071ms] [LOG] [Intro] introComplete: false @ http://localhost:3001/src/engine/Engine.ts?t=1775744906875:254
+[ 1942226ms] [LOG] [Traversal] RoadNetwork: 14 edges, 794 waypoints @ http://localhost:3001/src/engine/Engine.ts?t=1775744908111:208
+[ 1942232ms] [LOG] [Intro] introComplete: false @ http://localhost:3001/src/engine/Engine.ts?t=1775744908111:254
+[ 1943056ms] [LOG] [Traversal] RoadNetwork: 16 edges, 728 waypoints @ http://localhost:3001/src/engine/Engine.ts?t=1775744908963:208
+[ 1943060ms] [LOG] [Intro] introComplete: false @ http://localhost:3001/src/engine/Engine.ts?t=1775744908963:254
+[ 1944259ms] [LOG] [Traversal] RoadNetwork: 13 edges, 695 waypoints @ http://localhost:3001/src/engine/Engine.ts?t=1775744910112:208
+[ 1944263ms] [LOG] [Intro] introComplete: false @ http://localhost:3001/src/engine/Engine.ts?t=1775744910112:254
+[ 1945310ms] [LOG] [Traversal] RoadNetwork: 13 edges, 611 waypoints @ http://localhost:3001/src/engine/Engine.ts?t=1775744911228:208
+[ 1945315ms] [LOG] [Intro] introComplete: false @ http://localhost:3001/src/engine/Engine.ts?t=1775744911228:254
+[ 1946275ms] [LOG] [Traversal] RoadNetwork: 14 edges, 630 waypoints @ http://localhost:3001/src/engine/Engine.ts?t=1775744912202:208
+[ 1946279ms] [LOG] [Intro] introComplete: false @ http://localhost:3001/src/engine/Engine.ts?t=1775744912202:254
+[ 1952816ms] [LOG] [Traversal] RoadNetwork: 15 edges, 753 waypoints @ http://localhost:3001/src/engine/Engine.ts?t=1775744918692:208
+[ 1952820ms] [LOG] [Intro] introComplete: false @ http://localhost:3001/src/engine/Engine.ts?t=1775744918692:254
+[ 1963443ms] [LOG] [Traversal] RoadNetwork: 12 edges, 608 waypoints @ http://localhost:3001/src/engine/Engine.ts?t=1775744929268:208
+[ 1963448ms] [LOG] [Intro] introComplete: false @ http://localhost:3001/src/engine/Engine.ts?t=1775744929268:254
+[ 1968182ms] [LOG] [Traversal] RoadNetwork: 12 edges, 411 waypoints @ http://localhost:3001/src/engine/Engine.ts?t=1775744934089:208
+[ 1968186ms] [LOG] [Intro] introComplete: false @ http://localhost:3001/src/engine/Engine.ts?t=1775744934089:254
+[ 1977745ms] [LOG] [Traversal] RoadNetwork: 13 edges, 606 waypoints @ http://localhost:3001/src/engine/Engine.ts?t=1775744943563:208
+[ 1977750ms] [LOG] [Intro] introComplete: false @ http://localhost:3001/src/engine/Engine.ts?t=1775744943563:254
+[ 1986091ms] [LOG] [Traversal] RoadNetwork: 13 edges, 651 waypoints @ http://localhost:3001/src/engine/Engine.ts?t=1775744943563:208
+[ 1986096ms] [LOG] [Intro] introComplete: false @ http://localhost:3001/src/engine/Engine.ts?t=1775744943563:254
+[ 2449334ms] [LOG] [Traversal] RoadNetwork: 14 edges, 619 waypoints @ http://localhost:3001/src/engine/Engine.ts?t=1775745414775:208
+[ 2449341ms] [LOG] [Intro] introComplete: false @ http://localhost:3001/src/engine/Engine.ts?t=1775745414775:254
+[ 2449790ms] [LOG] [Traversal] RoadNetwork: 15 edges, 538 waypoints @ http://localhost:3001/src/engine/Engine.ts?t=1775745414775:208
+[ 2449796ms] [LOG] [Intro] introComplete: false @ http://localhost:3001/src/engine/Engine.ts?t=1775745414775:254
+[ 2466537ms] [LOG] [Traversal] RoadNetwork: 14 edges, 796 waypoints @ http://localhost:3001/src/engine/Engine.ts?t=1775745432316:208
+[ 2466542ms] [LOG] [Intro] introComplete: false @ http://localhost:3001/src/engine/Engine.ts?t=1775745432316:254
+[ 2479483ms] [LOG] [Traversal] RoadNetwork: 13 edges, 627 waypoints @ http://localhost:3001/src/engine/Engine.ts?t=1775745445297:208
+[ 2479489ms] [LOG] [Intro] introComplete: false @ http://localhost:3001/src/engine/Engine.ts?t=1775745445297:254
+[ 2480106ms] [LOG] [Traversal] RoadNetwork: 12 edges, 704 waypoints @ http://localhost:3001/src/engine/Engine.ts?t=1775745446001:208
+[ 2480110ms] [LOG] [Intro] introComplete: false @ http://localhost:3001/src/engine/Engine.ts?t=1775745446001:254
+[ 2481650ms] [LOG] [Traversal] RoadNetwork: 13 edges, 692 waypoints @ http://localhost:3001/src/engine/Engine.ts?t=1775745447543:208
+[ 2481655ms] [LOG] [Intro] introComplete: false @ http://localhost:3001/src/engine/Engine.ts?t=1775745447543:254
+[ 2532429ms] [LOG] [Traversal] RoadNetwork: 14 edges, 706 waypoints @ http://localhost:3001/src/engine/Engine.ts?t=1775745498192:208
+[ 2532435ms] [LOG] [Intro] introComplete: false @ http://localhost:3001/src/engine/Engine.ts?t=1775745498192:254
+[ 2542899ms] [LOG] [Traversal] RoadNetwork: 15 edges, 662 waypoints @ http://localhost:3001/src/engine/Engine.ts?t=1775745508739:208
+[ 2542903ms] [LOG] [Intro] introComplete: false @ http://localhost:3001/src/engine/Engine.ts?t=1775745508739:254
+[ 2546611ms] [LOG] [Traversal] RoadNetwork: 14 edges, 723 waypoints @ http://localhost:3001/src/engine/Engine.ts?t=1775745512488:208
+[ 2546617ms] [LOG] [Intro] introComplete: false @ http://localhost:3001/src/engine/Engine.ts?t=1775745512488:254
+[ 2548088ms] [LOG] [Traversal] RoadNetwork: 14 edges, 696 waypoints @ http://localhost:3001/src/engine/Engine.ts?t=1775745512488:208
+[ 2548092ms] [LOG] [Intro] introComplete: false @ http://localhost:3001/src/engine/Engine.ts?t=1775745512488:254
+[ 2729700ms] [LOG] [Traversal] RoadNetwork: 15 edges, 850 waypoints @ http://localhost:3001/src/engine/Engine.ts?t=1775745695488:208
+[ 2729706ms] [LOG] [Intro] introComplete: false @ http://localhost:3001/src/engine/Engine.ts?t=1775745695488:254
+[ 2774106ms] [LOG] [Traversal] RoadNetwork: 14 edges, 605 waypoints @ http://localhost:3001/src/engine/Engine.ts?t=1775745739886:208
+[ 2774112ms] [LOG] [Intro] introComplete: false @ http://localhost:3001/src/engine/Engine.ts?t=1775745739886:254
+[ 2777355ms] [LOG] [Traversal] RoadNetwork: 11 edges, 548 waypoints @ http://localhost:3001/src/engine/Engine.ts?t=1775745743202:208
+[ 2777360ms] [LOG] [Intro] introComplete: false @ http://localhost:3001/src/engine/Engine.ts?t=1775745743202:254
+[ 2781076ms] [LOG] [Traversal] RoadNetwork: 13 edges, 705 waypoints @ http://localhost:3001/src/engine/Engine.ts?t=1775745746906:208
+[ 2781080ms] [LOG] [Intro] introComplete: false @ http://localhost:3001/src/engine/Engine.ts?t=1775745746906:254
+[ 2784998ms] [LOG] [Traversal] RoadNetwork: 15 edges, 732 waypoints @ http://localhost:3001/src/engine/Engine.ts?t=1775745750838:208
+[ 2785004ms] [LOG] [Intro] introComplete: false @ http://localhost:3001/src/engine/Engine.ts?t=1775745750838:254
+[ 2788137ms] [LOG] [Traversal] RoadNetwork: 13 edges, 625 waypoints @ http://localhost:3001/src/engine/Engine.ts?t=1775745754019:208
+[ 2788142ms] [LOG] [Intro] introComplete: false @ http://localhost:3001/src/engine/Engine.ts?t=1775745754019:254
+[ 2797438ms] [LOG] [Traversal] RoadNetwork: 13 edges, 597 waypoints @ http://localhost:3001/src/engine/Engine.ts?t=1775745763246:208
+[ 2797445ms] [LOG] [Intro] introComplete: false @ http://localhost:3001/src/engine/Engine.ts?t=1775745763246:254
+[ 2801189ms] [LOG] [Traversal] RoadNetwork: 13 edges, 541 waypoints @ http://localhost:3001/src/engine/Engine.ts?t=1775745767029:208
+[ 2801194ms] [LOG] [Intro] introComplete: false @ http://localhost:3001/src/engine/Engine.ts?t=1775745767029:254
+[ 2804410ms] [LOG] [Traversal] RoadNetwork: 13 edges, 660 waypoints @ http://localhost:3001/src/engine/Engine.ts?t=1775745770247:208
+[ 2804415ms] [LOG] [Intro] introComplete: false @ http://localhost:3001/src/engine/Engine.ts?t=1775745770247:254
+[ 2816683ms] [LOG] [Traversal] RoadNetwork: 14 edges, 484 waypoints @ http://localhost:3001/src/engine/Engine.ts?t=1775745782584:208
+[ 2816688ms] [LOG] [Intro] introComplete: false @ http://localhost:3001/src/engine/Engine.ts?t=1775745782584:254
+[ 2820470ms] [LOG] [Traversal] RoadNetwork: 13 edges, 752 waypoints @ http://localhost:3001/src/engine/Engine.ts?t=1775745786366:208
+[ 2820475ms] [LOG] [Intro] introComplete: false @ http://localhost:3001/src/engine/Engine.ts?t=1775745786366:254
+[ 2824493ms] [LOG] [Traversal] RoadNetwork: 13 edges, 638 waypoints @ http://localhost:3001/src/engine/Engine.ts?t=1775745790390:208
+[ 2824498ms] [LOG] [Intro] introComplete: false @ http://localhost:3001/src/engine/Engine.ts?t=1775745790390:254
+[ 2844631ms] [LOG] [Traversal] RoadNetwork: 14 edges, 792 waypoints @ http://localhost:3001/src/engine/Engine.ts?t=1775745810530:208
+[ 2844636ms] [LOG] [Intro] introComplete: false @ http://localhost:3001/src/engine/Engine.ts?t=1775745810530:254
+[ 2848300ms] [LOG] [Traversal] RoadNetwork: 14 edges, 753 waypoints @ http://localhost:3001/src/engine/Engine.ts?t=1775745810530:208
+[ 2848304ms] [LOG] [Intro] introComplete: false @ http://localhost:3001/src/engine/Engine.ts?t=1775745810530:254
+[ 2852399ms] [LOG] [Traversal] RoadNetwork: 15 edges, 752 waypoints @ http://localhost:3001/src/engine/Engine.ts?t=1775745810530:208
+[ 2852403ms] [LOG] [Intro] introComplete: false @ http://localhost:3001/src/engine/Engine.ts?t=1775745810530:254
+[ 2857568ms] [LOG] [Traversal] RoadNetwork: 16 edges, 816 waypoints @ http://localhost:3001/src/engine/Engine.ts?t=1775745810530:208
+[ 2857572ms] [LOG] [Intro] introComplete: false @ http://localhost:3001/src/engine/Engine.ts?t=1775745810530:254
+[ 3011409ms] [LOG] [Traversal] RoadNetwork: 13 edges, 666 waypoints @ http://localhost:3001/src/engine/Engine.ts?t=1775745977227:208
+[ 3011415ms] [LOG] [Intro] introComplete: false @ http://localhost:3001/src/engine/Engine.ts?t=1775745977227:254

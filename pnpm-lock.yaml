@@ -12,6 +12,28 @@ importers:
         specifier: ^5.4.0
         version: 5.9.3
 
+  packages/crawler-world:
+    dependencies:
+      '@engine/core':
+        specifier: workspace:*
+        version: link:../engine
+      bitecs:
+        specifier: ^0.3.40
+        version: 0.3.40
+      three:
+        specifier: ^0.165.0
+        version: 0.165.0
+    devDependencies:
+      '@types/three':
+        specifier: ^0.165.0
+        version: 0.165.0
+      typescript:
+        specifier: ^5.4.0
+        version: 5.9.3
+      vite:
+        specifier: ^5.2.0
+        version: 5.4.21
+
   packages/engine:
     dependencies:
       bitecs:

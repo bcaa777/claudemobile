@@ -1,0 +1,30 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e4] [cursor=pointer]:
+      - heading "Retro World" [level=1] [ref=e5]
+      - paragraph [ref=e6]: Click to explore
+      - paragraph [ref=e7]: WASD — move | Mouse — look | F — fly
+      - paragraph [ref=e8]: J — journal | C — campfire | T — fast travel | V — mute
+    - generic: ◆ 0 / 30
+    - generic: DISCOVERED 25 / 201
+    - generic: RUNES 0 / 11
+  - generic:
+    - generic:
+      - generic:
+        - generic: "N"
+        - generic: NE
+        - generic: E
+        - generic: SE
+        - generic: S
+        - generic: SW
+        - generic: W
+        - generic: NW
+        - generic: "N"
+        - generic: NE
+        - generic: E
+        - generic: SE
+        - generic: S
+        - generic: SW
+        - generic: W
+        - generic: NW
+    - generic: Journal Updated [ J ]

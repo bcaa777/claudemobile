@@ -1,0 +1,11 @@
+[    1097ms] [LOG] [Traversal] RoadNetwork: 14 edges, 589 waypoints @ http://localhost:5174/src/engine/Engine.ts:205
+[    1105ms] [LOG] [Intro] introComplete: false @ http://localhost:5174/src/engine/Engine.ts:251
+[    1130ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5174/favicon.ico:0
+[   35571ms] The root document of this element is not valid for pointer lock.
+[  113627ms] The root document of this element is not valid for pointer lock.
+[  253329ms] [LOG] [Traversal] RoadNetwork: 14 edges, 599 waypoints @ http://localhost:5174/src/engine/Engine.ts:205
+[  253335ms] [LOG] [Intro] introComplete: false @ http://localhost:5174/src/engine/Engine.ts:251
+[  272232ms] The root document of this element is not valid for pointer lock.
+[  397876ms] [LOG] [Traversal] RoadNetwork: 14 edges, 643 waypoints @ http://localhost:5174/src/engine/Engine.ts:205
+[  397882ms] [LOG] [Intro] introComplete: true @ http://localhost:5174/src/engine/Engine.ts:251
+[  421014ms] The root document of this element is not valid for pointer lock.

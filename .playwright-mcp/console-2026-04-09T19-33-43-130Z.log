@@ -1,0 +1,55 @@
+[   25308ms] [LOG] [ExpeditionManager] Expedition started: Forest @ http://localhost:3002/src/expedition/ExpeditionManager.ts?t=1775760416241:63
+[   25309ms] [LOG] [CompanionSystem] Spawned Wolf @ http://localhost:3002/src/companion/CompanionSystem.ts:209
+[   25309ms] [LOG] [CompanionSystem] Applied passive damage_mult=1.1 from Wolf @ http://localhost:3002/src/companion/CompanionSystem.ts:385
+[   25753ms] The root document of this element is not valid for pointer lock.
+[   30667ms] [LOG] [WaveSystem] Wave 1 started — 12 enemies (Forest) @ http://localhost:3002/src/enemies/WaveSystem.ts?t=1775760562901:81
+[   34308ms] [LOG] [DamageSystem] Player hit by flyer for 6 — HP: 94 @ http://localhost:3002/src/combat/DamageSystem.ts?t=1775760421124:50
+[   34824ms] [LOG] [DamageSystem] Player hit by flyer for 6 — HP: 88 @ http://localhost:3002/src/combat/DamageSystem.ts?t=1775760421124:50
+[   35357ms] [LOG] [DamageSystem] Player hit by flyer for 6 — HP: 82 @ http://localhost:3002/src/combat/DamageSystem.ts?t=1775760421124:50
+[   35874ms] [LOG] [DamageSystem] Player hit by rusher for 11 — HP: 71 @ http://localhost:3002/src/combat/DamageSystem.ts?t=1775760421124:50
+[   36406ms] [LOG] [DamageSystem] Player hit by flyer for 6 — HP: 65 @ http://localhost:3002/src/combat/DamageSystem.ts?t=1775760421124:50
+[   36692ms] [LOG] [Game] Enemy died: rusher at (-0.1, 0.0) @ http://localhost:3002/src/Game.ts?t=1775763078439:112
+[   36924ms] [LOG] [DamageSystem] Player hit by flyer for 6 — HP: 59 @ http://localhost:3002/src/combat/DamageSystem.ts?t=1775760421124:50
+[   37458ms] [LOG] [DamageSystem] Player hit by flyer for 6 — HP: 53 @ http://localhost:3002/src/combat/DamageSystem.ts?t=1775760421124:50
+[   37891ms] [LOG] [Game] Enemy died: rusher at (0.0, 0.0) @ http://localhost:3002/src/Game.ts?t=1775763078439:112
+[   37974ms] [LOG] [DamageSystem] Player hit by flyer for 6 — HP: 47 @ http://localhost:3002/src/combat/DamageSystem.ts?t=1775760421124:50
+[   38491ms] [LOG] [DamageSystem] Player hit by flyer for 6 — HP: 41 @ http://localhost:3002/src/combat/DamageSystem.ts?t=1775760421124:50
+[   38507ms] [LOG] [Game] Enemy died: flyer at (0.1, 0.0) @ http://localhost:3002/src/Game.ts?t=1775763078439:112
+[   39024ms] [LOG] [DamageSystem] Player hit by shooter for 6 — HP: 35 @ http://localhost:3002/src/combat/DamageSystem.ts?t=1775760421124:50
+[   39524ms] [LOG] [Game] Enemy died: flyer at (0.0, -0.0) @ http://localhost:3002/src/Game.ts?t=1775763078439:112
+[   39524ms] [LOG] [CompanionSystem] Wolf leveled up to 2! dmg=14 hp=88 @ http://localhost:3002/src/companion/CompanionSystem.ts:363
+[   39541ms] [LOG] [DamageSystem] Player hit by shooter for 6 — HP: 29 @ http://localhost:3002/src/combat/DamageSystem.ts?t=1775760421124:50
+[   39741ms] [LOG] [Game] Level up! Now level 2 @ http://localhost:3002/src/Game.ts?t=1775763078439:421
+[   99774ms] [LOG] [Game] Enemy died: shooter at (-0.0, 0.0) @ http://localhost:3002/src/Game.ts?t=1775763078439:112
+[   99924ms] [LOG] [DamageSystem] Player hit by shooter for 6 — HP: 23 @ http://localhost:3002/src/combat/DamageSystem.ts?t=1775760421124:50
+[  100391ms] [LOG] [Game] Enemy died: shooter at (0.1, 0.0) @ http://localhost:3002/src/Game.ts?t=1775763078439:112
+[  100440ms] [LOG] [DamageSystem] Player hit by rusher for 11 — HP: 12 @ http://localhost:3002/src/combat/DamageSystem.ts?t=1775760421124:50
+[  100958ms] [LOG] [DamageSystem] Player hit by rusher for 11 — HP: 1 @ http://localhost:3002/src/combat/DamageSystem.ts?t=1775760421124:50
+[  100991ms] [LOG] [Game] Enemy died: rusher at (-0.1, 0.0) @ http://localhost:3002/src/Game.ts?t=1775763078439:112
+[  101391ms] [LOG] [Game] Enemy died: shooter at (0.0, 0.4) @ http://localhost:3002/src/Game.ts?t=1775763078439:112
+[  101392ms] [LOG] [CompanionSystem] Wolf leveled up to 3! dmg=16 hp=97 @ http://localhost:3002/src/companion/CompanionSystem.ts:363
+[  101424ms] [LOG] [Game] Enemy died: rusher at (-0.0, -0.1) @ http://localhost:3002/src/Game.ts?t=1775763078439:112
+[  101458ms] [LOG] [Game] Level up! Now level 3 @ http://localhost:3002/src/Game.ts?t=1775763078439:421
+[  166902ms] The root document of this element is not valid for pointer lock.
+[  177442ms] [LOG] [DamageSystem] Player hit by shooter for 6 — HP: -5 @ http://localhost:3002/src/combat/DamageSystem.ts?t=1775760421124:50
+[  177442ms] [LOG] [Game] Player DEAD @ http://localhost:3002/src/Game.ts?t=1775763078439:416
+[  249042ms] [LOG] [ExpeditionManager] Expedition started: Forest @ http://localhost:3002/src/expedition/ExpeditionManager.ts?t=1775760416241:63
+[  249043ms] [LOG] [CompanionSystem] Spawned Wolf @ http://localhost:3002/src/companion/CompanionSystem.ts:209
+[  249043ms] [LOG] [CompanionSystem] Applied passive damage_mult=1.1 from Wolf @ http://localhost:3002/src/companion/CompanionSystem.ts:385
+[  249209ms] The root document of this element is not valid for pointer lock.
+[  254147ms] [LOG] [WaveSystem] Wave 1 started — 12 enemies (Forest) @ http://localhost:3002/src/enemies/WaveSystem.ts?t=1775760562901:81
+[  257991ms] [LOG] [DamageSystem] Player hit by flyer for 6 — HP: 94 @ http://localhost:3002/src/combat/DamageSystem.ts?t=1775760421124:50
+[  258508ms] [LOG] [DamageSystem] Player hit by flyer for 6 — HP: 88 @ http://localhost:3002/src/combat/DamageSystem.ts?t=1775760421124:50
+[  259025ms] [LOG] [DamageSystem] Player hit by flyer for 6 — HP: 82 @ http://localhost:3002/src/combat/DamageSystem.ts?t=1775760421124:50
+[  259542ms] [LOG] [DamageSystem] Player hit by rusher for 11 — HP: 71 @ http://localhost:3002/src/combat/DamageSystem.ts?t=1775760421124:50
+[  260075ms] [LOG] [DamageSystem] Player hit by rusher for 11 — HP: 60 @ http://localhost:3002/src/combat/DamageSystem.ts?t=1775760421124:50
+[  260175ms] [LOG] [Game] Enemy died: rusher at (0.0, 0.0) @ http://localhost:3002/src/Game.ts?t=1775763078439:112
+[  260592ms] [LOG] [DamageSystem] Player hit by rusher for 11 — HP: 49 @ http://localhost:3002/src/combat/DamageSystem.ts?t=1775760421124:50
+[  261108ms] [LOG] [DamageSystem] Player hit by rusher for 11 — HP: 38 @ http://localhost:3002/src/combat/DamageSystem.ts?t=1775760421124:50
+[  261192ms] [LOG] [Game] Enemy died: rusher at (-0.0, 0.0) @ http://localhost:3002/src/Game.ts?t=1775763078439:112
+[  261625ms] [LOG] [DamageSystem] Player hit by rusher for 11 — HP: 27 @ http://localhost:3002/src/combat/DamageSystem.ts?t=1775760421124:50
+[  262125ms] [LOG] [Game] Enemy died: rusher at (-0.0, 0.0) @ http://localhost:3002/src/Game.ts?t=1775763078439:112
+[  262125ms] [LOG] [CompanionSystem] Wolf leveled up to 2! dmg=14 hp=88 @ http://localhost:3002/src/companion/CompanionSystem.ts:363
+[  262159ms] [LOG] [DamageSystem] Player hit by rusher for 11 — HP: 16 @ http://localhost:3002/src/combat/DamageSystem.ts?t=1775760421124:50
+[  262192ms] [LOG] [Game] Enemy died: flyer at (-0.0, 0.0) @ http://localhost:3002/src/Game.ts?t=1775763078439:112
+[  262392ms] [LOG] [Game] Level up! Now level 2 @ http://localhost:3002/src/Game.ts?t=1775763078439:421
