@@ -25,15 +25,21 @@ export class DamageSystem {
     eventBus: EventBus,
   ): boolean {
     const enemy = enemyManager.enemies[enemyIndex]
-    if (!enemy) return false
+    if (!enemy?.mesh?.parent) return false
 
     const eid = enemy.eid
     Health.current[eid] = Math.max(0, Health.current[eid] - amount)
 
     // Flash red — find the first Mesh child in the Group (the body)
-    const bodyMesh = enemy.mesh.children.find((c): c is THREE.Mesh => c instanceof THREE.Mesh)
-    const mat = bodyMesh ? (bodyMesh.material as THREE.MeshLambertMaterial) : null
-    const originalEmissive = mat ? mat.emissive.clone() : new THREE.Color(0, 0, 0)
+    let mat: THREE.MeshLambertMaterial | null = null
+    let originalEmissive = new THREE.Color(0, 0, 0)
+    try {
+      const bodyMesh = enemy.mesh.children.find((c): c is THREE.Mesh => c instanceof THREE.Mesh)
+      mat = bodyMesh ? (bodyMesh.material as THREE.MeshLambertMaterial) : null
+      originalEmissive = mat?.emissive ? mat.emissive.clone() : new THREE.Color(0, 0, 0)
+    } catch {
+      // mesh may have been partially disposed
+    }
     if (mat) mat.emissive.setHex(0xff0000)
     this.flashing.push({ enemy, timer: FLASH_DURATION, originalEmissive })
 
