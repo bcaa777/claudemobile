@@ -102,6 +102,13 @@ export class ProjectileSystem {
         continue
       }
 
+      // ---- Snap projectile to terrain surface (non-bouncing) ----
+      if (this.sampleHeight && proj.bouncesLeft <= 0) {
+        const terrainY = this.sampleHeight(proj.mesh.position.x, proj.mesh.position.z)
+        proj.mesh.position.y = terrainY + 1.2 // float slightly above ground
+        proj.velocity.y = 0 // keep horizontal
+      }
+
       // ---- Terrain ricochet ----
       if (this.sampleHeight && proj.bouncesLeft > 0) {
         const terrainY = this.sampleHeight(proj.mesh.position.x, proj.mesh.position.z)

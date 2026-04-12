@@ -49,6 +49,7 @@ interface GravityVortex {
 export class WeaponSystem {
   private weapons: ActiveWeapon[] = []
   private scene: THREE.Scene | null = null
+  private _playerFacingDir: THREE.Vector3 | null = null
   private sampleHeight: ((x: number, z: number) => number) | null = null
 
   // Active special effects
@@ -79,7 +80,9 @@ export class WeaponSystem {
     projectileSystem: ProjectileSystem,
     damageSystem?: DamageSystem,
     eventBus?: EventBus,
+    playerFacingDir?: THREE.Vector3,
   ): void {
+    this._playerFacingDir = playerFacingDir ?? null
     // ---- tick weapon cooldowns ----
     for (const weapon of this.weapons) {
       weapon.cooldownRemaining -= delta
@@ -135,7 +138,11 @@ export class WeaponSystem {
     projectileSystem: ProjectileSystem,
   ): void {
     if (!def.autoTarget) {
-      this.fire(def, playerPosition, getCameraDirection(camera), projectileSystem)
+      // In third-person/top-down, use player facing direction instead of camera direction
+      const aimDir = this._playerFacingDir
+        ? this._playerFacingDir.clone().normalize()
+        : getCameraDirection(camera)
+      this.fire(def, playerPosition, aimDir, projectileSystem)
       weapon.cooldownRemaining = def.cooldown
     } else {
       const target = findNearestEnemy(playerPosition, enemyManager, def.range)

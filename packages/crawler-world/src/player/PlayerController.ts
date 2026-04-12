@@ -15,6 +15,9 @@ export class PlayerController {
   private position: THREE.Vector3
   private playerModel: PlayerModel | null = null
 
+  /** The horizontal direction the player is facing (unit XZ vector). Updated every frame. */
+  private _facingDir = new THREE.Vector3(0, 0, -1)
+
   constructor(
     private camera: THREE.Camera,
     private input: InputManager,
@@ -38,7 +41,6 @@ export class PlayerController {
   }
 
   private _applyMode(): void {
-    // Sync third-person rig yaw with first-person yaw so there's no jump
     if (this.currentMode === 'third-person') {
       this.thirdPersonRig.setYaw(this.firstPersonRig.getYaw())
       this.thirdPersonRig.activate?.(this.camera)
@@ -71,12 +73,6 @@ export class PlayerController {
     }
 
     // Update the active rig
-    const targetPos = new THREE.Vector3(
-      this.position.x,
-      this.position.y - GAME_CONFIG.playerHeight, // foot position Y
-      this.position.z,
-    )
-    // playerHeight is eye offset; for third/top-down target at foot level + half height
     const bodyCenter = new THREE.Vector3(
       this.position.x,
       this.position.y - GAME_CONFIG.playerHeight * 0.5,
@@ -112,7 +108,6 @@ export class PlayerController {
     moveX += this.input.gamepadLeftX
     moveZ += this.input.gamepadLeftY
 
-    // Clamp to unit length so diagonal isn't faster
     const len = Math.sqrt(moveX * moveX + moveZ * moveZ)
     if (len > 1) {
       moveX /= len
@@ -121,32 +116,54 @@ export class PlayerController {
 
     const isMoving = (moveX !== 0 || moveZ !== 0)
 
-    // Yaw used for movement direction depends on mode
-    let moveYaw: number
-    if (this.currentMode === 'first-person') {
-      moveYaw = this.firstPersonRig.getYaw()
+    // ── Movement direction per camera mode ──────────────────────────────────
+    //
+    // Top-down: camera looks along -Z (with slight tilt).
+    //   "screen up" = -Z, "screen right" = +X
+    //   W (moveZ=-1) should move -Z, D (moveX=+1) should move +X
+    //   → forward=(0,0,-1), right=(1,0,0), use raw moveX/moveZ directly
+    //
+    // Third-person: camera orbits behind player.
+    //   forward = direction from camera toward player = (sin(yaw), 0, cos(yaw))
+    //   right = perpendicular = (cos(yaw), 0, -sin(yaw))
+    //
+    // First-person: forward = camera look direction on XZ plane
+    //   forward = (-sin(yaw), 0, -cos(yaw))
+    //   W (moveZ=-1) → addScaledVector(forward, +1) = forward direction ✓
+
+    let forward: THREE.Vector3
+    let right: THREE.Vector3
+
+    if (this.currentMode === 'top-down') {
+      // Screen-aligned: W=north(-Z), D=east(+X)
+      forward = new THREE.Vector3(0, 0, -1)
+      right = new THREE.Vector3(1, 0, 0)
+      this.position.addScaledVector(forward, -moveZ * speed * delta)
+      this.position.addScaledVector(right, moveX * speed * delta)
     } else if (this.currentMode === 'third-person') {
-      moveYaw = this.thirdPersonRig.getYaw()
+      // Camera-relative: forward = from camera toward target
+      const yaw = this.thirdPersonRig.getYaw()
+      forward = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw))
+      right = new THREE.Vector3(Math.cos(yaw), 0, -Math.sin(yaw))
+      this.position.addScaledVector(forward, -moveZ * speed * delta)
+      this.position.addScaledVector(right, moveX * speed * delta)
     } else {
-      // Top-down: camera looks straight down along -Z, no rotation
-      moveYaw = 0
+      // First-person: camera-look-direction aligned
+      const yaw = this.firstPersonRig.getYaw()
+      forward = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw))
+      right = new THREE.Vector3(Math.cos(yaw), 0, -Math.sin(yaw))
+      this.position.addScaledVector(forward, -moveZ * speed * delta)
+      this.position.addScaledVector(right, moveX * speed * delta)
     }
 
-    // Project movement along yaw direction (ignore pitch for walking)
-    let forward = new THREE.Vector3(-Math.sin(moveYaw), 0, -Math.cos(moveYaw))
-    let right = new THREE.Vector3(Math.cos(moveYaw), 0, -Math.sin(moveYaw))
-
-    // In third-person/top-down the camera is behind the player, so the
-    // forward vector derived from the orbit yaw points toward the camera
-    // instead of away from it.  Negate both axes so W walks *away* from
-    // the camera and A/D strafe correctly.
-    if (this.currentMode !== 'first-person') {
-      forward.negate()
-      right.negate()
+    // Update facing direction (for weapon aiming)
+    if (isMoving) {
+      this._facingDir.set(0, 0, 0)
+        .addScaledVector(forward, -moveZ)
+        .addScaledVector(right, moveX)
+      this._facingDir.y = 0
+      if (this._facingDir.lengthSq() > 0.001) this._facingDir.normalize()
     }
-
-    this.position.addScaledVector(forward, -moveZ * speed * delta)
-    this.position.addScaledVector(right, moveX * speed * delta)
 
     // Snap Y to terrain height + eye level
     const terrainY = this.sampleHeight(this.position.x, this.position.z)
@@ -160,10 +177,9 @@ export class PlayerController {
     // Update player model
     if (this.playerModel && this.currentMode !== 'first-person') {
       const footPos = new THREE.Vector3(this.position.x, terrainY, this.position.z)
-      // Face movement direction if moving, otherwise keep current yaw.
-      // moveZ<0 = forward (W key), moveX>0 = strafe right (D key).
-      // atan2(moveX, -moveZ) maps (0,-1)→0, (1,0)→PI/2, etc., matching our yaw convention.
-      const facingYaw = isMoving ? (moveYaw + Math.atan2(moveX, -moveZ)) : moveYaw
+      const facingYaw = isMoving
+        ? Math.atan2(this._facingDir.x, this._facingDir.z)
+        : (this.currentMode === 'third-person' ? this.thirdPersonRig.getYaw() : 0)
       this.playerModel.update(footPos, facingYaw, isMoving, delta)
     }
   }
@@ -171,6 +187,16 @@ export class PlayerController {
   /** Expose position so Game can pass it to the chunk manager. */
   getPosition(): THREE.Vector3 {
     return this.position
+  }
+
+  /** Get the horizontal direction the player is facing (for weapon aiming in third-person/top-down). */
+  getFacingDirection(): THREE.Vector3 {
+    return this._facingDir
+  }
+
+  /** Get current camera mode. */
+  getMode(): CameraRigMode {
+    return this.currentMode
   }
 
   dispose(scene: THREE.Scene): void {

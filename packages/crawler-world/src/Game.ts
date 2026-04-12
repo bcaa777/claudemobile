@@ -529,6 +529,11 @@ export class Game {
         )
       }
 
+      // Pass player facing direction for non-first-person aiming
+      const facingDir = this.player.getMode() !== 'first-person'
+        ? this.player.getFacingDirection()
+        : undefined
+
       this.weaponSystem.update(
         delta,
         pos,
@@ -537,6 +542,7 @@ export class Game {
         this.projectileSystem,
         this.damageSystem,
         this.eventBus,
+        facingDir,
       )
 
       // Update orbital weapons
