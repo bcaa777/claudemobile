@@ -214,21 +214,26 @@ export class HubScene {
     }
 
     // ── Ambient + directional light ───────────────────────────────────────────
-    const ambient = new THREE.AmbientLight(0xaabbdd, 1.2)
+    const ambient = new THREE.AmbientLight(0xccddff, 2.0)
     this.addObject(ambient)
 
-    const sun = new THREE.DirectionalLight(0xffeedd, 1.8)
+    const sun = new THREE.DirectionalLight(0xffeedd, 2.5)
     sun.position.set(30, 50, 20)
     this.addObject(sun)
 
     // Warm fill light from below-front to lift shadows
-    const fill = new THREE.DirectionalLight(0xffddaa, 0.4)
+    const fill = new THREE.DirectionalLight(0xffddaa, 0.8)
     fill.position.set(-10, -5, 30)
     this.addObject(fill)
 
+    // Warm point light at center of courtyard
+    const centerLight = new THREE.PointLight(0xffddaa, 3, 30)
+    centerLight.position.set(0, 4, -4)
+    this.addObject(centerLight)
+
     // ── Scene background and fog ──────────────────────────────────────────────
-    this.renderer.scene.background = new THREE.Color(0x1a2a3a)
-    this.renderer.scene.fog = new THREE.FogExp2(0x1a2a3a, 0.008)
+    this.renderer.scene.background = new THREE.Color(0x2a3a4a)
+    this.renderer.scene.fog = new THREE.FogExp2(0x2a3a4a, 0.005)
 
     // ── Fixed hub camera ──────────────────────────────────────────────────────
     this.renderer.camera.position.set(8, 6, 12)

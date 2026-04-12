@@ -399,9 +399,10 @@ const VIEW_RADIUS = 2
 
 interface ChunkObjects {
   terrain: THREE.Mesh
-  sprites: THREE.Sprite[]
+  vegMeshes: THREE.Object3D[]
   water: THREE.Mesh | null
   rocks: THREE.Mesh[]
+  fogPlane: THREE.Mesh | null
 }
 
 // ─── Underground scene helpers ────────────────────────────────────────────────
@@ -496,6 +497,86 @@ export function setupUndergroundScene(
     stalMat.dispose()
     for (const l of lights) scene.remove(l)
   }
+}
+
+// ─── 3D vegetation mesh builders ─────────────────────────────────────────────
+
+function buildTreeMesh(color: number, trunkColor: number, w: number, h: number): THREE.Group {
+  const group = new THREE.Group()
+
+  // Trunk
+  const trunkH = h * 0.35
+  const trunkGeo = new THREE.CylinderGeometry(w * 0.08, w * 0.12, trunkH, 5)
+  const trunkMat = new THREE.MeshLambertMaterial({ color: trunkColor })
+  const trunk = new THREE.Mesh(trunkGeo, trunkMat)
+  trunk.position.y = trunkH / 2
+  group.add(trunk)
+
+  // Canopy — 2-3 stacked cones for a layered look
+  const canopyMat = new THREE.MeshLambertMaterial({ color })
+  const layers = 2 + Math.floor(Math.random() * 2)
+  for (let i = 0; i < layers; i++) {
+    const layerH = (h - trunkH) / layers * 1.3
+    const layerR = w * 0.5 * (1 - i * 0.15)
+    const coneGeo = new THREE.ConeGeometry(layerR, layerH, 6)
+    const cone = new THREE.Mesh(coneGeo, canopyMat)
+    cone.position.y = trunkH + i * layerH * 0.6 + layerH / 2
+    group.add(cone)
+  }
+
+  return group
+}
+
+function buildBushMesh(color: number, w: number, h: number): THREE.Group {
+  const group = new THREE.Group()
+  const mat = new THREE.MeshLambertMaterial({ color })
+
+  // Central sphere
+  const mainGeo = new THREE.SphereGeometry(w * 0.4, 6, 4)
+  const main = new THREE.Mesh(mainGeo, mat)
+  main.position.y = h * 0.4
+  group.add(main)
+
+  // 2-3 smaller offset spheres
+  for (let i = 0; i < 2; i++) {
+    const smallGeo = new THREE.SphereGeometry(w * 0.25, 5, 3)
+    const small = new THREE.Mesh(smallGeo, mat)
+    const angle = (i / 2) * Math.PI * 2 + Math.random()
+    small.position.set(
+      Math.cos(angle) * w * 0.3,
+      h * 0.3,
+      Math.sin(angle) * w * 0.3,
+    )
+    group.add(small)
+  }
+
+  return group
+}
+
+function buildCrystalMesh(color: number, w: number, h: number): THREE.Group {
+  const group = new THREE.Group()
+  const mat = new THREE.MeshStandardMaterial({
+    color,
+    emissive: color,
+    emissiveIntensity: 0.3,
+    transparent: true,
+    opacity: 0.8,
+  })
+
+  // Main crystal column
+  const mainGeo = new THREE.ConeGeometry(w * 0.3, h, 5)
+  const main = new THREE.Mesh(mainGeo, mat)
+  main.position.y = h / 2
+  group.add(main)
+
+  // Smaller tilted crystal
+  const smallGeo = new THREE.ConeGeometry(w * 0.15, h * 0.5, 4)
+  const small = new THREE.Mesh(smallGeo, mat)
+  small.position.set(w * 0.25, h * 0.3, 0)
+  small.rotation.z = 0.4
+  group.add(small)
+
+  return group
 }
 
 export class ChunkManager {
@@ -657,14 +738,10 @@ export class ChunkManager {
       }
     }
 
-    // ── Vegetation sprites (THREE.Sprite — auto-billboards to camera) ────────
-    const sprites: THREE.Sprite[] = []
+    // ── 3D Vegetation meshes ────────────────────────────────────────────────
+    const vegMeshes: THREE.Object3D[] = []
     const spriteSpec = BIOME_SPRITES[biomeType]
-    if (spriteSpec) {
-      // Pre-create a small set of materials to share across sprites in this chunk
-      const colors = [spriteSpec.color, spriteSpec.color2 ?? spriteSpec.color]
-      const mats = colors.map(c => new THREE.SpriteMaterial({ color: c, fog: true }))
-
+    if (spriteSpec && !this.undergroundConfig) {
       for (let i = 0; i < spriteSpec.count; i++) {
         const lx = chunkRand() * CHUNK_SIZE
         const lz = chunkRand() * CHUNK_SIZE
@@ -673,23 +750,49 @@ export class ChunkManager {
         const wy = sampleWorldHeight(wx, wz, this.biomeMap, getBiomeConfig)
         if (wy <= WATER_LEVEL) continue
 
-        // Pick a random size variant
         const sizeVariant = SIZE_VARIANTS[Math.floor(chunkRand() * SIZE_VARIANTS.length)]
         const w = spriteSpec.width * sizeVariant
         const h = spriteSpec.height * sizeVariant
 
-        // Alternate between primary and secondary color
-        const matIndex = chunkRand() < 0.3 ? 1 : 0
-        const sprite = new THREE.Sprite(mats[matIndex])
-        sprite.scale.set(w, h, 1)
-        // Center-bottom of sprite sits on terrain
-        sprite.position.set(wx, wy + h / 2, wz)
-        this.scene.add(sprite)
-        sprites.push(sprite)
+        let mesh: THREE.Object3D
+        const color = chunkRand() < 0.3 ? (spriteSpec.color2 ?? spriteSpec.color) : spriteSpec.color
+
+        if (spriteSpec.type === 'tree') {
+          mesh = buildTreeMesh(spriteSpec.color, spriteSpec.color2 ?? 0x5c3a1a, w, h)
+        } else if (spriteSpec.type === 'bush') {
+          mesh = buildBushMesh(color, w, h)
+        } else if (spriteSpec.type === 'generic') {
+          mesh = buildCrystalMesh(color, w, h)
+        } else {
+          // 'rock' type - skip, rocks are handled separately
+          continue
+        }
+
+        mesh.position.set(wx, wy, wz)
+        mesh.rotation.y = chunkRand() * Math.PI * 2
+        this.scene.add(mesh)
+        vegMeshes.push(mesh)
       }
     }
 
-    this.loadedChunks.set(key, { terrain, sprites, water, rocks })
+    // ── Ground fog plane ────────────────────────────────────────────────────
+    let fogPlane: THREE.Mesh | null = null
+    if (!this.undergroundConfig) {
+      const fogGeo = new THREE.PlaneGeometry(CHUNK_SIZE, CHUNK_SIZE)
+      const fogMat = new THREE.MeshBasicMaterial({
+        color: BIOME_FOG[biomeType]?.color ?? 0x888888,
+        transparent: true,
+        opacity: 0.12,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+      })
+      fogPlane = new THREE.Mesh(fogGeo, fogMat)
+      fogPlane.rotation.x = -Math.PI / 2
+      fogPlane.position.set(originX + CHUNK_SIZE / 2, WATER_LEVEL + 1.5, originZ + CHUNK_SIZE / 2)
+      this.scene.add(fogPlane)
+    }
+
+    this.loadedChunks.set(key, { terrain, vegMeshes, water, rocks, fogPlane })
   }
 
   private unloadChunk(key: string, objects: ChunkObjects): void {
@@ -697,9 +800,17 @@ export class ChunkManager {
     objects.terrain.geometry.dispose()
     ;(objects.terrain.material as THREE.Material).dispose()
 
-    for (const sprite of objects.sprites) {
-      this.scene.remove(sprite)
-      ;(sprite.material as THREE.Material).dispose()
+    for (const veg of objects.vegMeshes) {
+      this.scene.remove(veg)
+      veg.traverse((child) => {
+        const m = child as THREE.Mesh
+        if (m.isMesh) {
+          m.geometry?.dispose()
+          const mat = m.material
+          if (Array.isArray(mat)) mat.forEach(mm => mm.dispose())
+          else (mat as THREE.Material).dispose()
+        }
+      })
     }
 
     if (objects.water) {
@@ -712,6 +823,12 @@ export class ChunkManager {
       this.scene.remove(rock)
       rock.geometry.dispose()
       ;(rock.material as THREE.Material).dispose()
+    }
+
+    if (objects.fogPlane) {
+      this.scene.remove(objects.fogPlane)
+      objects.fogPlane.geometry.dispose()
+      ;(objects.fogPlane.material as THREE.Material).dispose()
     }
 
     this.loadedChunks.delete(key)
