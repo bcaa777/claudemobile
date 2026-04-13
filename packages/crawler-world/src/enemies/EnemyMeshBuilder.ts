@@ -189,10 +189,8 @@ export function buildEnemyMesh(dna: CreatureDNA, archetype: string, biome?: numb
 
 /** Add dark inverted-hull outline to a group (back-face only, slightly larger) */
 function addOutline(group: THREE.Group, outlineColor: number, scale: number): void {
-  const outlineMat = new THREE.MeshStandardMaterial({
+  const outlineMat = new THREE.MeshBasicMaterial({
     color: outlineColor,
-    emissive: outlineColor,
-    emissiveIntensity: 0.8,
     side: THREE.BackSide,
   })
   const outlines: THREE.Mesh[] = []

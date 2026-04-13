@@ -71,7 +71,7 @@ export class PlayerModel {
     this.group.add(this.weapon)
 
     // Add glowing blue outline for visibility
-    const outlineMat = new THREE.MeshStandardMaterial({ color: 0x4488ff, emissive: 0x2266ff, emissiveIntensity: 0.8, side: THREE.BackSide })
+    const outlineMat = new THREE.MeshBasicMaterial({ color: 0x4488ff, side: THREE.BackSide })
     const meshes: THREE.Mesh[] = []
     this.group.traverse((child) => {
       if (child instanceof THREE.Mesh) meshes.push(child)
