@@ -25,10 +25,10 @@ export class PlayerModel {
   constructor(scene: THREE.Scene) {
     this.group = new THREE.Group()
 
-    const bodyMat  = new THREE.MeshLambertMaterial({ color: 0x3377ff })
-    const skinMat  = new THREE.MeshLambertMaterial({ color: 0xf0c080 })
-    const darkMat  = new THREE.MeshLambertMaterial({ color: 0x223355 })
-    const weapMat  = new THREE.MeshLambertMaterial({ color: 0xaaaaaa })
+    const bodyMat  = new THREE.MeshStandardMaterial({ color: 0x3377ff, emissive: 0x1133aa, emissiveIntensity: 0.3 })
+    const skinMat  = new THREE.MeshStandardMaterial({ color: 0xf0c080, emissive: 0xf0c080, emissiveIntensity: 0.15 })
+    const darkMat  = new THREE.MeshStandardMaterial({ color: 0x223355, emissive: 0x112244, emissiveIntensity: 0.2 })
+    const weapMat  = new THREE.MeshStandardMaterial({ color: 0xcccccc, emissive: 0x888888, emissiveIntensity: 0.3 })
 
     // Torso (box)
     this.torso = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.75, 0.3), bodyMat)
@@ -69,6 +69,21 @@ export class PlayerModel {
     this.weapon.position.set(0.5, 0.72, 0.1)
     this.weapon.rotation.z = -0.25
     this.group.add(this.weapon)
+
+    // Add dark outline for visibility
+    const outlineMat = new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.BackSide })
+    const meshes: THREE.Mesh[] = []
+    this.group.traverse((child) => {
+      if (child instanceof THREE.Mesh) meshes.push(child)
+    })
+    for (const mesh of meshes) {
+      const outline = new THREE.Mesh(mesh.geometry, outlineMat)
+      outline.position.copy(mesh.position)
+      outline.rotation.copy(mesh.rotation)
+      outline.scale.copy(mesh.scale).multiplyScalar(1.15)
+      outline.renderOrder = -1
+      this.group.add(outline)
+    }
 
     scene.add(this.group)
     this.group.visible = false

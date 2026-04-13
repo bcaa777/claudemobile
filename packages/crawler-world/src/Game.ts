@@ -4,7 +4,7 @@ import { Renderer, InputManager, EventBus, createGameWorld } from '@engine/core'
 import { BiomeType } from '@engine/core'
 import { SkyDome, GroundFog, AtmosphereParticles } from '@engine/core'
 import { PlayerController } from './player/PlayerController'
-import { ChunkManager, BiomeWeather, applyBiomeFog, getBiomeColorGrade, getBiomeVisualIdentity } from './expedition/BiomeSetup'
+import { ChunkManager, BiomeWeather, applyBiomeFog, getBiomeColorGrade, getBiomeVisualIdentity, getBiomeTimeOfDay } from './expedition/BiomeSetup'
 import { EnemyManager } from './enemies/EnemyFactory'
 import { WaveSystem } from './enemies/WaveSystem'
 import { updateEnemyAI } from './enemies/EnemyAI'
@@ -359,7 +359,8 @@ export class Game {
     this.atmosphereParticles?.dispose()
     this.atmosphereParticles = new AtmosphereParticles(this.renderer.scene)
 
-    // Set biome-specific post-processing
+    // Set biome-specific time-of-day and post-processing
+    this.dayNight.setFixedTime(getBiomeTimeOfDay(biomeType))
     const biomeVi = getBiomeVisualIdentity(biomeType)
     if (biomeVi.godRayIntensity > 0) {
       this.dayNight.setBiomeGodRayIntensity(biomeVi.godRayIntensity)

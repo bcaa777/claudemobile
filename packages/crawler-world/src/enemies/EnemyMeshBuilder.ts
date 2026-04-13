@@ -25,9 +25,13 @@ export function buildEnemyMesh(dna: CreatureDNA, archetype: string, biome?: numb
     }
   }
 
-  // Body: sphere scaled by DNA body dimensions
+  // Body: sphere scaled by DNA body dimensions — emissive glow makes enemies pop
   const bodyGeo = new THREE.SphereGeometry(0.5, 8, 6)
-  const bodyMat = new THREE.MeshLambertMaterial({ color })
+  const bodyMat = new THREE.MeshStandardMaterial({
+    color,
+    emissive: color,
+    emissiveIntensity: 0.35,
+  })
   const body = new THREE.Mesh(bodyGeo, bodyMat)
   body.scale.set(dna.bodyWidth, dna.bodyHeight, dna.bodyLength)
   body.userData.isBobTarget = true
@@ -55,14 +59,12 @@ export function buildEnemyMesh(dna: CreatureDNA, archetype: string, biome?: numb
   const headSize = dna.headSize * 0.5
   const headGeo = new THREE.SphereGeometry(headSize, 6, 4)
 
-  // Shooter archetype: emissive glowing head
-  const headMat = archetype === 'shooter'
-    ? new THREE.MeshStandardMaterial({
-        color: accentColor,
-        emissive: accentColor,
-        emissiveIntensity: 0.8,
-      })
-    : new THREE.MeshLambertMaterial({ color: accentColor })
+  // All enemies get emissive heads for visibility; shooters glow brighter
+  const headMat = new THREE.MeshStandardMaterial({
+    color: accentColor,
+    emissive: accentColor,
+    emissiveIntensity: archetype === 'shooter' ? 0.8 : 0.4,
+  })
   const head = new THREE.Mesh(headGeo, headMat)
   const headY = dna.bodyHeight * 0.3
   const headZ = dna.bodyLength * 0.5
@@ -176,9 +178,32 @@ export function buildEnemyMesh(dna: CreatureDNA, archetype: string, biome?: numb
     group.add(tail)
   }
 
+  // Add inverted-hull outline to make enemy pop against environment
+  addOutline(group, 0x000000, 1.12)
+
   // Scale by DNA size
   group.scale.setScalar(dna.size || 1)
   return group
+}
+
+/** Add dark inverted-hull outline to a group (back-face only, slightly larger) */
+function addOutline(group: THREE.Group, outlineColor: number, scale: number): void {
+  const outlineMat = new THREE.MeshBasicMaterial({
+    color: outlineColor,
+    side: THREE.BackSide,
+  })
+  const outlines: THREE.Mesh[] = []
+  group.traverse((child) => {
+    if (child instanceof THREE.Mesh && child.geometry) {
+      const outline = new THREE.Mesh(child.geometry, outlineMat)
+      outline.position.copy(child.position)
+      outline.rotation.copy(child.rotation)
+      outline.scale.copy(child.scale).multiplyScalar(scale)
+      outline.renderOrder = -1
+      outlines.push(outline)
+    }
+  })
+  for (const o of outlines) group.add(o)
 }
 
 /**

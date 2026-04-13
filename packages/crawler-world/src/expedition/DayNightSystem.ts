@@ -1,9 +1,6 @@
 import * as THREE from 'three'
 import type { GodRayPass } from '@engine/core'
 
-// Full day cycle in seconds (10 minutes)
-const DAY_DURATION = 600
-
 // Colour stops for sky/fog
 const SKY_NIGHT   = new THREE.Color(0x101828)
 const SKY_DAWN    = new THREE.Color(0xe05020)
@@ -24,36 +21,34 @@ function smoothstep(t: number): number {
 }
 
 export class DayNightSystem {
-  private elapsed = 0
   private sun: THREE.DirectionalLight | null = null
   private ambient: THREE.AmbientLight | null = null
   private godRayPass: GodRayPass | null = null
   private camera: THREE.PerspectiveCamera | null = null
   private scene: THREE.Scene | null = null
 
-  /** Cached sun direction (normalised) — updated every frame */
-  private _sunDirection = new THREE.Vector3(0, 1, 0)
-  /** Cached sun color — updated every frame */
-  private _sunColor = new THREE.Color(0xfff8e0)
-  /** Biome-specific god ray intensity multiplier (default 1.0) */
+  /** Fixed time-of-day per biome (0-1). null = use cycling. */
+  private fixedTime: number | null = null
+  /** Biome-specific god ray intensity multiplier */
   private _biomeGodRayIntensity = 1.0
+
+  private _sunDirection = new THREE.Vector3(0, 1, 0)
+  private _sunColor = new THREE.Color(0xfff8e0)
 
   get sunDirection(): THREE.Vector3 { return this._sunDirection }
   get sunColor(): THREE.Color { return this._sunColor }
 
-  /** Set a per-biome multiplier for god ray intensity */
   setBiomeGodRayIntensity(value: number): void {
     this._biomeGodRayIntensity = value
   }
 
-  /** normalised time-of-day [0..1], 0 = midnight, 0.25 = dawn, 0.5 = noon, 0.75 = dusk */
-  get timeOfDay(): number {
-    return (this.elapsed % DAY_DURATION) / DAY_DURATION
+  /** Set a fixed time-of-day. 0=midnight, 0.25=dawn, 0.5=noon, 0.75=dusk. null=cycling. */
+  setFixedTime(t: number | null): void {
+    this.fixedTime = t
   }
 
-  /** Alias for timeOfDay — returns 0-1 where 0=midnight, 0.25=sunrise, 0.5=noon, 0.75=sunset */
   getDayFraction(): number {
-    return this.timeOfDay
+    return this.fixedTime ?? 0.5
   }
 
   init(
@@ -68,18 +63,14 @@ export class DayNightSystem {
     this.godRayPass = godRayPass
     this.camera = camera
     this.scene = scene
-    // Start at mid-morning so god rays are immediately visible
-    this.elapsed = DAY_DURATION * 0.3
   }
 
-  update(delta: number) {
+  update(_delta: number) {
     if (!this.sun || !this.ambient || !this.godRayPass || !this.camera || !this.scene) return
-    this.elapsed += delta
 
-    const t = this.timeOfDay // 0..1
+    const t = this.fixedTime ?? 0.5
 
-    // --- Sun orbit: rises in east (negative X), sets in west (positive X)
-    // angle = 0 at midnight (below horizon), π at noon (top)
+    // --- Sun orbit
     const angle = t * Math.PI * 2
     const sunX = -Math.cos(angle) * 200
     const sunY = Math.sin(angle) * 200
@@ -87,12 +78,12 @@ export class DayNightSystem {
     this.sun.position.set(sunX, sunY, sunZ)
     this._sunDirection.set(sunX, sunY, sunZ).normalize()
 
-    // --- Sun intensity: bright at noon, dim at dawn/dusk, dark at night
-    const dayFraction = Math.max(0, Math.sin(angle)) // 0 at night, 1 at noon
+    // --- Sun intensity
+    const dayFraction = Math.max(0, Math.sin(angle))
     const sunIntensity = 0.05 + dayFraction * dayFraction * 1.15
     this.sun.intensity = sunIntensity
 
-    // --- Sun colour blends dawn/dusk/noon
+    // --- Sun colour
     let sunColor: THREE.Color
     if (dayFraction < 0.2) {
       sunColor = lerpColor(SUN_NIGHT, SUN_DAWN, smoothstep(dayFraction / 0.2))
@@ -104,7 +95,7 @@ export class DayNightSystem {
     this.sun.color.set(sunColor)
     this._sunColor.copy(sunColor)
 
-    // --- Ambient: dim at night, bright at noon — never below 0.2
+    // --- Ambient
     const ambientIntensity = 0.20 + dayFraction * 0.45
     this.ambient.intensity = ambientIntensity
     this.ambient.color.set(lerpColor(SKY_NIGHT, new THREE.Color(0xaaccff), dayFraction))
@@ -124,7 +115,6 @@ export class DayNightSystem {
     }
     this.scene.background = skyColor
 
-    // Keep fog in sync if present
     if (this.scene.fog) {
       if (this.scene.fog instanceof THREE.FogExp2) {
         this.scene.fog.color.set(skyColor)
@@ -133,14 +123,13 @@ export class DayNightSystem {
       }
     }
 
-    // --- God rays: project sun world-position to screen UV (modulated by biome)
+    // --- God rays
     const godRayIntensity = dayFraction > 0.05 ? dayFraction * 0.9 * this._biomeGodRayIntensity : 0
     this.godRayPass.setIntensity(godRayIntensity)
 
     if (godRayIntensity > 0) {
       const sunWorld = this.sun.position.clone()
       const proj = sunWorld.project(this.camera)
-      // NDC [-1,1] → UV [0,1]
       const screenX = (proj.x + 1) * 0.5
       const screenY = (proj.y + 1) * 0.5
       this.godRayPass.setSunPosition(screenX, screenY)

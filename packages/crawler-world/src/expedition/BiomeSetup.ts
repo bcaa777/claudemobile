@@ -266,6 +266,25 @@ export function getBiomeColorGrade(type: BiomeType): ColorGradeSpec {
   return BIOME_COLOR_GRADE[type] ?? { tint: [1, 1, 1], contrast: 1, saturation: 1 }
 }
 
+// ─── Per-biome fixed time-of-day (0=midnight, 0.25=dawn, 0.5=noon, 0.75=dusk)
+const BIOME_TIME: Partial<Record<BiomeType, number>> = {
+  [BiomeType.Forest]:   0.45,  // bright late morning
+  [BiomeType.Desert]:   0.50,  // harsh noon
+  [BiomeType.Swamp]:    0.30,  // misty dawn
+  [BiomeType.Snow]:     0.40,  // crisp morning
+  [BiomeType.Volcanic]: 0.72,  // fiery dusk
+  [BiomeType.Crystal]:  0.60,  // warm afternoon
+  [BiomeType.Jungle]:   0.35,  // early morning
+  [BiomeType.Mesa]:     0.65,  // golden hour
+  [BiomeType.CoralReef]:0.45,  // mid-morning
+  [BiomeType.Heaven]:   0.50,  // eternal noon
+  [BiomeType.Hell]:     0.80,  // deep dusk
+}
+
+export function getBiomeTimeOfDay(type: BiomeType): number {
+  return BIOME_TIME[type] ?? 0.45
+}
+
 // ─── Sprite configurations per biome (engine billboard system) ──────────────
 
 const BIOME_SPRITE_TYPES: Partial<Record<BiomeType, SpriteTypeConfig[]>> = {
