@@ -266,19 +266,21 @@ export function getBiomeColorGrade(type: BiomeType): ColorGradeSpec {
   return BIOME_COLOR_GRADE[type] ?? { tint: [1, 1, 1], contrast: 1, saturation: 1 }
 }
 
-// ─── Per-biome fixed time-of-day (0=midnight, 0.25=dawn, 0.5=noon, 0.75=dusk)
+// ─── Per-biome fixed time-of-day ─────────────────────────────────────────────
+// DayNight angle = t * 2π, dayFraction = max(0, sin(angle))
+// t=0.25 → noon (brightest), t=0.125 → dawn, t=0.375 → dusk, t=0.5/0.0 → midnight
 const BIOME_TIME: Partial<Record<BiomeType, number>> = {
-  [BiomeType.Forest]:   0.45,  // bright late morning
-  [BiomeType.Desert]:   0.50,  // harsh noon
-  [BiomeType.Swamp]:    0.30,  // misty dawn
-  [BiomeType.Snow]:     0.40,  // crisp morning
-  [BiomeType.Volcanic]: 0.72,  // fiery dusk
-  [BiomeType.Crystal]:  0.60,  // warm afternoon
-  [BiomeType.Jungle]:   0.35,  // early morning
-  [BiomeType.Mesa]:     0.65,  // golden hour
-  [BiomeType.CoralReef]:0.45,  // mid-morning
-  [BiomeType.Heaven]:   0.50,  // eternal noon
-  [BiomeType.Hell]:     0.80,  // deep dusk
+  [BiomeType.Forest]:   0.25,  // bright noon
+  [BiomeType.Desert]:   0.27,  // harsh early afternoon
+  [BiomeType.Swamp]:    0.15,  // misty dawn
+  [BiomeType.Snow]:     0.22,  // crisp late morning
+  [BiomeType.Volcanic]: 0.36,  // fiery dusk
+  [BiomeType.Crystal]:  0.20,  // cool morning
+  [BiomeType.Jungle]:   0.23,  // warm morning
+  [BiomeType.Mesa]:     0.33,  // golden afternoon
+  [BiomeType.CoralReef]:0.24,  // bright midday
+  [BiomeType.Heaven]:   0.25,  // eternal noon
+  [BiomeType.Hell]:     0.40,  // deep dusk
 }
 
 export function getBiomeTimeOfDay(type: BiomeType): number {

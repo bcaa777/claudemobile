@@ -35,7 +35,7 @@ export class DamageSystem {
     let bodyColor = new THREE.Color(1, 0, 0)
     try {
       const bodyMesh = enemy.mesh.children.find((c): c is THREE.Mesh => c instanceof THREE.Mesh)
-      const mat = bodyMesh?.material as THREE.MeshLambertMaterial | undefined
+      const mat = bodyMesh?.material as THREE.MeshStandardMaterial | undefined
       if (mat?.emissive) {
         const originalEmissive = mat.emissive.clone()
         bodyColor = mat.color?.clone() ?? bodyColor
@@ -109,7 +109,7 @@ export class DamageSystem {
         try {
           if (entry.enemy?.mesh?.parent) {
             const bodyMesh = entry.enemy.mesh.children.find((c): c is THREE.Mesh => c instanceof THREE.Mesh)
-            const mat = bodyMesh?.material as THREE.MeshLambertMaterial | undefined
+            const mat = bodyMesh?.material as THREE.MeshStandardMaterial | undefined
             if (mat?.emissive) {
               mat.emissive.copy(entry.originalEmissive)
             }
