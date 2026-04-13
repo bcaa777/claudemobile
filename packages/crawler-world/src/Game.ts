@@ -594,6 +594,7 @@ export class Game {
         this.damageSystem,
         this.eventBus,
         facingDir,
+        this.bossSystem.active ? this.bossSystem.getPosition() : null,
       )
 
       // Update orbital weapons

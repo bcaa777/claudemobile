@@ -50,6 +50,7 @@ export class WeaponSystem {
   private weapons: ActiveWeapon[] = []
   private scene: THREE.Scene | null = null
   private _playerFacingDir: THREE.Vector3 | null = null
+  private _bossPos: THREE.Vector3 | null = null
   private sampleHeight: ((x: number, z: number) => number) | null = null
 
   // Active special effects
@@ -81,8 +82,10 @@ export class WeaponSystem {
     damageSystem?: DamageSystem,
     eventBus?: EventBus,
     playerFacingDir?: THREE.Vector3,
+    bossPos?: THREE.Vector3 | null,
   ): void {
     this._playerFacingDir = playerFacingDir ?? null
+    this._bossPos = bossPos ?? null
     // ---- tick weapon cooldowns ----
     for (const weapon of this.weapons) {
       weapon.cooldownRemaining -= delta
@@ -138,7 +141,7 @@ export class WeaponSystem {
     projectileSystem: ProjectileSystem,
   ): void {
     // All weapons auto-target nearest enemy
-    const target = findNearestEnemy(playerPosition, enemyManager, def.range)
+    const target = findNearestEnemy(playerPosition, enemyManager, def.range, this._bossPos)
     if (!target) return
 
     const dir = target.clone().sub(playerPosition)
@@ -178,7 +181,7 @@ export class WeaponSystem {
     _damageSystem: DamageSystem,
     _eventBus: EventBus,
   ): void {
-    const nearbyEnemy = findNearestEnemy(playerPosition, enemyManager, def.range)
+    const nearbyEnemy = findNearestEnemy(playerPosition, enemyManager, def.range, this._bossPos)
     if (!nearbyEnemy) return
 
     weapon.cooldownRemaining = def.cooldown
@@ -266,7 +269,7 @@ export class WeaponSystem {
     damageSystem: DamageSystem,
     eventBus: EventBus,
   ): void {
-    const firstTarget = findNearestEnemy(playerPosition, enemyManager, def.range)
+    const firstTarget = findNearestEnemy(playerPosition, enemyManager, def.range, this._bossPos)
     if (!firstTarget) return
 
     weapon.cooldownRemaining = def.cooldown
@@ -345,7 +348,7 @@ export class WeaponSystem {
       if (turret.fireTimer <= 0) {
         turret.fireTimer = 0.8  // turret fires every 0.8s
 
-        const target = findNearestEnemy(turret.position, enemyManager, turret.range)
+        const target = findNearestEnemy(turret.position, enemyManager, turret.range, this._bossPos)
         if (target) {
           const dir = target.clone().sub(turret.mesh.position)
           dir.y = 0
@@ -508,6 +511,7 @@ function findNearestEnemy(
   from: THREE.Vector3,
   enemyManager: EnemyManager,
   range: number,
+  bossPos?: THREE.Vector3 | null,
 ): THREE.Vector3 | null {
   let bestDist = range * range
   let bestPos: THREE.Vector3 | null = null
@@ -519,6 +523,16 @@ function findNearestEnemy(
     if (distSq < bestDist) {
       bestDist = distSq
       bestPos = enemy.mesh.position.clone()
+    }
+  }
+
+  // Also consider the boss
+  if (bossPos) {
+    const dx = bossPos.x - from.x
+    const dz = bossPos.z - from.z
+    const distSq = dx * dx + dz * dz
+    if (distSq < bestDist) {
+      bestPos = bossPos.clone()
     }
   }
 
