@@ -178,8 +178,9 @@ export function buildEnemyMesh(dna: CreatureDNA, archetype: string, biome?: numb
     group.add(tail)
   }
 
-  // Add inverted-hull outline to make enemy pop against environment
-  addOutline(group, 0x000000, 1.12)
+  // Add glowing colored outline to make enemy pop against environment
+  const outlineColor = color.clone().multiplyScalar(1.5).addScalar(0.1)
+  addOutline(group, outlineColor.getHex(), 1.12)
 
   // Scale by DNA size
   group.scale.setScalar(dna.size || 1)
@@ -188,8 +189,10 @@ export function buildEnemyMesh(dna: CreatureDNA, archetype: string, biome?: numb
 
 /** Add dark inverted-hull outline to a group (back-face only, slightly larger) */
 function addOutline(group: THREE.Group, outlineColor: number, scale: number): void {
-  const outlineMat = new THREE.MeshBasicMaterial({
+  const outlineMat = new THREE.MeshStandardMaterial({
     color: outlineColor,
+    emissive: outlineColor,
+    emissiveIntensity: 0.8,
     side: THREE.BackSide,
   })
   const outlines: THREE.Mesh[] = []

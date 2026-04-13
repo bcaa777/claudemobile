@@ -70,8 +70,8 @@ export class PlayerModel {
     this.weapon.rotation.z = -0.25
     this.group.add(this.weapon)
 
-    // Add dark outline for visibility
-    const outlineMat = new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.BackSide })
+    // Add glowing blue outline for visibility
+    const outlineMat = new THREE.MeshStandardMaterial({ color: 0x4488ff, emissive: 0x2266ff, emissiveIntensity: 0.8, side: THREE.BackSide })
     const meshes: THREE.Mesh[] = []
     this.group.traverse((child) => {
       if (child instanceof THREE.Mesh) meshes.push(child)
